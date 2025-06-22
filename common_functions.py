@@ -3968,7 +3968,7 @@ def multi_process(process_num, func, args_list=None, kwargs_list=None, func_name
 
 
 def part_list_for(func, for_list, for_idx_name, use_tqdm, *args, **kwargs):
-    if use_tqdm:
+    if use_tqdm and len(for_list) != 1:
         iterable = tqdm.tqdm(for_list)
     else:
         iterable = for_list
@@ -4010,7 +4010,7 @@ def multi_process_list_for(process_num, func, args=None, kwargs=None, for_list=N
 
 
 def part_enumerate_for(func, idx_list, for_list, for_idx_name, for_item_name, use_tqdm, *args, **kwargs):
-    if use_tqdm:
+    if use_tqdm and len(for_list) != 1:
         iterable = tqdm.tqdm(zip(idx_list, for_list))
     else:
         iterable = zip(idx_list, for_list)
@@ -4051,7 +4051,7 @@ def multi_process_enumerate_for(process_num, func, args=None, kwargs=None, for_l
 
 
 def part_items_for(func, key_list, value_list, for_key_name, for_value_name, use_tqdm, *args, **kwargs):
-    if use_tqdm:
+    if use_tqdm and len(key_list) != 1:
         iterable = tqdm.tqdm(zip(key_list, value_list))
     else:
         iterable = zip(key_list, value_list)
