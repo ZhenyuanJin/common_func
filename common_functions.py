@@ -1906,7 +1906,7 @@ class FlexibleTry:
     print(ft.success)  # True or False, 是否成功
     print(ft.exception)  # 如果发生异常, 则为异常对象, 否则为None
     '''
-    def __init__(self, enable_try=True):
+    def __init__(self, enable_try=True, print_info=True):
         self.enable_try = enable_try
         
     def __enter__(self):
@@ -1926,13 +1926,14 @@ class FlexibleTry:
         if self.enable_try and exc_type:
             # 当启用异常捕获且发生异常时，获取详细错误信息
             error_info = get_detailed_error()
-            print(error_info)  # 打印详细错误信息
+            if self.print_info:
+                print(error_info)  # 打印详细错误信息
             return True  # 吞掉异常
         
         return False  # 抛出异常
 
 
-def flexible_try(enable_try=True):
+def flexible_try(enable_try=True, print_info=True):
     """
     异常处理装饰器,可同时用于函数和类方法
     
@@ -1963,7 +1964,8 @@ def flexible_try(enable_try=True):
                 except Exception:
                     # 捕获并打印详细错误信息
                     error_info = get_detailed_error()
-                    print(f"{func.__name__}:\n{error_info}")
+                    if print_info:
+                        print(f"{func.__name__}:\n{error_info}")
                     return None  # 可以选择返回默认值或None
             else:
                 # 直接执行不捕获异常
