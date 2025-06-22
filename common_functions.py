@@ -1908,6 +1908,7 @@ class FlexibleTry:
     '''
     def __init__(self, enable_try=True, print_info=True):
         self.enable_try = enable_try
+        self.print_info = print_info
         
     def __enter__(self):
         return self
