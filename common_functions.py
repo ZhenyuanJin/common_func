@@ -5645,6 +5645,7 @@ def get_connection_idx_and_weight(weight_matrix):
     connection_strengths = weight_matrix[i_indices, j_indices]
     return i_indices, j_indices, connection_strengths
 
+
 def get_nearby_idx(arr, index, nearby_index):
     """
     获取给定多维数组 arr 中某个索引 index 前后 nearby_index 范围内的所有索引。
