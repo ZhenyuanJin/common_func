@@ -7194,6 +7194,15 @@ def lowess_smooth(x, y, frac=0.2):
     y_smooth = lowess_result[:, 1]
     
     return x_smooth, y_smooth
+
+
+def get_envelope(signal):
+    dc_offset = np.mean(signal)
+    zero_mean_signal = signal - dc_offset
+    analytic_signal = scipy.signal.hilbert(zero_mean_signal)
+    envelope = np.abs(analytic_signal)
+    envelope = envelope + dc_offset
+    return envelope
 # endregion
 
 
