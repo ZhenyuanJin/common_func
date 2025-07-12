@@ -11479,13 +11479,13 @@ def zoom_in_yrange_partial(ax, zoom_in_ax, ymin, ymax, zoom_ymin, zoom_ymax, col
 def add_twin_ax(ax, axis, color='black', label='twin', inset_mode='fig'):
     '''
     在指定轴上添加一个新的双轴。
-    :param ax: matplotlib的轴对象，用于绘制图形。
-    :param axis: 新双轴的位置，'x'或'y'。
-    :param color: 新双轴的颜色，默认为黑色。
+    :param ax: matplotlib的轴对象,用于绘制图形
+    :param axis: 新双轴的位置,'x'或'y'
+    :param color: 新双轴的颜色,默认为黑色
 
     注意: 
-    axis为'x'时,share x轴,新轴的y轴在右边;axis为'y'时,share y轴,新轴的x轴在上边。
-    假如后续更改了原ax的位置,需要同步设置twin_ax的位置。
+    axis为'x'时,share x轴,新轴的y轴在右边;axis为'y'时,share y轴,新轴的x轴在上边
+    假如后续更改了原ax的位置,需要同步设置twin_ax的位置
     '''
     if axis == 'x':
         twin_ax = ax.twinx()
