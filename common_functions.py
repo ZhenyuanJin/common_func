@@ -3314,17 +3314,37 @@ def search_dict_subdir(dict_data, basedir, pkl_name, ext='joblib', value_dir_key
 
 def compare_dict(dict1, dict2, ignore_key=None):
     '''
-    比较两个字典的不同,可以选择忽略某些键
+    比较两个字典,包括嵌套字典和NumPy数组,可选择忽略某些键
     '''
+    # 处理忽略键
     if ignore_key is None:
-        return dict1 == dict2
+        d1 = dict1.copy()
+        d2 = dict2.copy()
     else:
-        local_dict1 = dict1.copy()
-        local_dict2 = dict2.copy()
-        for key in ignore_key:
-            local_dict1.pop(key, None)
-            local_dict2.pop(key, None)
-        return local_dict1 == local_dict2
+        d1 = {k: v for k, v in dict1.items() if k not in ignore_key}
+        d2 = {k: v for k, v in dict2.items() if k not in ignore_key}
+
+    # 递归比较值
+    def compare_values(v1, v2):
+        # 处理NumPy数组
+        if isinstance(v1, np.ndarray) and isinstance(v2, np.ndarray):
+            return np.array_equal(v1, v2)
+        
+        # 处理嵌套字典
+        elif isinstance(v1, dict) and isinstance(v2, dict):
+            return compare_dict(v1, v2)
+        
+        # 处理其他类型,列表、标量等
+        else:
+            return v1 == v2
+
+    # 比较所有键值对
+    if set(d1.keys()) != set(d2.keys()):
+        return False
+    for key in d1:
+        if not compare_values(d1[key], d2[key]):
+            return False
+    return True
 
 
 def save_df(df, filename, index=True, format_list=None):
