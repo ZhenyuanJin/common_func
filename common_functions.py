@@ -8683,36 +8683,32 @@ class MetaModel(abc.ABC, MetaAnalyzerMixin):
 
     @property
     def logs_dir(self):
-        dir_dict = get_common_subdir_dict(self.timedir, ['logs'])
-        return dir_dict['logs']
+        return pj(self.timedir, 'logs')
 
     @property
     def figs_dir(self):
-        dir_dict = get_common_subdir_dict(self.timedir, ['figs'])
-        return dir_dict['figs']
+        return pj(self.timedir, 'figs')
     
     @property
     def models_dir(self):
-        dir_dict = get_common_subdir_dict(self.timedir, ['models'])
-        return dir_dict['models']
+        return pj(self.timedir, 'models')
     
     @property
     def outcomes_dir(self):
-        dir_dict = get_common_subdir_dict(self.timedir, ['outcomes'])
-        return dir_dict['outcomes']
+        return pj(self.timedir, 'outcomes')
 
     @property
     def params_dir(self):
-        dir_dict = get_common_subdir_dict(self.timedir, ['params'])
-        return dir_dict['params']
+        return pj(self.timedir, 'params')
+
+    @property
+    def codes_dir(self):
+        return pj(self.timedir, 'code')
 
     @property
     def code_dir(self):
-        '''
-        用于保存备份代码
-        '''
-        dir_dict = get_common_subdir_dict(self.timedir, ['code'])
-        return dir_dict['code']
+        '''保留之前的没有加s的版本'''
+        return pj(self.timedir, 'code')
     # endregion
 
     # region load
