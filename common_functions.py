@@ -16454,6 +16454,10 @@ def set_fig_title(fig, title, text_process=None, title_size=SUP_TITLE_SIZE, **kw
     fig.suptitle(local_title, fontsize=title_size, **kwargs)
 
 
+def add_fig_title(*args, **kwargs):
+    return set_fig_title(*args, **kwargs)
+
+
 def get_tick_size(ax):
     x_tick_size = ax.xaxis.get_ticklabels()[0].get_fontsize()
     y_tick_size = ax.yaxis.get_ticklabels()[0].get_fontsize()
