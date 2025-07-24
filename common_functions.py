@@ -8981,6 +8981,7 @@ class AbstractTool(abc.ABC):
     def __init__(self):
         self.already_done = False
         self._set_name() # 子类必须实现_set_name方法,用于设置name属性
+        self._config_info_container() # 子类可以修改_config_info_container方法,用于设置info_container
         self._config_data_keeper() # 子类可以修改_config_data_keeper方法,用于设置data_keeper
         self._config_dir_manager() # 子类可以修改_config_dir_manager方法,用于设置dir_manager
         self.enable_search = False # search 有两步,第一步为寻找参数,第二步为check_all_saved
@@ -9061,9 +9062,18 @@ class AbstractTool(abc.ABC):
         info = {
             'data_keeper': self.data_keeper,
             'params': self.params,
+            'info_container': self.info_container,
             'name': self.name,
         }
         return info
+
+    def _config_info_container(self):
+        self.info_container_name = self.name
+        self.info_container_kwargs = {'data_type': 'dict', 'save_load_method': 'lmdb'}
+        # self.info_container_kwargs = {'data_type': 'OrderedDataContainer', 'save_load_method': 'lmdb', 'param_order': ..., 'included_name_list': ...} 注意设置param_order等
+
+    def init_info_container(self):
+        self.info_container = DataKeeper(name=self.info_container_name, basedir=self.dir_manager.params_dir, **self.info_container_kwargs)
 
     def _config_data_keeper(self):
         self.data_keeper_name = self.name
@@ -9094,6 +9104,8 @@ class AbstractTool(abc.ABC):
 
     def before_run(self):
         self.save_params()
+        self.add_info_to_info_container()
+        self.info_container.save()
 
     @abc.abstractmethod
     def run_detail(self):
@@ -9131,6 +9143,10 @@ class AbstractTool(abc.ABC):
     def load_params(self):
         self.params = self.dir_manager.load_params(prefix=self.name, set_to_self=False)
         self.set_params(self.params)
+
+    def add_info_to_info_container(self):
+        '''子类可按需要添加信息到info_container'''
+        pass
 
     @property
     def logs_dir(self):
@@ -9261,6 +9277,10 @@ class ToolsPipeLine:
         tool.finalize_init_dir_manager() # 只有第一个有资格以他的信息来init_dir_manager
         tool.search_params_when_enabled()
 
+    def init_info_container_for_each_tool(self):
+        for tool in self._pipeline:
+            tool.init_info_container()
+
     def init_data_keeper_for_each_tool(self):
         for tool in self._pipeline:
             tool.init_data_keeper()
@@ -9268,6 +9288,10 @@ class ToolsPipeLine:
     def load_params_for_each_tool(self):
         for tool in self._pipeline:
             tool.load_params()
+
+    def load_info_container_for_each_tool(self):
+        for tool in self._pipeline:
+            tool.info_container.load()
 
     def mark_already_done_for_each_tool(self):
         for tool in self._pipeline:
@@ -9284,10 +9308,13 @@ class ToolsPipeLine:
         if self.timedir_injected:
             self.set_dir_manager_timedir_by_first_tool()
             self.load_params_for_each_tool()
+            self.init_info_container_for_each_tool()
+            self.load_info_container_for_each_tool()
             self.init_data_keeper_for_each_tool()
             self.mark_already_done_for_each_tool()
         else:
             self.search_params_for_first_tool()
+            self.init_info_container_for_each_tool()
             self.init_data_keeper_for_each_tool()
             self.check_results_for_each_tool()
             self.code_saver.save_code()
