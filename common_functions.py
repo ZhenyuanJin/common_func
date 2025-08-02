@@ -8805,6 +8805,63 @@ class MetaModel(abc.ABC, MetaAnalyzerMixin):
     def save_simulation_results(self, filename='simulation_results', **kwargs):
         self._save_results(results_prefix='simulation', filename=filename, **kwargs)
     # endregion
+
+
+def find_incomplete_model(dir_before_timedir, dir_after_timedir):
+    '''
+    寻找不完整的模型文件夹,以为'simulation_results_saved'是否存在为判断标准
+    '''
+    incomplete_model_list = []
+
+    sub_dir_list = get_subdir(dir_before_timedir)
+    for sub_dir in sub_dir_list:
+        mark_file = pj(sub_dir, dir_after_timedir, 'outcomes', 'simulation_results', 'simulation_results_saved')
+        if check_all_file_exist_with_any_extension(mark_file):
+            pass
+        else:
+            model_dir = pj(sub_dir, dir_after_timedir)
+            print(f'Found incomplete model directory: {model_dir}')
+            incomplete_model_list.append(model_dir)
+    return incomplete_model_list
+
+
+def clean_incomplete_model(dir_before_timedir, dir_after_timedir):
+    '''
+    删除不完整的模型文件夹,以为'simulation_results_saved'是否存在为判断标准
+    '''
+    incomplete_model_list = find_incomplete_model(dir_before_timedir, dir_after_timedir)
+    for incomplete_model in incomplete_model_list:
+        rmdir(incomplete_model)
+
+
+def collect_params(dir_before_timedir, dir_after_timedir):
+    '''
+    收集模型参数
+    '''
+    incomplete_model_list = find_incomplete_model(dir_before_timedir, dir_after_timedir)
+    params_list = []
+    params_dict = {}
+
+    sub_dir_list = get_subdir(dir_before_timedir)
+    for sub_dir in sub_dir_list:
+        model_dir = pj(sub_dir, dir_after_timedir)
+        if model_dir in incomplete_model_list:
+            pass
+        else:
+            params_file = pj(sub_dir, dir_after_timedir, 'params', 'params')
+
+            params = load_pkl(params_file)
+            params_list.append(params)
+            params_dict[model_dir] = params
+    return params_list, params_dict
+
+
+def count_params(params_list, key):
+    params_count_dict = defaultdict(int)
+    for params in params_list:
+        value = params[key]
+        params_count_dict[repr(value)] += 1
+    return params_count_dict
 # endregion
 
 
@@ -11356,18 +11413,18 @@ def add_side_ax(ax, position='right', relative_size=SIDE_PAD*2, pad=SIDE_PAD, sh
 def add_zoom_in_ax(ax, bounds_custom, xlim, ylim, edgecolor=BLACK, ax_facecolor=(1., 1., 1., 0.), label='zoom_in', inset_mode='fig', **kwargs):
     '''
     放大指定轴的显示范围。
-    :param ax: matplotlib的轴对象，用于绘制图形。
-    # :param bounds: list, 新ax的范围,相对于ax，为一个四元组(left, bottom, width, height)。比如(0.5, 0.5, 0.4, 0.4)表示zoom_in_ax的左下角在ax的(0.5, 0.5)位置，宽度和高度都是0.4
-    : param bounds_custom: 新ax的范围，为一个四元组(left, right, bottom, top)。比如(0.5, 0.9, 0.5, 0.9)表示zoom_in_ax的左下角在ax的(0.5, 0.5)位置，右上角在(0.9, 0.9)位置
-    :param xlim: 将要放大的原图的x轴范围，一个二元组(x1, x2)。
-    :param ylim: 将要放大的原图的y轴范围，一个二元组(y1, y2)。
-    :param edgecolor: 放大框的边框颜色，默认为BLACK。
-    :param ax_facecolor: 放大框的背景颜色，默认为(1., 1., 1., 0.), 即透明(防止遮挡原图)
+    :param ax: matplotlib的轴对象,用于绘制图形。
+    # :param bounds: list, 新ax的范围,相对于ax,为一个四元组(left, bottom, width, height)。比如(0.5, 0.5, 0.4, 0.4)表示zoom_in_ax的左下角在ax的(0.5, 0.5)位置,宽度和高度都是0.4
+    : param bounds_custom: 新ax的范围,为一个四元组(left, right, bottom, top)。比如(0.5, 0.9, 0.5, 0.9)表示zoom_in_ax的左下角在ax的(0.5, 0.5)位置,右上角在(0.9, 0.9)位置
+    :param xlim: 将要放大的原图的x轴范围,一个二元组(x1, x2)。
+    :param ylim: 将要放大的原图的y轴范围,一个二元组(y1, y2)。
+    :param edgecolor: 放大框的边框颜色,默认为BLACK。
+    :param ax_facecolor: 放大框的背景颜色,默认为(1., 1., 1., 0.), 即透明(防止遮挡原图)
     :param kwargs: 传递给`ax.inset_axes`的其他参数。
 
     注意:
-    - 该函数会在原图上绘制一个放大框，并返回新的ax对象。
-    - 获得新的ax后仍需要再在新的ax上绘制图形，否则为空白。
+    - 该函数会在原图上绘制一个放大框,并返回新的ax对象。
+    - 获得新的ax后仍需要再在新的ax上绘制图形,否则为空白。
     '''
     # 创建新的ax
     zoom_in_ax = inset_ax(ax, bounds_custom[0], bounds_custom[1], bounds_custom[2], bounds_custom[3], label=label, inset_mode=inset_mode, **kwargs)
@@ -11641,7 +11698,7 @@ def set_ax_position(ax, left, bottom, width, height):
 
 def get_ax_position_custom(ax):
     '''
-        更加人性化,返回left, right, bottom, top
+    更加人性化,返回left, right, bottom, top
     '''
     left, bottom, width, height = ax.get_position().bounds
     right = left + width
@@ -11665,13 +11722,13 @@ def set_ax_position_custom(ax, left, right, bottom, top):
 
 def set_relative_ax_position(ax, nrows=1, ncols=1, margin=None, squeeze=False):
     '''
-    自动设置subplot的位置，使其在等分的图像中按照给定的比例占据空间。
+    自动设置subplot的位置,使其在等分的图像中按照给定的比例占据空间。
 
     参数:
     - nrows: 子图的行数。
     - ncols: 子图的列数。
     - ax: 一个或一组matplotlib的Axes对象。
-    - margin: 一个字典，定义了图像边缘的留白，包括left, right, bottom, top。
+    - margin: 一个字典,定义了图像边缘的留白,包括left, right, bottom, top。
     - squeeze: ax是否被压缩,squeeze为True时,对于单个ax其就是axes对象;squeeze为False时,对于单个ax其是一个(1,1)的np.ndarray对象
     '''
     if margin is None:
@@ -11788,8 +11845,8 @@ def move_ax(ax, d_left=None, d_right=None, d_bottom=None, d_top=None, keep_size=
             position_dict['left'] -= d_left
             position_dict['right'] -= d_left
         if d_right is not None:
-            position_dict['left'] -= d_right
-            position_dict['right'] -= d_right
+            position_dict['left'] += d_right
+            position_dict['right'] += d_right
         if d_bottom is not None:
             position_dict['bottom'] -= d_bottom
             position_dict['top'] -= d_bottom
@@ -11808,6 +11865,39 @@ def move_ax(ax, d_left=None, d_right=None, d_bottom=None, d_top=None, keep_size=
         if d_top is not None:
             top += d_top
     set_ax_position_custom(ax, left, right, bottom, top)
+
+
+def rm_end_ax_and_align(axes, row=None, col=None):
+    '''
+    移除指定行/列的最后一个ax,并重新对齐剩余的子图
+    
+    参数:
+    axes : matplotlib Axes 对象数组 (nrows x ncols)
+    row : 要处理的行索引 (从0开始)
+    col : 要处理的列索引 (从0开始)
+    
+    返回:
+    调整后的Axes数组
+    '''
+    if row is not None:
+        ax = axes[row, -1]
+        rm_ax(ax)
+
+        ax_row = axes[row, :-1]
+        pos_0, _, _, _ = get_ax_position_custom(ax_row[0])
+        pos_1, _, _, _ = get_ax_position_custom(ax_row[1])
+        d_right = np.abs((pos_1 - pos_0) / 2)
+        move_ax(ax_row, d_right=d_right, keep_size=True)
+    if col is not None:
+        ax = axes[-1, col]
+        rm_ax(ax)
+
+        ax_col = axes[:-1, col]
+        _, _, pos_0, _ = get_ax_position_custom(ax_col[0])
+        _, _, pos_1, _ = get_ax_position_custom(ax_col[1])
+        d_bottom = np.abs((pos_1 - pos_0) / 2)
+        move_ax(ax_col, d_bottom=d_bottom, keep_size=True)
+    return axes
 # endregion
 
 
