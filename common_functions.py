@@ -2986,6 +2986,10 @@ def load_dict_separate(load_dir, key_to_load=None, filter_str=None, filter_mode=
         if k is not None:  # 检查键是否非None
             loaded_data[k] = v  # 存储到字典中
 
+    # 检查loaded_data是否读取了所有key_to_load
+    if set(loaded_data.keys()) != set(key_to_load):
+        missing_keys = set(key_to_load) - set(loaded_data.keys())
+        raise ValueError(f"Not all keys were loaded. Missing keys: {missing_keys}. Please check the files in {load_dir}.")
     return loaded_data
 
 
