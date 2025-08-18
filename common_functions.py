@@ -8172,7 +8172,8 @@ class MetaResultsMixin:
                 load_func = getattr(self, f'load_{results_prefix}_func')
                 load_func(results_dict, pj(self.outcomes_dir, f'{results_prefix}_results'), key_to_load=['_config'], ensure_config=False)
             except Exception as e:
-                print(f'Error loading config from {results_prefix}_results: {e}')
+                # print(f'Error loading config from {results_prefix}_results: {e}')
+                pass
         self.__setattr__(f'{results_attr}_config_updated', True)
 
     def _get_results_value_by_key(self, results_prefix, key):
@@ -13518,6 +13519,12 @@ def add_bar_label(ax, bars, labels, label_type='edge', padding=0., rotation=0., 
 
 
 # region 初级作图函数(文字)
+def _check_maybe_wrong_transform_for_text(x, y, transform):
+    if transform != 'data':
+        if x > 2 or x < -2 or y > 2 or y < -2:
+            print(f"Warning: x={x}, y={y}, transform={transform} may be wrong.")
+
+
 def add_text(ax, text, x=TEXT_X, y=TEXT_Y, text_process=None, transform='ax', va=TEXT_VA, ha=TEXT_HA, fontsize=FONT_SIZE, color=BLACK, **kwargs):
     '''
 
@@ -13531,7 +13538,7 @@ def add_text(ax, text, x=TEXT_X, y=TEXT_Y, text_process=None, transform='ax', va
     :param kwargs: 传递给'ax.text'的额外关键字参数
     '''
     text_process = update_dict(TEXT_PROCESS, text_process)
-
+    _check_maybe_wrong_transform_for_text(x, y, transform)
     # 处理文本
     text = format_text(text, text_process)
 
