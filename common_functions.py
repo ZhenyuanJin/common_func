@@ -15256,13 +15256,6 @@ def sns_marginal_heatmap(ax, data, x_side_ax=None, y_side_ax=None, outside=True,
     else:
         local_data = data.copy()
     
-    # 调整cbar的位置
-    if heatmap_kwargs['cbar']:
-        if heatmap_kwargs['cbar_position']['position'] == x_side_ax_position:
-            heatmap_kwargs['cbar_position']['pad'] += x_side_ax_size + x_side_ax_pad
-        if heatmap_kwargs['cbar_position']['position'] == y_side_ax_position:
-            heatmap_kwargs['cbar_position']['pad'] += y_side_ax_size + y_side_ax_pad
-
     # 获得边缘分布需要的ax
     if x_side_ax is None and y_side_ax is None:
         if outside:
@@ -15271,6 +15264,16 @@ def sns_marginal_heatmap(ax, data, x_side_ax=None, y_side_ax=None, outside=True,
         else:
             # 当边缘分布在内部时，需要手动分划ax然后获取需要的
             x_side_ax, y_side_ax, ax = split_with_double_marginal_ax(ax=ax, x_side_ax_position=x_side_ax_position, y_side_ax_position=y_side_ax_position, x_side_ax_size=x_side_ax_size, y_side_ax_size=y_side_ax_size, x_side_ax_pad=x_side_ax_pad, y_side_ax_pad=y_side_ax_pad, inset_mode=inset_mode)
+    
+    # 调整cbar的位置
+    if heatmap_kwargs['cbar']:
+        ax_width, ax_height = get_ax_size(ax)
+        x_side_ax_width, x_side_ax_height = get_ax_size(x_side_ax)
+        y_side_ax_width, y_side_ax_height = get_ax_size(y_side_ax)
+        if heatmap_kwargs['cbar_position']['position'] == x_side_ax_position:
+            heatmap_kwargs['cbar_position']['pad'] += x_side_ax_pad + x_side_ax_height / ax_height
+        if heatmap_kwargs['cbar_position']['position'] == y_side_ax_position:
+            heatmap_kwargs['cbar_position']['pad'] += y_side_ax_pad + y_side_ax_width / ax_width
 
     # 绘制热图
     sns_heatmap(ax, local_data, **heatmap_kwargs)
@@ -15296,7 +15299,7 @@ def sns_marginal_heatmap(ax, data, x_side_ax=None, y_side_ax=None, outside=True,
     if y_side_ax_position == 'left':
         y_side_ax.invert_xaxis()
 
-    return x_side_ax, y_side_ax
+    return ax, x_side_ax, y_side_ax
 
 
 def sns_triangle_heatmap(ax, up_data, lower_data, up_mask=None, lower_mask=None, up_mask_color=MASK_COLOR, lower_mask_color=MASK_COLOR, same_cmap=True, cmap=CMAP, up_cmap=CMAP, lower_cmap=CMAP, up_norm_mode='linear', up_vmin=None, up_vmax=None, up_norm_kwargs=None, lower_norm_mode='linear', lower_vmin=None, lower_vmax=None, lower_norm_kwargs=None, cbar=True, cbar_label=None, up_cbar_label='up', lower_cbar_label='lower', two_cbar_pad=0.2, cbar_position=None, heatmap_kwargs=None, inset_mode='fig'):
@@ -16572,6 +16575,7 @@ def set_fig_title(fig, title, text_process=None, title_size=SUP_TITLE_SIZE, **kw
     - title: 图形的标题
     - text_process: 文本处理参数
     - title_size: 标题字体大小
+    - kwargs: 传递给fig.suptitle的其他参数,比如y值,可以控制标题的位置
     '''
     text_process = update_dict(TEXT_PROCESS, text_process)
 
@@ -16584,6 +16588,19 @@ def set_fig_title(fig, title, text_process=None, title_size=SUP_TITLE_SIZE, **kw
 
 def add_fig_title(*args, **kwargs):
     return set_fig_title(*args, **kwargs)
+
+
+def add_axes_title(axes, title, text_process=None, title_size=TITLE_SIZE, pad=50., **kwargs):
+    '''
+    在多个ax的中间添加标题
+    '''
+    text_process = update_dict(TEXT_PROCESS, text_process)
+    title = format_text(title, text_process)
+
+    merged_ax = merge_ax(axes, rm_mode=False)
+    merged_ax.set_title(title, pad=pad, fontsize=title_size, **kwargs)
+
+    rm_ax_axis(merged_ax)
 
 
 def get_tick_size(ax):
