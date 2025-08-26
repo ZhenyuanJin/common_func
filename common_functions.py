@@ -8792,10 +8792,12 @@ class MetaModel(abc.ABC, MetaAnalyzerMixin):
         '''
         保存模型参数
         '''
-        if hasattr(self, 'params') and self.params_exist is False:
-            # 注意如果params_exist为True,说明已经保存过了,不需要再保存
-            save_timed_dir_dict(dict_data=self.params, basedir=self.basedir, dict_name='params', value_dir_key=self.value_dir_key_before, both_dir_key=self.both_dir_key_before, after_timedir=pj(self.after_timedir, 'params'), current_time=self.current_time, pop=self.pop)
-            print_title(f'{self.model_name}: Params saved')
+        if hasattr(self, 'params'):
+            if check_all_file_exist_with_any_extension(pj(self.params_dir, 'params')):
+                print_title(f'{self.model_name}: Params already saved')
+            else:
+                save_timed_dir_dict(dict_data=self.params, basedir=self.basedir, dict_name='params', value_dir_key=self.value_dir_key_before, both_dir_key=self.both_dir_key_before, after_timedir=pj(self.after_timedir, 'params'), current_time=self.current_time, pop=self.pop)
+                print_title(f'{self.model_name}: Params saved')
         else:
             print_title(f'{self.model_name}: No params to save')
 
