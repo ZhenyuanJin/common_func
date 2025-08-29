@@ -5330,6 +5330,49 @@ def is_sublist(sub_list, main_list):
 # endregion
 
 
+# region instance container
+class InstanceContainer:
+    '''
+    用来存储一组实例,并提供一些常用的操作方法,如过滤/提取信息等
+    '''
+    def __init__(self, items=None):
+        self._instances = list(items) if items else []
+    
+    def append(self, item):
+        self._instances.append(item)
+    
+    def extend(self, items):
+        self._instances.extend(items)
+    
+    def filter_by_func(self, func):
+        return InstanceContainer(filter(func, self._instances))
+    
+    def filter_by_attr(self, **attributes):
+        def attribute_condition(item):
+            for attr, value in attributes.items():
+                if not hasattr(item, attr) or getattr(item, attr) != value:
+                    return False
+            return True
+        
+        return InstanceContainer(filter(attribute_condition, self._instances))
+    
+    def get_info_by_attr(self, attribute):
+        return [getattr(item, attribute) for item in self._instances]
+    
+    def get_info_by_func(self, func):
+        return [func(item) for item in self._instances]
+    
+    def __len__(self):
+        return len(self._instances)
+    
+    def __iter__(self):
+        return iter(self._instances)
+    
+    def __getitem__(self, index):
+        return self._instances[index]
+# endregion
+
+
 # region tuple处理相关函数
 def flatten_tuple(tpl, level=None):
     '''
