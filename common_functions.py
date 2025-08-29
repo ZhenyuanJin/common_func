@@ -5344,18 +5344,48 @@ class InstanceContainer:
     def extend(self, items):
         self._instances.extend(items)
     
-    def filter_by_func(self, func):
-        return InstanceContainer(filter(func, self._instances))
+    def get_filtered_by_func(self, func):
+        '''
+        注意这个操作会返回一个新的InstanceContainer,原来的不会变
+        '''
+        return InstanceContainer(item for item in self if func(item))
     
-    def filter_by_attr(self, **attributes):
-        def attribute_condition(item):
+    def get_filtered_by_attr(self, **attributes):
+        '''
+        注意这个操作会返回一个新的InstanceContainer,原来的不会变
+        '''
+        def match(item):
             for attr, value in attributes.items():
                 if not hasattr(item, attr) or getattr(item, attr) != value:
                     return False
             return True
-        
-        return InstanceContainer(filter(attribute_condition, self._instances))
+            
+        return InstanceContainer(filter(match, self._instances))
     
+    def inplace_filter_by_func(self, func):
+        '''
+        原地过滤,使用函数过滤,直接修改当前容器
+        保留满足条件的实例,移除不满足条件的
+        返回自身以支持链式调用
+        '''
+        self._instances = [item for item in self._instances if func(item)]
+        return self
+    
+    def inplace_filter_by_attr(self, **attributes):
+        '''
+        原地过滤,使用属性条件过滤,直接修改当前容器
+        保留满足所有属性条件的实例,移除不满足的
+        返回自身以支持链式调用
+        '''
+        def match(item):
+            for attr, value in attributes.items():
+                if not hasattr(item, attr) or getattr(item, attr) != value:
+                    return False
+            return True
+            
+        self._instances = list(filter(match, self._instances))
+        return self
+
     def get_info_by_attr(self, attribute):
         return [getattr(item, attribute) for item in self._instances]
     
@@ -8857,7 +8887,7 @@ class MetaModel(abc.ABC, MetaAnalyzerMixin):
     # endregion
 
 
-def find_incomplete_model(dir_before_timedir, dir_after_timedir):
+def find_incomplete_model(dir_before_timedir, dir_after_timedir=None):
     '''
     寻找不完整的模型文件夹,以为'simulation_results_saved'是否存在为判断标准
     '''
@@ -8875,43 +8905,44 @@ def find_incomplete_model(dir_before_timedir, dir_after_timedir):
     return incomplete_model_list
 
 
-def clean_incomplete_model(dir_before_timedir, dir_after_timedir):
+def clean_incomplete_model(dir_before_timedir, dir_after_timedir=None):
     '''
     删除不完整的模型文件夹,以为'simulation_results_saved'是否存在为判断标准
     '''
+    print('Warning: The following incomplete model directories will be removed')
     incomplete_model_list = find_incomplete_model(dir_before_timedir, dir_after_timedir)
+    print('You still have 1 minute to cancel this operation')
+    time.sleep(60)
     for incomplete_model in incomplete_model_list:
         rmdir(incomplete_model)
 
 
-def collect_params(dir_before_timedir, dir_after_timedir):
+class MetaModelContainer(InstanceContainer):
     '''
-    收集模型参数
+    获取一个目录下的所有模型,功能如下:
+    初始化时,自动略过不完整的模型
+    统计参数
     '''
-    incomplete_model_list = find_incomplete_model(dir_before_timedir, dir_after_timedir)
-    params_list = []
-    params_dict = {}
+    def __init__(self, model_class, dir_before_timedir, dir_after_timedir=None):
+        incomplete_model_list = find_incomplete_model(dir_before_timedir, dir_after_timedir)
+        sub_dir_list = get_subdir(dir_before_timedir)
+        instance_list = []
+        for sub_dir in sub_dir_list:
+            timedir = pj(sub_dir, dir_after_timedir)
+            if timedir in incomplete_model_list:
+                continue
+            else:
+                instance = model_class()
+                instance.set_timedir(timedir)
+                instance_list.append(instance)
+        super().__init__(instance_list)
 
-    sub_dir_list = get_subdir(dir_before_timedir)
-    for sub_dir in sub_dir_list:
-        model_dir = pj(sub_dir, dir_after_timedir)
-        if model_dir in incomplete_model_list:
-            pass
-        else:
-            params_file = pj(sub_dir, dir_after_timedir, 'params', 'params')
-
-            params = load_pkl(params_file)
-            params_list.append(params)
-            params_dict[model_dir] = params
-    return params_list, params_dict
-
-
-def count_params(params_list, key):
-    params_count_dict = defaultdict(int)
-    for params in params_list:
-        value = params[key]
-        params_count_dict[repr(value)] += 1
-    return params_count_dict
+    def count_params_by_key(self, key):
+        count_dict = defaultdict(int)
+        for instance in self.instance_list:
+            value = instance.params[key]
+            count_dict[repr(value)] += 1
+        return count_dict
 # endregion
 
 
