@@ -8889,7 +8889,7 @@ class MetaModel(abc.ABC, MetaAnalyzerMixin):
 
 def find_incomplete_model(dir_before_timedir, dir_after_timedir=None):
     '''
-    寻找不完整的模型文件夹,以为'simulation_results_saved'是否存在为判断标准
+    寻找不完整的模型文件夹,以'simulation_results_saved'是否存在为判断标准
     '''
     incomplete_model_list = []
 
@@ -8907,7 +8907,7 @@ def find_incomplete_model(dir_before_timedir, dir_after_timedir=None):
 
 def clean_incomplete_model(dir_before_timedir, dir_after_timedir=None):
     '''
-    删除不完整的模型文件夹,以为'simulation_results_saved'是否存在为判断标准
+    删除不完整的模型文件夹,以'simulation_results_saved'是否存在为判断标准
     '''
     print('Warning: The following incomplete model directories will be removed')
     incomplete_model_list = find_incomplete_model(dir_before_timedir, dir_after_timedir)
@@ -9854,6 +9854,68 @@ class ComposedExperiment(abc.ABC):
         self.before_run()
         self.run_detail()
         self.after_run()
+
+
+def find_incomplete_experiment(dir_before_timedir, tool_name, dir_after_timedir=None):
+    '''
+    寻找不完整的模型文件夹,以输入的tool_name对应的tool的f'{tool_name}_results_saved'是否存在为判断标准
+    '''
+    incomplete_experiment_list = []
+
+    sub_dir_list = get_subdir(dir_before_timedir)
+    for sub_dir in sub_dir_list:
+        mark_file = pj(sub_dir, dir_after_timedir, 'outcomes', tool_name, f'{tool_name}_results_saved')
+        if check_all_file_exist_with_any_extension(mark_file):
+            pass
+        else:
+            experiment_dir = pj(sub_dir, dir_after_timedir)
+            print(f'Found incomplete experiment directory: {experiment_dir}')
+            incomplete_experiment_list.append(experiment_dir)
+    return incomplete_experiment_list
+
+
+def clean_incomplete_experiment(dir_before_timedir, tool_name, dir_after_timedir=None):
+    '''
+    删除不完整的模型文件夹,以输入的tool_name对应的tool的f'{tool_name}_results_saved'是否存在为判断标准
+    '''
+    print('Warning: The following incomplete experiment directories will be removed')
+    incomplete_experiment_list = find_incomplete_experiment(dir_before_timedir, tool_name, dir_after_timedir)
+    print('You still have 1 minute to cancel this operation')
+    time.sleep(60)
+    for incomplete_experiment in incomplete_experiment_list:
+        rmdir(incomplete_experiment)
+
+
+class ExperimentContainer(InstanceContainer):
+    '''
+    获取一个目录下的所有实验,功能如下:
+    统计参数
+
+    注意:
+    兼容Experiment和ComposedExperiment
+    '''
+    def __init__(self, experiment_class, dir_before_timedir, dir_after_timedir=None):
+        sub_dir_list = get_subdir(dir_before_timedir)
+        instance_list = []
+        for sub_dir in sub_dir_list:
+            timedir = pj(sub_dir, dir_after_timedir)
+            with FlexibleTry(enable_try=True):
+                instance = experiment_class()
+                instance.load(timedir)
+                instance_list.append(instance)
+        super().__init__(instance_list)
+
+    def count_params_by_key(self, key, tool_name=None, experiment_name=None):
+        count_dict = defaultdict(int)
+        for instance in self.instance_list:
+            if isinstance(instance, ComposedExperiment):
+                experiment = instance.experiments[0] if experiment_name is None else getattr(instance, experiment_name)
+            elif isinstance(instance, Experiment):
+                experiment = instance
+            tool = experiment.tools[0] if tool_name is None else getattr(experiment, tool_name)
+            value = tool.params[key]
+            count_dict[repr(value)] += 1
+        return count_dict
 # endregion
 
 
