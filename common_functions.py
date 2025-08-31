@@ -9406,6 +9406,14 @@ class Visualizer(AbstractTool):
     '''
     def __init__(self):
         super().__init__()
+    
+    def auto_save_fig(self, filename=None, save_fig_kwargs=None, fig=None):
+        '''
+        自动按照调用者的函数名保存fig
+        '''
+        if filename is None:
+            filename = pj(self.figs_dir, sys._getframe(1).f_code.co_name)
+        self.save_fig(filename, save_fig_kwargs=save_fig_kwargs, fig=fig)
 
 
 class ToolsPipeLine:
