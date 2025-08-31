@@ -9354,19 +9354,48 @@ class Simulator(AbstractTool):
         self.enable_skip = True
 
 
-class Analyzer(AbstractTool):
+class FlexibleTool(AbstractTool):
+    '''
+    适用于零散的,失败了问题不大的任务
+
+    功能:
+    -可以选择性地执行某些任务,通过task_list控制
+    -允许失败,通过enable_try控制
+    '''
     def __init__(self):
         super().__init__()
         self.enable_try = True # 失败了问题不大,先try尽可能往后运行
-        self.analysis_task_list = ['all']  # 分析任务,默认是全部
+        self.task_list = ['all']  # 默认是全部任务
 
-    def whether_run_this_analysis_task(self, task):
-        if task in self.analysis_task_list or 'all' in self.analysis_task_list:
-            print_title(f'{self.model_name}: Analysis task {task} will be run')
+    def whether_run_this_task(self, task):
+        if task in self.task_list or 'all' in self.task_list:
+            print_title(f'{self.name}: task {task} will be run')
             return True
         else:
-            print_title(f'{self.model_name}: Analysis task {task} will be skipped')
+            print_title(f'{self.name}: task {task} will be skipped')
             return False
+    
+    @staticmethod
+    def whether_run_decorator(func):
+        """
+        装饰器：根据函数名自动判断是否执行
+        
+        子类中的使用方式为:
+        @FlexibleTool.whether_run_decorator
+        def some_task(self, ...):
+            ...
+        """
+        @wraps(func)
+        def wrapper(self, *args, **kwargs):
+            if self.whether_run_this_task(func.__name__):
+                return func(self, *args, **kwargs)
+            return None
+        return wrapper
+
+
+class Analyzer(AbstractTool):
+    def __init__(self):
+        super().__init__()
 
 
 class Visualizer(AbstractTool):
@@ -9377,7 +9406,6 @@ class Visualizer(AbstractTool):
     '''
     def __init__(self):
         super().__init__()
-        self.enable_try = True # 失败了问题不大,先try尽可能往后运行
 
 
 class ToolsPipeLine:
