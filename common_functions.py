@@ -9665,7 +9665,8 @@ class Experiment(abc.ABC):
         注意:
         1. 工具名称应与实例变量名一致(如工具名'trainer'对应实例 tool.name=='trainer')
         2. 不推荐将工具实例直接赋值给self属性,如避免 self.trainer = Trainer(), _finalize_init_tools 方法后续会自动将每个工具注入为当前实验对象的属性
-        4. 只需关注工具实例创建和列表添加操作,参数配置将由后续流程处理
+        3. 只需关注工具实例创建和列表添加操作,参数配置将由后续流程处理
+        4. 注意要放入的是实例,而不是类,如Simulator(),而不是Simulator
         '''
         self.tools = []
 
