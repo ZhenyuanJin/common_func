@@ -9414,7 +9414,9 @@ class Visualizer(FlexibleTool):
         '''
         if filename is None:
             filename = pj(self.figs_dir, sys._getframe(1).f_code.co_name)
-        self.save_fig(filename, save_fig_kwargs=save_fig_kwargs, fig=fig)
+        if save_fig_kwargs is None:
+            save_fig_kwargs = {}
+        save_fig(fig, filename, **save_fig_kwargs)
 
 
 class ToolsPipeLine:
