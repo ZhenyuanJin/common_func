@@ -4998,7 +4998,7 @@ class DataKeeper:
     注意:
     如果需要,在保存后可调用mark_all_saved()方法来标记所有数据已保存
     """
-    def __init__(self, name, basedir, data_type='dict', save_load_method='separate', param_order=None):
+    def __init__(self, name, basedir, data_type='dict', save_load_method='separate', param_order=None, included_name_list=None):
         self.read_only = False  # 默认可读写
         self.process_num = 1  # 默认单process
 
@@ -5007,6 +5007,7 @@ class DataKeeper:
         self.data_type = data_type
         self.save_load_method = save_load_method
         self.param_order = param_order
+        self.included_name_list = included_name_list
         
         # 初始化结果容器
         if data_type == 'dict':
@@ -5014,7 +5015,7 @@ class DataKeeper:
         elif data_type == 'OrderedDataContainer':
             if not param_order:
                 raise ValueError("OrderedDataContainer requires param_order")
-            self.data = OrderedDataContainer(param_order=param_order)
+            self.data = OrderedDataContainer(param_order=param_order, included_name_list=included_name_list)
         else:
             raise ValueError(f"Unknown data_type: {data_type}")
         
