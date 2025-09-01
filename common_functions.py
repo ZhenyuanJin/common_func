@@ -9394,12 +9394,12 @@ class FlexibleTool(AbstractTool):
         return wrapper
 
 
-class Analyzer(AbstractTool):
+class Analyzer(FlexibleTool):
     def __init__(self):
         super().__init__()
 
 
-class Visualizer(AbstractTool):
+class Visualizer(FlexibleTool):
     '''
     Visualizer也可以持有data_keeper,万一需要存一些画图时候产生的指标等;虽然不建议在画图的时候运算,而是分离到analyzer,但这么做提供了可能性
 
