@@ -4617,7 +4617,7 @@ def get_sub_dict(d, keys):
 
 
 def update_dict(original_dict, new_dict):
-    '''更新字典'''
+    '''更新字典,保护原始字典'''
     if original_dict is None:
         original_dict = {}
     if new_dict is None:
@@ -4627,7 +4627,7 @@ def update_dict(original_dict, new_dict):
 
 
 def update_dict_ignore(original_dict, new_dict, ignore_value_list=None):
-    '''更新字典,忽略某些值'''
+    '''更新字典,忽略某些值,保护原始字典'''
     if ignore_value_list is None:
         ignore_value_list = [None]
     local_new_dict = new_dict.copy()
@@ -9207,7 +9207,7 @@ class AbstractTool(abc.ABC):
         return info
 
     def _config_info_container(self):
-        self.info_container_name = self.name
+        self.info_container_name = cat(self.name, 'info_container')
         self.info_container_kwargs = {'data_type': 'dict', 'save_load_method': 'lmdb'}
         # self.info_container_kwargs = {'data_type': 'OrderedDataContainer', 'save_load_method': 'lmdb', 'param_order': ..., 'included_name_list': ...} 注意设置param_order等
 
@@ -9239,7 +9239,8 @@ class AbstractTool(abc.ABC):
         self.already_done = self.data_keeper.check_all_saved()
 
     def save_params(self):
-        save_dict(self.params, pj(self.dir_manager.params_dir, cat(self.name, 'params')))
+        if not check_all_file_exist_with_any_extension(pj(self.dir_manager.params_dir, cat(self.name, 'params'))):
+            save_dict(self.params, pj(self.dir_manager.params_dir, cat(self.name, 'params')))
 
     def before_run(self):
         self.save_params()
@@ -9407,6 +9408,7 @@ class Visualizer(FlexibleTool):
     '''
     def __init__(self):
         super().__init__()
+        self.save_fig_kwargs = {}
     
     def auto_save_fig(self, filename=None, save_fig_kwargs=None, fig=None):
         '''
@@ -9414,9 +9416,9 @@ class Visualizer(FlexibleTool):
         '''
         if filename is None:
             filename = pj(self.figs_dir, sys._getframe(1).f_code.co_name)
-        if save_fig_kwargs is None:
-            save_fig_kwargs = {}
-        save_fig(fig, filename, **save_fig_kwargs)
+        local_save_fig_kwargs = self.save_fig_kwargs.copy()
+        local_save_fig_kwargs = update_dict(local_save_fig_kwargs, save_fig_kwargs)
+        save_fig(fig, filename, **local_save_fig_kwargs)
 
 
 class ToolsPipeLine:
@@ -17920,7 +17922,9 @@ class SingleVisualizer:
         '''
         更新save_fig_kwargs
         '''
-        self.save_fig_kwargs = update_dict({}, save_fig_kwargs)
+        if not hasattr(self, 'save_fig_kwargs'):
+            self.save_fig_kwargs = {}
+        self.save_fig_kwargs = update_dict(self.save_fig_kwargs, save_fig_kwargs)
 
     def save_fig(self, filename, save_fig_kwargs=None, fig=None):
         '''
