@@ -8956,9 +8956,9 @@ def get_sorted_keys_and_mean_variance_arrays_from_dict_of_list(data_dict):
         '0.3': [3, 4, 5]
     }
     x, y_mean, y_var = get_sorted_keys_mean_variance_arrays_from_dict_of_list(data_dict)
-    print(x) # [0.1 0.2 0.3]
-    print(y_mean) # [2. 3. 4.]
-    print(y_var) # [1. 1. 1.]
+    print(x)
+    print(y_mean)
+    print(y_var)
     '''
     # 提取并排序x轴数据（参数值）
     sorted_keys = sorted(data_dict.keys(), key=float)
@@ -8970,7 +8970,7 @@ def get_sorted_keys_and_mean_variance_arrays_from_dict_of_list(data_dict):
     for key in sorted_keys:
         values = data_dict[key]
         mean = np.mean(values)
-        variance = np.var(values, ddof=1)  # 使用样本方差（n-1）
+        variance = np.var(values)
         means.append(mean)
         variances.append(variance)
     
@@ -9604,6 +9604,7 @@ class Experiment(abc.ABC):
         self._set_name()  # 子类必须实现_set_name方法,用于设置name属性
         self.code_file_list = []
         self.tool_config_dict = {}  # 不必须输入,所以设置默认值
+        self.previous_experiment_name_list = []  # 用于compose多个experiment,记录其名称
 
     @abc.abstractmethod
     def _set_name(self):
@@ -9660,7 +9661,7 @@ class Experiment(abc.ABC):
         name = info['name']
         for k, v in info.items():
             if k == 'name':
-                pass
+                self.previous_experiment_name_list.append(v)
             else:
                 setattr(self, f'{name}_{k}', v)
 
@@ -9721,6 +9722,10 @@ class Experiment(abc.ABC):
                     setattr(tool, key, value)  # 设置tool的配置参数
             tool._config_data_keeper()
             setattr(self, tool.name, tool)  # 将tool设置为experiment的属性,方便后续访问
+        
+            for previous_experiment_name in self.previous_experiment_name_list:
+                setattr(tool, f'{previous_experiment_name}_data_keeper_dict', getattr(self, f'{previous_experiment_name}_data_keeper_dict', {}))
+                setattr(tool, f'{previous_experiment_name}_params_dict', getattr(self, f'{previous_experiment_name}_params_dict', {}))
 
     def _init_tools(self):
         self._minimal_init_tools()
