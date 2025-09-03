@@ -18283,7 +18283,7 @@ def _init_paper_fig_and_run_method(cls, init_kwargs, method_list):
         getattr(paper_fig, method)()
 
 
-def multi_process_fig(cls, init_kwargs, method_list, process_num=PROCESS_NUM):
+def multi_process_fig(cls, init_kwargs, method_list, process_num=10):
     '''多进程运行PaperFig的多个方法'''
     kwargs_list = []
     for method in method_list:
