@@ -18274,6 +18274,21 @@ class PaperFigVisualizer(SingleVisualizer):
         if filename is None:
             filename = pj(self.figs_dir, sys._getframe(1).f_code.co_name)
         self.save_fig(filename, save_fig_kwargs=save_fig_kwargs, fig=fig)
+
+
+def _init_paper_fig_and_run_method(cls, init_kwargs, method_list):
+    '''用于多进程初始化PaperFig并运行方法'''
+    paper_fig = cls(**init_kwargs)
+    for method in method_list:
+        getattr(paper_fig, method)()
+
+
+def multi_process_fig(cls, init_kwargs, method_list, process_num=PROCESS_NUM):
+    '''多进程运行PaperFig的多个方法'''
+    kwargs_list = []
+    for method in method_list:
+        kwargs_list.append({'cls': cls, 'init_kwargs': init_kwargs, 'method_list': [method]})
+    multi_process(process_num=process_num, func=_init_paper_fig_and_run_method, kwargs_list=kwargs_list)
 # endregion
 
 
