@@ -8946,7 +8946,7 @@ class MetaModelContainer(InstanceContainer):
         return count_dict
 
 
-def get_sorted_keys_mean_variance_arrays_from_dict_of_list(data_dict):
+def get_sorted_keys_and_mean_variance_arrays_from_dict_of_list(data_dict):
     '''
     输入一个字典,value是list,返回排序后的key数组,均值数组,方差数组
     例如:
