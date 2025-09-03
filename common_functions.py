@@ -8944,6 +8944,41 @@ class MetaModelContainer(InstanceContainer):
             value = instance.params[key]
             count_dict[repr(value)] += 1
         return count_dict
+
+
+def get_sorted_keys_mean_variance_arrays_from_dict_of_list(data_dict):
+    '''
+    输入一个字典,value是list,返回排序后的key数组,均值数组,方差数组
+    例如:
+    data_dict = {
+        '0.1': [1, 2, 3],
+        '0.2': [2, 3, 4],
+        '0.3': [3, 4, 5]
+    }
+    x, y_mean, y_var = get_sorted_keys_mean_variance_arrays_from_dict_of_list(data_dict)
+    print(x) # [0.1 0.2 0.3]
+    print(y_mean) # [2. 3. 4.]
+    print(y_var) # [1. 1. 1.]
+    '''
+    # 提取并排序x轴数据（参数值）
+    sorted_keys = sorted(data_dict.keys(), key=float)
+    x = np.array(sorted_keys)
+    
+    # 计算每个参数对应的均值和方差
+    means = []
+    variances = []
+    for key in sorted_keys:
+        values = data_dict[key]
+        mean = np.mean(values)
+        variance = np.var(values, ddof=1)  # 使用样本方差（n-1）
+        means.append(mean)
+        variances.append(variance)
+    
+    # 转换为NumPy数组
+    y_mean = np.array(means)
+    y_var = np.array(variances)
+    
+    return x, y_mean, y_var
 # endregion
 
 
