@@ -9151,6 +9151,37 @@ class AbstractTool(abc.ABC):
     注意:
     和结果相关的参数,利用set_params输入
     和结果无关的设定,利用experiment中的set_tool_config_dict输入(例如process_num等)
+
+    示例:
+    class NewTool(AbstractTool):
+        def _set_name(self):
+            self.name = 'tool_name'
+        
+        def _set_required_key_list(self):
+            super()._set_required_key_list()
+            self.required_key_list.extend(['key1', 'key2'])
+
+        def _set_optional_key_value_dict(self):
+            super()._set_optional_key_value_dict()
+            self.optional_key_value_dict.update({'key3': default_value3, 'key4': default_value4})
+    
+        def _config_dir_manager(self):
+            super()._config_dir_manager()
+            self.dir_manager_kwargs['value_dir_key_before'].extend(['animal', 'dataset_key'])
+        
+        def _config_data_keeper(self):
+            super()._config_data_keeper()
+            self.data_keeper_kwargs = {'data_type': 'dict', 'save_load_method': 'separate'}
+
+        def _config_info_container(self):
+            super()._config_info_container()
+            self.info_container_kwargs = {'data_type': 'dict', 'save_load_method': 'lmdb'}
+
+        def add_info_to_info_container(self):
+            pass
+
+        def run_detail(self):
+            pass
     '''
     def __init__(self):
         self.already_done = False
@@ -9351,6 +9382,8 @@ class AbstractTool(abc.ABC):
 class NoSkipTool(AbstractTool):
     '''
     用来传递无法保存的对象,所以无法跳过,不管什么情形都需要重新运行
+
+    AbstractTool中有一个示例代码
     '''
     @property
     def already_done(self):
@@ -9378,6 +9411,9 @@ class NoSkipTool(AbstractTool):
 
 
 class Trainer(AbstractTool):
+    '''
+    AbstractTool中有一个示例代码
+    '''
     def __init__(self):
         super().__init__()
         self.enable_search = True
@@ -9385,6 +9421,9 @@ class Trainer(AbstractTool):
 
 
 class Simulator(AbstractTool):
+    '''
+    AbstractTool中有一个示例代码
+    '''
     def __init__(self):
         super().__init__()
         self.enable_search = True
@@ -9396,8 +9435,10 @@ class FlexibleTool(AbstractTool):
     适用于零散的,失败了问题不大的任务
 
     功能:
-    -可以选择性地执行某些任务,通过task_list控制
+    -可以选择性地执行某些任务,通过task_list控制(需要config进来,见Experiment中的tool_config_dict)
     -允许失败,通过enable_try控制
+
+    AbstractTool中有一个示例代码
     '''
     def __init__(self):
         super().__init__()
@@ -9431,6 +9472,9 @@ class FlexibleTool(AbstractTool):
 
 
 class Analyzer(FlexibleTool):
+    '''
+    AbstractTool中有一个示例代码
+    '''
     def __init__(self):
         super().__init__()
 
@@ -9440,6 +9484,8 @@ class Visualizer(FlexibleTool):
     Visualizer也可以持有data_keeper,万一需要存一些画图时候产生的指标等;虽然不建议在画图的时候运算,而是分离到analyzer,但这么做提供了可能性
 
     区别于single visualizer等,这里的visualizer是pipeline中的一个tool,其可以持有single visualizer等
+    
+    AbstractTool中有一个示例代码
     '''
     def __init__(self):
         super().__init__()
