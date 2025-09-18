@@ -175,20 +175,6 @@ def spike_to_fr(spike, width, dt, neuron_idx=None, **kwargs):
     return bp.measure.firing_rate(partial_spike, width, dt, **kwargs)
 
 
-def get_spike_acf(spike, dt, nlags, neuron_idx=None, average=True, **kwargs):
-    '''
-    计算spike的自相关函数
-    '''
-    # partial_spike = neuron_idx_data(spike, neuron_idx, keep_size=True)
-    # float_spike = np.array(partial_spike).astype(float)
-    # lag_times, multi_acf = cf.get_multi_acf(float_spike.T, T=dt, nlags=nlags, **kwargs)
-    # if average:
-    #     return lag_times, np.nanmean(multi_acf, axis=0)
-    # else:
-    #     return lag_times, multi_acf.T
-    raise NotImplementedError('get_spike_acf is not implemented yet, please use get_neuron_data_acf instead.')
-
-
 def get_neuron_data_acf(neuron_data, dt, nlags, neuron_idx=None, process_num=1, **kwargs):
     '''
     计算单个神经元级别的自相关函数
@@ -228,6 +214,46 @@ def get_neuron_data_ccovf(neuron_data_x, neuron_data_y, dt, nlags, neuron_idx_x=
     partial_neuron_data_y = neuron_idx_data(neuron_data_y, neuron_idx_y, keep_size=True)
     lag_times, multi_ccovf = cf.get_multi_ccovf(partial_neuron_data_x.T, partial_neuron_data_y.T, T=dt, nlags=nlags, process_num=process_num, **kwargs)
     return lag_times, multi_ccovf
+
+
+def split_auto_and_cross(multi_result):
+    """分离自相关和互相关结果"""
+    auto = {}
+    cross = {}
+    for k, v in multi_result.items():
+        if k[0] == k[1]:
+            auto[k] = v
+        else:
+            cross[k] = v
+    return auto, cross
+
+
+def get_neuron_data_ccf_auto_and_cross(neuron_data, dt, nlags, neuron_idx_x=None, neuron_idx_y=None, process_num=1, return_complete=False, **kwargs):
+    """CCF版本的自相关与互相关分组"""
+    lag_times, multi_ccf = get_neuron_data_ccf(neuron_data, neuron_data, dt, nlags, neuron_idx_x, neuron_idx_y, process_num, **kwargs)
+    auto_ccf, cross_ccf = split_auto_and_cross(multi_ccf)
+    
+    auto_mean = np.mean(list(auto_ccf.values()), axis=0)
+    cross_mean = np.mean(list(cross_ccf.values()), axis=0)
+    
+    r = {'auto_ccf_mean': auto_mean, 'cross_ccf_mean': cross_mean, 'lag_times': lag_times}
+    if return_complete:
+        r.update({'auto_ccf': auto_ccf, 'cross_ccf': cross_ccf})
+    return r
+
+
+def get_neuron_data_ccovf_auto_and_cross(neuron_data, dt, nlags, neuron_idx_x=None, neuron_idx_y=None, process_num=1, return_complete=False, **kwargs):
+    """CCOVF版本的自相关与互相关分组"""
+    lag_times, multi_ccovf = get_neuron_data_ccovf(neuron_data, neuron_data, dt, nlags, neuron_idx_x, neuron_idx_y, process_num, **kwargs)
+    auto_ccovf, cross_ccovf = split_auto_and_cross(multi_ccovf)
+    
+    auto_mean = np.mean(list(auto_ccovf.values()), axis=0)
+    cross_mean = np.mean(list(cross_ccovf.values()), axis=0)
+    
+    r = {'auto_ccovf_mean': auto_mean, 'cross_ccovf_mean': cross_mean, 'lag_times': lag_times}
+    if return_complete:
+        r.update({'auto_ccovf': auto_ccovf, 'cross_ccovf': cross_ccovf})
+    return r
 
 
 def spike_to_fr_acf(spike, width, dt, nlags, neuron_idx=None, spike_to_fr_kwargs=None, **kwargs):
