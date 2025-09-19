@@ -933,6 +933,9 @@ class SNNSimulator(cf.MetaModel):
 
 
 class ComposedSNNSimulator(cf.Simulator):
+    '''
+    不允许子类修改data_keeper为OrderedDataContainer,因为monitors一定是dict,而结果是按照monitors的key来保存的
+    '''
     def __init__(self):
         super().__init__()
         self.total_chunk_num = 0
@@ -1923,6 +1926,7 @@ class SNNNetGenerator(abc.ABC):
         '''
         self._before_get_net()
         self.net = MultiNet(neuron=self.neuron, synapse=self.synapse, inp_neuron=self.inp_neuron, inp_synapse=self.inp_synapse, neuron_params=self.neuron_params, synapse_params=self.synapse_params, inp_neuron_params=self.inp_neuron_params, inp_synapse_params=self.inp_synapse_params, comm=self.comm, inp_comm=self.inp_comm)
+        return self.net
 # endregion
 
 
