@@ -271,7 +271,7 @@ class NormalizedDualExponV2(bp.dyn.DualExponV2):
 
 
 class ExponCUBA(bp.Projection):
-    def __init__(self, pre, post, delay, comm, tau, out_label=None):
+    def __init__(self, pre, post, delay, comm, tau, out_label=None, **kwargs):
         super().__init__()
         
         self.proj = bp.dyn.FullProjAlignPostMg(
@@ -286,7 +286,7 @@ class ExponCUBA(bp.Projection):
 
 
 class ExponCOBA(bp.Projection):
-    def __init__(self, pre, post, delay, comm, tau, E, out_label=None, name=None):
+    def __init__(self, pre, post, delay, comm, tau, E, out_label=None, name=None, **kwargs):
         super().__init__()
         if name is None:
             Expon_name = None
@@ -307,7 +307,7 @@ class ExponCOBA(bp.Projection):
 
 
 class NormalizedExponCUBA(bp.Projection):
-    def __init__(self, pre, post, delay, comm, tau, out_label=None):
+    def __init__(self, pre, post, delay, comm, tau, out_label=None, **kwargs):
         super().__init__()
         
         self.proj = bp.dyn.FullProjAlignPostMg(
@@ -322,7 +322,7 @@ class NormalizedExponCUBA(bp.Projection):
 
 
 class NormalizedExponCOBA(bp.Projection):
-    def __init__(self, pre, post, delay, comm, tau, E, out_label=None):
+    def __init__(self, pre, post, delay, comm, tau, E, out_label=None, **kwargs):
         super().__init__()
         
         self.proj = bp.dyn.FullProjAlignPostMg(
@@ -337,7 +337,7 @@ class NormalizedExponCOBA(bp.Projection):
 
 
 class DualExponCUBA(bp.Projection):
-    def __init__(self, pre, post, delay, comm, tau_rise, tau_decay, A=None, out_label=None):
+    def __init__(self, pre, post, delay, comm, tau_rise, tau_decay, A=None, out_label=None, **kwargs):
         super().__init__()
         
         self.proj = bp.dyn.FullProjAlignPostMg(
@@ -352,7 +352,7 @@ class DualExponCUBA(bp.Projection):
 
 
 class NormalizedDualExponCUBA(bp.Projection):
-    def __init__(self, pre, post, delay, comm, tau_rise, tau_decay, out_label=None):
+    def __init__(self, pre, post, delay, comm, tau_rise, tau_decay, out_label=None, **kwargs):
         super().__init__()
         
         self.proj = bp.dyn.FullProjAlignPostMg(
@@ -367,7 +367,7 @@ class NormalizedDualExponCUBA(bp.Projection):
 
 
 class NormalizedDualExponCOBA(bp.Projection):
-    def __init__(self, pre, post, delay, comm, tau_rise, tau_decay, E, out_label=None):
+    def __init__(self, pre, post, delay, comm, tau_rise, tau_decay, E, out_label=None, **kwargs):
         super().__init__()
         
         self.proj = bp.dyn.FullProjAlignPostMg(
@@ -382,7 +382,7 @@ class NormalizedDualExponCOBA(bp.Projection):
 
 
 class NMDACUBA(bp.Projection):
-    def __init__(self, pre, post, delay, comm, tau_rise, tau_decay, a, out_label=None):
+    def __init__(self, pre, post, delay, comm, tau_rise, tau_decay, a, out_label=None, **kwargs):
         super().__init__()
         
         self.proj = bp.dyn.FullProjAlignPreDSMg(
@@ -397,7 +397,7 @@ class NMDACUBA(bp.Projection):
 
 
 class NMDACOBA(bp.Projection):
-    def __init__(self, pre, post, delay, comm, tau_rise, tau_decay, a, E, out_label=None):
+    def __init__(self, pre, post, delay, comm, tau_rise, tau_decay, a, E, out_label=None, **kwargs):
         super().__init__()
         
         self.proj = bp.dyn.FullProjAlignPreDSMg(
@@ -412,7 +412,7 @@ class NMDACOBA(bp.Projection):
 
 
 class NMDAMgBlock(bp.Projection):
-    def __init__(self, pre, post, delay, comm, tau_rise, tau_decay, a, E, cc_Mg, alpha, beta, V_offset, out_label=None, name=None):
+    def __init__(self, pre, post, delay, comm, tau_rise, tau_decay, a, E, cc_Mg, alpha, beta, V_offset, out_label=None, name=None, **kwargs):
         super().__init__()
         if name is None:
             NMDA_name = None
