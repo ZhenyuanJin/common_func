@@ -163,6 +163,15 @@ def get_spike_sort_measure_by_corr_and_fr(spike, fr, fr_threshold=0.1, fallback_
 
 
 # region 神经元放电性质计算
+def _bp_measure_firing_rate(spikes, width, dt):
+    '''
+    adapted from bp.measure.firing_rate
+    '''
+    width1 = int(width / 2 / dt) * 2 + 1
+    window = np.ones(width1) * 1000 / width
+    return np.convolve(np.mean(spikes, axis=1), window, mode='same')
+
+
 def spike_to_fr(spike, width, dt, neuron_idx=None, **kwargs):
     '''
     修改bp.measure.firing_rate使得一维数组的spike也能够计算firing rate(但是使用方式是设定neuron_idx而不是直接传入一个一维的spike)
@@ -172,7 +181,7 @@ def spike_to_fr(spike, width, dt, neuron_idx=None, **kwargs):
     adjusted_spike = np.reshape(spike, (spike.shape[0], -1))
     '''
     partial_spike = neuron_idx_data(spike, neuron_idx, keep_size=True)
-    return bp.measure.firing_rate(partial_spike, width, dt, **kwargs)
+    return _bp_measure_firing_rate(partial_spike, width, dt, **kwargs)
 
 
 def get_neuron_data_acf(neuron_data, dt, nlags, neuron_idx=None, process_num=1, **kwargs):
