@@ -5421,6 +5421,66 @@ class InstanceContainer:
     
     def __getitem__(self, index):
         return self._instances[index]
+
+
+def group_values_by_keys(keys, values):
+    """
+    将值按照对应的键分组,返回字典结构
+    
+    参数:
+    keys -- 列表,array
+    values -- 包含值的可迭代对象,长度需与keys相同
+    
+    返回:
+    字典,键为keys中的唯一值,值为对应values的列表
+    """
+    # 转换为列表以确保长度计算和迭代安全
+    keys_list = list(keys)
+    values_list = list(values)
+    
+    if len(keys_list) != len(values_list):
+        raise ValueError(f"keys和values的长度必须相同 ({len(keys_list)} != {len(values_list)})")
+    
+    grouped = defaultdict(list)
+    for key, value in zip(keys_list, values_list):
+        grouped[key].append(value)
+    
+    return dict(grouped)
+
+
+def get_sorted_keys_and_mean_variance_arrays_from_dict_of_list(data_dict):
+    '''
+    输入一个字典,value是list,返回排序后的key数组,均值数组,方差数组
+    例如:
+    data_dict = {
+        0.1: [1, 2, 3],
+        0.2: [2, 3, 4],
+        0.3: [3, 4, 5]
+    }
+    x, y_mean, y_var = get_sorted_keys_and_mean_variance_arrays_from_dict_of_list(data_dict)
+    print(x)
+    print(y_mean)
+    print(y_var)
+    '''
+    # 提取并排序x轴数据（参数值）
+    sorted_keys = sorted(data_dict.keys(), key=float)
+    x = np.array(sorted_keys)
+    
+    # 计算每个参数对应的均值和方差
+    means = []
+    variances = []
+    for key in sorted_keys:
+        values = data_dict[key]
+        mean = np.mean(values)
+        variance = np.var(values)
+        means.append(mean)
+        variances.append(variance)
+    
+    # 转换为NumPy数组
+    y_mean = np.array(means)
+    y_var = np.array(variances)
+    
+    return x, y_mean, y_var
 # endregion
 
 
@@ -8964,41 +9024,6 @@ class MetaModelContainer(InstanceContainer):
             value = instance.params[key]
             count_dict[repr(value)] += 1
         return count_dict
-
-
-def get_sorted_keys_and_mean_variance_arrays_from_dict_of_list(data_dict):
-    '''
-    输入一个字典,value是list,返回排序后的key数组,均值数组,方差数组
-    例如:
-    data_dict = {
-        0.1: [1, 2, 3],
-        0.2: [2, 3, 4],
-        0.3: [3, 4, 5]
-    }
-    x, y_mean, y_var = get_sorted_keys_and_mean_variance_arrays_from_dict_of_list(data_dict)
-    print(x)
-    print(y_mean)
-    print(y_var)
-    '''
-    # 提取并排序x轴数据（参数值）
-    sorted_keys = sorted(data_dict.keys(), key=float)
-    x = np.array(sorted_keys)
-    
-    # 计算每个参数对应的均值和方差
-    means = []
-    variances = []
-    for key in sorted_keys:
-        values = data_dict[key]
-        mean = np.mean(values)
-        variance = np.var(values)
-        means.append(mean)
-        variances.append(variance)
-    
-    # 转换为NumPy数组
-    y_mean = np.array(means)
-    y_var = np.array(variances)
-    
-    return x, y_mean, y_var
 # endregion
 
 
