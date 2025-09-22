@@ -5386,6 +5386,26 @@ class InstanceContainer:
             
         self._instances = list(filter(match, self._instances))
         return self
+    
+    def inplace_sort_by_attr(self, attr, reverse=False):
+        '''
+        根据指定属性原地排序实例
+        :param attr: 用于排序的属性名
+        :param reverse: 是否降序排序,默认为False(升序)
+        :return: 返回自身以支持链式调用
+        '''
+        self._instances.sort(key=lambda x: getattr(x, attr), reverse=reverse)
+        return self
+    
+    def inplace_sort_by_func(self, key_func, reverse=False):
+        '''
+        根据key_func函数的返回值原地排序实例
+        :param key_func: 接受一个实例作为输入，返回用于排序的键值
+        :param reverse: 是否降序排序,默认为False(升序)
+        :return: 返回自身以支持链式调用
+        '''
+        self._instances.sort(key=key_func, reverse=reverse)
+        return self
 
     def get_info_by_attr(self, attribute):
         return [getattr(item, attribute) for item in self._instances]
@@ -8951,11 +8971,11 @@ def get_sorted_keys_and_mean_variance_arrays_from_dict_of_list(data_dict):
     输入一个字典,value是list,返回排序后的key数组,均值数组,方差数组
     例如:
     data_dict = {
-        '0.1': [1, 2, 3],
-        '0.2': [2, 3, 4],
-        '0.3': [3, 4, 5]
+        0.1: [1, 2, 3],
+        0.2: [2, 3, 4],
+        0.3: [3, 4, 5]
     }
-    x, y_mean, y_var = get_sorted_keys_mean_variance_arrays_from_dict_of_list(data_dict)
+    x, y_mean, y_var = get_sorted_keys_and_mean_variance_arrays_from_dict_of_list(data_dict)
     print(x)
     print(y_mean)
     print(y_var)
