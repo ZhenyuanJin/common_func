@@ -5448,6 +5448,75 @@ def group_values_by_keys(keys, values):
     return dict(grouped)
 
 
+def get_group_values_by_keys(keys, values):
+    '''
+    just an alias of group_values_by_keys
+    方便记忆
+    '''
+    return group_values_by_keys(keys, values)
+
+
+def group_values_by_multikeys(*args):
+    """
+    将值按照对应的多维键分组,返回字典结构
+    
+    参数:
+    *args -- 前N个参数是表示不同维度的键列表,最后一个参数是值列表
+            例如: (keys_dim1, keys_dim2, ..., values)
+    
+    返回:
+    字典,键为多维键组成的元组,值为对应值的列表
+    
+    示例:
+    learning_rates = [0.01, 0.01, 0.1, 0.1]
+    batch_sizes = [32, 64, 32, 64]
+    optimizers = ['Adam', 'SGD', 'Adam', 'SGD']
+    accuracies = [0.85, 0.82, 0.87, 0.79]
+    # 按三个维度分组
+    result = group_values_by_multikeys(
+        learning_rates, 
+        batch_sizes, 
+        optimizers, 
+        accuracies
+    )
+    print(result)
+    {
+        (0.01, 32, 'Adam'): [0.85],
+        (0.01, 64, 'SGD'): [0.82],
+        (0.1, 32, 'Adam'): [0.87],
+        (0.1, 64, 'SGD'): [0.79]
+    }
+    """
+    if len(args) < 2:
+        raise ValueError("至少需要提供一组键列表和一个值列表")
+    
+    # 分离键列表和值列表
+    keys_lists = args[:-1]
+    values_list = args[-1]
+    
+    # 检查所有列表长度是否一致
+    list_lengths = [len(lst) for lst in keys_lists] + [len(values_list)]
+    if len(set(list_lengths)) > 1:
+        raise ValueError(f"所有列表长度必须相同: {list_lengths}")
+    
+    # 创建分组字典
+    grouped = defaultdict(list)
+    for i in range(len(values_list)):
+        # 从每个键列表中获取当前索引的键值
+        key_tuple = tuple(lst[i] for lst in keys_lists)
+        grouped[key_tuple].append(values_list[i])
+    
+    return dict(grouped)
+
+
+def get_multigroup_values_by_keys(*args):
+    '''
+    just an alias of group_values_by_multikeys
+    方便记忆
+    '''
+    return group_values_by_multikeys(*args)
+
+
 def get_sorted_keys_and_mean_variance_arrays_from_dict_of_list(data_dict):
     '''
     输入一个字典,value是list,返回排序后的key数组,均值数组,方差数组
@@ -5481,6 +5550,49 @@ def get_sorted_keys_and_mean_variance_arrays_from_dict_of_list(data_dict):
     y_var = np.array(variances)
     
     return x, y_mean, y_var
+
+
+def get_2d_mean_variance_df(grouped_dict):
+    """
+    将二维分组字典转换为均值和方差的DataFrame
+    
+    参数:
+    grouped_dict -- 字典，键为二维元组(dim1, dim2)，值为数值列表
+    
+    返回:
+    包含两个DataFrame的元组:(均值DataFrame, 方差DataFrame)
+    
+    示例:
+    grouped_data = {
+         (0.01, 32): [0.85, 0.86],
+         (0.01, 64): [0.82, 0.83],
+         (0.1, 32): [0.87, 0.88],
+         (0.1, 64): [0.79, 0.80]
+    }
+    mean_df, var_df = get_2d_mean_variance_df(grouped_data)
+    print("均值DataFrame:")
+    print(mean_df)
+    print("\n方差DataFrame:")
+    print(var_df)
+    """
+    # 提取所有唯一的维度值
+    dim1_values = sorted({key[0] for key in grouped_dict.keys()})
+    dim2_values = sorted({key[1] for key in grouped_dict.keys()})
+    
+    # 创建空DataFrame
+    mean_df = pd.DataFrame(index=dim1_values, columns=dim2_values, dtype=float)
+    var_df = pd.DataFrame(index=dim1_values, columns=dim2_values, dtype=float)
+    
+    # 填充DataFrame
+    for (d1, d2), values in grouped_dict.items():
+        if d1 in dim1_values and d2 in dim2_values:  # 确保键在索引中
+            mean_val = np.mean(values)
+            var_val = np.var(values)
+            
+            mean_df.loc[d1, d2] = mean_val
+            var_df.loc[d1, d2] = var_val
+    
+    return mean_df, var_df
 # endregion
 
 
