@@ -225,44 +225,20 @@ def get_neuron_data_ccovf(neuron_data_x, neuron_data_y, dt, nlags, neuron_idx_x=
     return lag_times, multi_ccovf
 
 
-def split_auto_and_cross(multi_result):
-    """分离自相关和互相关结果"""
-    auto = {}
-    cross = {}
-    for k, v in multi_result.items():
-        if k[0] == k[1]:
-            auto[k] = v
-        else:
-            cross[k] = v
-    return auto, cross
+def get_neuron_data_ccf_auto_and_cross(neuron_data, dt, nlags, neuron_idx=None, process_num=1, return_complete=False, **kwargs):
+    '''
+    计算神经元数据的自相关和互相关函数
+    '''
+    partial_neuron_data = neuron_idx_data(neuron_data, neuron_idx, keep_size=True)
+    return cf.get_multi_ccf_auto_and_cross(partial_neuron_data.T, T=dt, nlags=nlags, process_num=process_num, return_complete=return_complete, **kwargs)
 
 
-def get_neuron_data_ccf_auto_and_cross(neuron_data, dt, nlags, neuron_idx_x=None, neuron_idx_y=None, process_num=1, return_complete=False, **kwargs):
-    """CCF版本的自相关与互相关分组"""
-    lag_times, multi_ccf = get_neuron_data_ccf(neuron_data, neuron_data, dt, nlags, neuron_idx_x, neuron_idx_y, process_num, **kwargs)
-    auto_ccf, cross_ccf = split_auto_and_cross(multi_ccf)
-    
-    auto_mean = np.mean(list(auto_ccf.values()), axis=0)
-    cross_mean = np.mean(list(cross_ccf.values()), axis=0)
-    
-    r = {'auto_ccf_mean': auto_mean, 'cross_ccf_mean': cross_mean, 'lag_times': lag_times}
-    if return_complete:
-        r.update({'auto_ccf': auto_ccf, 'cross_ccf': cross_ccf})
-    return r
-
-
-def get_neuron_data_ccovf_auto_and_cross(neuron_data, dt, nlags, neuron_idx_x=None, neuron_idx_y=None, process_num=1, return_complete=False, **kwargs):
-    """CCOVF版本的自相关与互相关分组"""
-    lag_times, multi_ccovf = get_neuron_data_ccovf(neuron_data, neuron_data, dt, nlags, neuron_idx_x, neuron_idx_y, process_num, **kwargs)
-    auto_ccovf, cross_ccovf = split_auto_and_cross(multi_ccovf)
-    
-    auto_mean = np.mean(list(auto_ccovf.values()), axis=0)
-    cross_mean = np.mean(list(cross_ccovf.values()), axis=0)
-    
-    r = {'auto_ccovf_mean': auto_mean, 'cross_ccovf_mean': cross_mean, 'lag_times': lag_times}
-    if return_complete:
-        r.update({'auto_ccovf': auto_ccovf, 'cross_ccovf': cross_ccovf})
-    return r
+def get_neuron_data_ccovf_auto_and_cross(neuron_data, dt, nlags, neuron_idx=None, process_num=1, return_complete=False, **kwargs):
+    '''
+    计算神经元数据的自协方差和互协方差函数
+    '''
+    partial_neuron_data = neuron_idx_data(neuron_data, neuron_idx, keep_size=True)
+    return cf.get_multi_ccovf_auto_and_cross(partial_neuron_data.T, T=dt, nlags=nlags, process_num=process_num, return_complete=return_complete, **kwargs)
 
 
 def spike_to_fr_acf(spike, width, dt, nlags, neuron_idx=None, spike_to_fr_kwargs=None, **kwargs):

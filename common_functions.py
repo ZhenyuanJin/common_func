@@ -8144,6 +8144,56 @@ def get_multi_ccovf(multi_x, multi_y, T=None, sample_rate=None, nlags=None, nan_
     return _get_multi_ccf_ccovf(multi_x, multi_y, T=T, sample_rate=sample_rate, nlags=nlags, nan_policy=nan_policy, fill_value=fill_value, inf_policy=inf_policy, process_num=process_num, ccf_or_ccovf='ccovf')
 
 
+def split_auto_and_cross(multi_result):
+    """分离自相关和互相关结果"""
+    auto = {}
+    cross = {}
+    for k, v in multi_result.items():
+        if k[0] == k[1]:
+            auto[k] = v
+        else:
+            cross[k] = v
+    return auto, cross
+
+
+def get_multi_ccf_auto_and_cross(multi_timeseries, T=None, sample_rate=None, nlags=None, return_complete=False, process_num=1, **kwargs):
+    """CCF版本的自相关与互相关分组,此时输入的multi_x和multi_y是一样的,所以才有自相关和互相关之分"""
+    lag_times, multi_ccf = get_multi_ccf(multi_timeseries, multi_timeseries, T=T, sample_rate=sample_rate, nlags=nlags, process_num=process_num, **kwargs)
+    auto_ccf, cross_ccf = split_auto_and_cross(multi_ccf)
+    
+    auto_mean = np.mean(list(auto_ccf.values()), axis=0)
+    cross_mean = np.mean(list(cross_ccf.values()), axis=0)
+    
+    r = {'auto_ccf_mean': auto_mean, 'cross_ccf_mean': cross_mean, 'lag_times': lag_times}
+    if return_complete:
+        r.update({'auto_ccf': auto_ccf, 'cross_ccf': cross_ccf})
+    return r
+
+
+def get_multi_ccovf_auto_and_cross(multi_timeseries, T=None, sample_rate=None, nlags=None, return_complete=False, process_num=1, **kwargs):
+    """CCOVF版本的自相关与互相关分组,此时输入的multi_x和multi_y是一样的,所以才有自相关和互相关之分"""
+    lag_times, multi_ccovf = get_multi_ccovf(multi_timeseries, multi_timeseries, T=T, sample_rate=sample_rate, nlags=nlags, process_num=process_num, **kwargs)
+    auto_ccovf, cross_ccovf = split_auto_and_cross(multi_ccovf)
+    
+    auto_mean = np.mean(list(auto_ccovf.values()), axis=0)
+    cross_mean = np.mean(list(cross_ccovf.values()), axis=0)
+    
+    r = {'auto_ccovf_mean': auto_mean, 'cross_ccovf_mean': cross_mean, 'lag_times': lag_times}
+    if return_complete:
+        r.update({'auto_ccovf': auto_ccovf, 'cross_ccovf': cross_ccovf})
+    return r
+
+
+def get_auto_and_cross_num(multi_timeseries):
+    '''
+    计算自相关和互相关的数量
+    这里的multi_timeseries的shape为(time_series_num, time_series_length)
+    '''
+    auto_num = multi_timeseries.shape[0]
+    cross_num = auto_num * (auto_num - 1)
+    return auto_num, cross_num
+
+
 def get_hist(data, bins, stat='probability', nan_policy='drop', fill_value=0, inf_policy=INF_POLICY):
     '''
     Generates a histogram with various normalization options.
@@ -17085,6 +17135,58 @@ def get_tick_rotation(ax, axis):
             return XTICK_ROTATION
         elif axis == 'y':
             return YTICK_ROTATION
+
+@iterate_over_axs
+def format_axis_ticklabel(ax, axis='both', tick_source='ticklabel', func=round_float, kwargs=None):
+    """
+    设置坐标轴刻度标签的格式化显示
+    
+    参数:
+    - ax: matplotlib 坐标轴对象
+    - axis: 要设置的轴 ('x', 'y' 或 'both')
+    - tick_source: 用于生成标签的来源 ('tick' 使用刻度值, 'ticklabel' 使用现有标签)
+    """
+    kwargs = update_dict({}, kwargs)
+    
+    def _process_axis(axis_type):
+        """处理单个坐标轴的刻度标签格式化"""
+        if axis_type == 'x':
+            get_ticks = ax.get_xticks
+            get_ticklabels = ax.get_xticklabels
+            set_ticks = ax.set_xticks
+            set_ticklabels = ax.set_xticklabels
+        elif axis_type == 'y':
+            get_ticks = ax.get_yticks
+            get_ticklabels = ax.get_yticklabels
+            set_ticks = ax.set_yticks
+            set_ticklabels = ax.set_yticklabels
+        
+        if tick_source == 'tick':
+            # 使用刻度值生成标签
+            ticks = get_ticks()
+            labels = [func(tick, **kwargs) for tick in ticks]
+        elif tick_source == 'ticklabel':
+            # 使用现有标签生成新标签
+            old_labels = [label.get_text() for label in get_ticklabels()]
+            labels = []
+            for label in old_labels:
+                try:
+                    # 尝试转换为float后格式化
+                    num = float(label)
+                    labels.append(func(num, **kwargs))
+                except ValueError:
+                    # 转换失败时保留原标签
+                    labels.append(label)
+        
+        # 保持刻度位置不变，仅更新标签
+        set_ticks(get_ticks())
+        set_ticklabels(labels)
+    
+    # 根据axis参数处理对应的坐标轴
+    if axis in ['x', 'both']:
+        _process_axis('x')
+    if axis in ['y', 'both']:
+        _process_axis('y')
 # endregion
 
 
