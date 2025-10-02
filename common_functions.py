@@ -10550,6 +10550,48 @@ def unsqueeze_ax(ax, ncols=1, nrows=1):
 
 
 # region 初级作图函数(matplotlib系列,输入向量使用)
+def filter_data_by_xylim(x, y, xlim=None, ylim=None):
+    """
+    根据坐标轴范围过滤数据点
+    
+    参数:
+    x -- x坐标值列表或数组
+    y -- y坐标值列表或数组
+    xlim -- 可选,x轴范围限制的元组 (x_min, x_max), 如果带有None则表示不限制该方向
+    ylim -- 可选,y轴范围限制的元组 (y_min, y_max), 如果带有None则表示不限制该方向
+    
+    返回:
+    x_filtered -- 过滤后的x坐标列表
+    y_filtered -- 过滤后的y坐标列表
+    """
+    # 当任一限制条件存在时执行过滤
+    if xlim or ylim:
+        if xlim is not None:
+            if xlim[0] is None:
+                xlim = (-np.inf, xlim[1])
+            if xlim[1] is None:
+                xlim = (xlim[0], np.inf)
+        if ylim is not None:
+            if ylim[0] is None:
+                ylim = (-np.inf, ylim[1])
+            if ylim[1] is None:
+                ylim = (ylim[0], np.inf)
+
+        filtered_data = [
+            (xi, yi) for xi, yi in zip(x, y)
+            if (xlim is None or (xlim[0] <= xi <= xlim[1])) and 
+               (ylim is None or (ylim[0] <= yi <= ylim[1]))
+        ]
+        # 处理过滤结果（包括空结果的情况）
+        if filtered_data:
+            x_filtered, y_filtered = zip(*filtered_data)
+            return list(x_filtered), list(y_filtered)
+        else:
+            return [], []
+    # 无限制条件时返回原始数据
+    return x.copy(), y.copy()
+
+
 def plt_scatter(ax, x, y, label=None, color=BLUE, vert=True, rasterized=False, rasterized_threshold=10000, xlim=None, ylim=None, linewidths=0., **kwargs):
     '''
     使用x和y绘制散点图,可以接受plt.scatter的其他参数
@@ -10570,14 +10612,7 @@ def plt_scatter(ax, x, y, label=None, color=BLUE, vert=True, rasterized=False, r
     -s是marker_size的平方
     -s是圆的面积,radius按照points的单位
     '''
-    # 根据xlim和ylim预处理数据
-    if xlim or ylim:
-        filtered_data = [
-            (xi, yi) for xi, yi in zip(x, y)
-            if (xlim is None or xlim[0] <= xi <= xlim[1]) and 
-               (ylim is None or ylim[0] <= yi <= ylim[1])
-        ]
-        x, y = zip(*filtered_data) if filtered_data else ([], [])
+    x, y = filter_data_by_xylim(x, y, xlim=xlim, ylim=ylim)
 
     if not vert:
         x, y = y, x
@@ -10612,14 +10647,7 @@ def plt_line(ax, x, y, label=None, color=BLUE, vert=True, xlim=None, ylim=None, 
     :param ylim: y轴的范围,默认为None
     :param kwargs: 其他plt.plot支持的参数
     '''
-    # 根据xlim和ylim预处理数据
-    if xlim or ylim:
-        filtered_data = [
-            (xi, yi) for xi, yi in zip(x, y)
-            if (xlim is None or xlim[0] <= xi <= xlim[1]) and 
-               (ylim is None or ylim[0] <= yi <= ylim[1])
-        ]
-        x, y = zip(*filtered_data) if filtered_data else ([], [])
+    x, y = filter_data_by_xylim(x, y, xlim=xlim, ylim=ylim)
     
     # 画图
     if not vert:
