@@ -16970,6 +16970,49 @@ def set_ax_aspect_3d(ax, aspect=(1, 1, 1), adjustable='datalim', **kwargs):
         ax.set_zlim3d([zmean - plot_radius/local_aspect[2], zmean + plot_radius/local_aspect[2]])
     elif adjustable == 'box':
         ax.set_box_aspect(aspect, **kwargs)
+
+
+def get_xylim_by_aspect_ratio(xlim, ylim, aspect_ratio=1.0):
+    """
+    计算按比例的坐标轴范围
+    
+    参数:
+    xlim (tuple): 原始x轴范围 (xmin, xmax)
+    ylim (tuple): 原始y轴范围 (ymin, ymax)
+    aspect_ratio (float): 目标宽高比 (默认1.0表示正方形比例)
+    
+    返回:
+    tuple: 调整后的x轴范围
+    tuple: 调整后的y轴范围
+    """
+    xmin, xmax = xlim
+    ymin, ymax = ylim
+    
+    # 计算原始范围的中心点和范围大小
+    x_center = (xmin + xmax) / 2.0
+    y_center = (ymin + ymax) / 2.0
+    x_range = xmax - xmin
+    y_range = ymax - ymin
+    
+    # 计算当前宽高比
+    current_aspect = y_range / x_range
+    
+    # 计算目标比例因子
+    target_aspect = aspect_ratio
+    
+    # 调整范围以匹配目标宽高比
+    if current_aspect > target_aspect:
+        # 当前y轴范围过大，需要调整x轴范围
+        new_x_range = y_range / target_aspect
+        new_xlim = (x_center - new_x_range/2, x_center + new_x_range/2)
+        new_ylim = ylim
+    else:
+        # 当前x轴范围过大，需要调整y轴范围
+        new_y_range = x_range * target_aspect
+        new_ylim = (y_center - new_y_range/2, y_center + new_y_range/2)
+        new_xlim = xlim
+    
+    return new_xlim, new_ylim
 # endregion
 
 
