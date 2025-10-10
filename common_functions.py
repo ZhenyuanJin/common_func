@@ -83,6 +83,11 @@ import cv2
 from reportlab.pdfgen import canvas
 from pdf2image import convert_from_path
 import imageio
+
+
+# 调整文本位置的库
+# import adjustText
+import adjust_text_custom # use seed to make the random shifts reproducible
 # endregion
 
 
@@ -14053,6 +14058,34 @@ def add_text(ax, text, x=TEXT_X, y=TEXT_Y, text_process=None, transform='ax', va
     return ax.text(x, y, text, transform=transform, va=va, ha=ha, fontsize=fontsize, color=color, **kwargs)
 
 
+def add_multi_text_by_list(ax, text_list, x_list, y_list, text_process=None, transform='ax', va=TEXT_VA, ha=TEXT_HA, fontsize=FONT_SIZE, color=BLACK, **kwargs):
+    text_obj_list = []
+    for text, x, y in zip(text_list, x_list, y_list):
+        text_obj_list.append(add_text(ax, text, x=x, y=y, text_process=text_process, transform=transform, va=va, ha=ha, fontsize=fontsize, color=color, **kwargs))
+    return text_obj_list
+
+
+def add_multi_text_by_dict(ax, x_dict, y_dict, text_process=None, transform='ax', va=TEXT_VA, ha=TEXT_HA, fontsize=FONT_SIZE, color=BLACK, **kwargs):
+    # check the keys of x_dict and y_dict are the same
+    if set(x_dict.keys()) != set(y_dict.keys()):
+        raise ValueError("The keys of x_dict and y_dict must be the same.")
+    text_obj_list = []
+    for key in x_dict.keys():
+        text_obj_list.append(add_text(ax, key, x=x_dict[key], y=y_dict[key], text_process=text_process, transform=transform, va=va, ha=ha, fontsize=fontsize, color=color, **kwargs))
+    return text_obj_list
+
+
+def auto_adjust_text(ax, text_obj_list, add_arrow, arrow_style='->', arrow_color=BLACK, arrow_width=0.5, expand_points=(1.2, 1.4), expand_text=(1.2, 1.4), force_points=(0.5, 0.5), force_text=(0.5, 0.5), min_arrow_len=15, ensure_inside_axes=False, seed=0, **kwargs):
+    '''
+    自动调整文本位置,避免重叠
+    '''
+    if add_arrow:
+        arrow_props = dict(arrowstyle=arrow_style, color=arrow_color, lw=arrow_width)
+    else:
+        arrow_props = None
+    adjust_text_custom.adjust_text(text_obj_list, arrowprops=arrow_props, expand_points=expand_points, expand_text=expand_text, force_points=force_points, force_text=force_text, min_arrow_len=min_arrow_len, ax=ax, ensure_inside_axes=ensure_inside_axes, seed=seed, **kwargs)
+
+
 def adjust_text(fig_or_ax, text, new_position=None, new_text=None, text_kwargs=None, text_process=None):
     '''
     调整指定文本对象的文本,位置和对齐方式。
@@ -14091,10 +14124,10 @@ def adjust_text_obj(text_obj, new_position=None, new_text=None, text_kwargs=None
     调整指定文本对象的文本,位置和对齐方式。
     
     参数:
-    - text_obj: matplotlib的Text对象，要调整的文本对象。
-    - new_position: tuple, 新的位置，格式为(x, y)。
-    - new_text: str, 新的文本内容，默认为None,表示不修改文本内容。
-    - text_kwargs: dict, 传递给`text.update`的其他参数，默认为None。
+    - text_obj: matplotlib的Text对象,要调整的文本对象
+    - new_position: tuple,新的位置,格式为(x, y)
+    - new_text: str,新的文本内容,默认为None,表示不修改文本内容
+    - text_kwargs: dict,传递给text.update的其他参数,默认为None
 
     注意:
     改变位置时,坐标的ha,va,transform等属性和原先一样(除非指定了新的text_kwargs)
