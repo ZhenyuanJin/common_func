@@ -11211,6 +11211,9 @@ def plt_scatter_3d(ax, x, y, z, label=None, color=BLUE, **kwargs):
     :param label: 图例标签,默认为None
     :param color: 散点图的颜色,默认为BLUE
     :param kwargs: 其他ax.scatter支持的参数
+
+    注意:
+    输入的ax需要是3D轴对象
     '''
     # 画图
     if 'c' in kwargs:
@@ -11229,6 +11232,9 @@ def plt_line_3d(ax, x, y, z, label=None, color=BLUE, **kwargs):
     :param label: 图例标签,默认为None
     :param color: 折线图的颜色,默认为BLUE
     :param kwargs: 其他ax.plot支持的参数
+
+    注意:
+    输入的ax需要是3D轴对象
     '''
     # 画图
     return ax.plot(x, y, z, label=label, color=color, **kwargs)
@@ -11244,6 +11250,9 @@ def plt_bar_3d(ax, x, y, z, dx, dy, dz, label=None, color=BLUE, **kwargs):
     :param label: 图例标签,默认为None
     :param color: 柱状图的颜色,默认为BLUE
     :param kwargs: 其他ax.bar3d支持的参数
+
+    注意:
+    输入的ax需要是3D轴对象
     '''
     return ax.bar3d(x, y, z, dx, dy, dz, color=color, label=label, **kwargs)
 
@@ -11258,6 +11267,9 @@ def plt_surface_3d(ax, x, y, z, label=None, color=BLUE, alpha=FAINT_ALPHA, **kwa
     :param label: 图例标签,默认为None
     :param color: 曲面图的颜色,默认为BLUE
     :param kwargs: 其他ax.plot_surface支持的参数
+
+    注意:
+    输入的ax需要是3D轴对象
     '''
     # 画图
     return ax.plot_surface(x, y, z, label=label, color=color, alpha=alpha, **kwargs)
@@ -11274,6 +11286,9 @@ def plt_wireframe_3d(ax, X, Y, Z, rstride=BIN_NUM, cstride=BIN_NUM, color=BLUE, 
     :param cstride: 列步长,默认为BIN_NUM
     :param color: 线框的颜色,默认为BLUE
     :param kwargs: 其他plt.plot_wireframe支持的参数
+
+    注意:
+    输入的ax需要是3D轴对象
     '''
     return ax.plot_wireframe(X, Y, Z, rstride=rstride, cstride=cstride, color=color, **kwargs)
 
@@ -11288,6 +11303,7 @@ def plt_voxel_3d(ax, data, label=None, color=BLUE, facecolors=None, edgecolors=N
     :param kwargs: 其他ax.voxels支持的参数
 
     注意:
+    输入的ax需要是3D轴对象
     如果需要设置facecolors和edgecolors,请使用facecolors和edgecolors参数,并且把color参数设置为None,因为在这里color的优先级更高
     如果设置label的时候产生问题,建议设置label为None,另行添加图例
     '''
@@ -11309,6 +11325,9 @@ def plt_stem_3d(ax, x, y, z, label=None, linefmt='-', markerfmt='o', basefmt='k-
     :param markerfmt: 点的格式,默认为'o'
     :param basefmt: 基线的格式,默认为'k-'
     :param kwargs: 其他ax.stem支持的参数
+
+    注意:
+    输入的ax需要是3D轴对象
     '''
     # 画图
     return ax.stem(x, y, z, label=label, linefmt=linefmt, markerfmt=markerfmt, basefmt=basefmt, **kwargs)
@@ -15381,26 +15400,29 @@ def plt_group_bar_dict(ax, data, width=None, colors=CMAP, vert=True, **kwargs):
 # region 复杂作图函数(matplotlib系列,三维作图)
 def plt_colorful_scatter_3d(ax, x, y, z, c, cmap=CMAP, norm_mode='linear', vmin=None, vmax=None, norm_kwargs=None, s=MARKER_SIZE**2, label=None, label_cmap_float=1.0, scatter_kwargs=None, cbar=True, cbar_postion=None, cbar_kwargs=None):
     '''
-    绘制颜色关于c值变化的散点图。
+    绘制颜色关于c值变化的散点图
 
     参数:
-    - ax (matplotlib.axes.Axes): matplotlib的轴对象, 用于绘制图形。
-    - x (numpy.ndarray or list): x轴的数据。
-    - y (numpy.ndarray or list): y轴的数据。 
-    - z (numpy.ndarray or list): z轴的数据。
-    - c (numpy.ndarray or list): 颜色的数据。
-    - cmap (matplotlib.colors.Colormap, optional): 颜色映射, 默认为CMAP。
+    - ax (matplotlib.axes.Axes): matplotlib的轴对象, 用于绘制图形
+    - x (numpy.ndarray or list): x轴的数据
+    - y (numpy.ndarray or list): y轴的数据
+    - z (numpy.ndarray or list): z轴的数据
+    - c (numpy.ndarray or list): 颜色的数据
+    - cmap (matplotlib.colors.Colormap, optional): 颜色映射, 默认为CMAP
     - norm_mode (str, optional): 颜色映射的规范化模式, 可选 'linear', 'log', 'symlog', 'two_slope'等, 默认为 'linear'
-    - vmin (float, optional): 颜色映射的最小值, 默认为None。
-    - vmax (float, optional): 颜色映射的最大值, 默认为None。
+    - vmin (float, optional): 颜色映射的最小值, 默认为None
+    - vmax (float, optional): 颜色映射的最大值, 默认为None
     - norm_kwargs (dict or None, optional): 颜色映射规范化的其他参数
-    - s (float, optional): 散点的大小, 默认为MARKER_SIZE**2。
-    - label (str or None, optional): 散点的标签, 默认为None。
-    - label_cmap_float (float, optional): 代表性点的颜色映射模式, 默认为1.0。如果输入整数则会raise ValueError。
-    - scatter_kwargs (dict or None, optional): 传递给plt_scatter的其他参数。
-    - cbar (bool, optional): 是否添加颜色条,默认为True。
-    - cbar_postion (str or None, optional): 颜色条的位置,默认为None。
-    - cbar_kwargs (dict or None, optional): 传递给add_side_colorbar的其他参数。
+    - s (float, optional): 散点的大小, 默认为MARKER_SIZE**2
+    - label (str or None, optional): 散点的标签, 默认为None
+    - label_cmap_float (float, optional): 代表性点的颜色映射模式, 默认为1.0。如果输入整数则会raise ValueError
+    - scatter_kwargs (dict or None, optional): 传递给plt_scatter的其他参数
+    - cbar (bool, optional): 是否添加颜色条,默认为True
+    - cbar_postion (str or None, optional): 颜色条的位置,默认为None
+    - cbar_kwargs (dict or None, optional): 传递给add_side_colorbar的其他参数
+
+    注意:
+    输入的ax需要是3D轴对象
     '''
     # 设置默认参数
     if scatter_kwargs is None:
@@ -15438,27 +15460,28 @@ def plt_colorful_scatter_3d(ax, x, y, z, c, cmap=CMAP, norm_mode='linear', vmin=
 
 def plt_voxel_heatmap(ax, data, cmap=CMAP, norm_mode='linear', vmin=None, vmax=None, norm_kwargs=None, edgecolors=BLACK, cbar=True, cbar_position=None, cbar_label=None, mask=None, mask_color=MASK_COLOR, voxel_kwargs=None, cbar_kwargs=None):
     '''
-    根据data中的值和指定的颜色映射绘制体素图。(data中的nan值将不会绘制,mask中的True值将会用mask_color绘制。)
+    根据data中的值和指定的颜色映射绘制体素图(data中的nan值将不会绘制,mask中的True值将会用mask_color绘制)
     
     参数:
-    - ax: matplotlib的Axes3D对象。
-    - data: 三维numpy数组，其值将用来根据颜色映射确定颜色。(如果data中的值为nan,则不会绘制该体素。)
-    - cmap: 颜色映射，默认为CMAP。
-    - norm_mode: 归一化模式，默认为'linear'。
-    - vmin: 颜色映射的最小值，默认为None。
-    - vmax: 颜色映射的最大值，默认为None。
-    - norm_kwargs: 传递给get_norm的额外关键字参数。
-    - edgecolors: 体素的边框颜色，默认为BLACK。
-    - cbar: 是否添加颜色条，默认为True。
-    - cbar_position: 颜色条的位置，默认为None。
-    - cbar_label: 颜色条的标签，默认为None。
-    - mask: 三维numpy数组，其True值将用mask_color绘制。(如果mask为None,则不会绘制mask。)
-    - mask_color: mask的颜色，默认为MASK_COLOR。
-    - voxel_kwargs: 传递给plt_voxel_3d的额外关键字参数。
-    - cbar_kwargs: 传递给add_side_colorbar的额外关键字参数。
+    - ax: matplotlib的Axes3D对象
+    - data: 三维numpy数组,其值将用来根据颜色映射确定颜色(如果data中的值为nan,则不会绘制该体素)
+    - cmap: 颜色映射,默认为CMAP
+    - norm_mode: 归一化模式,默认为'linear'
+    - vmin: 颜色映射的最小值,默认为None
+    - vmax: 颜色映射的最大值,默认为None
+    - norm_kwargs: 传递给get_norm的额外关键字参数
+    - edgecolors: 体素的边框颜色,默认为BLACK
+    - cbar: 是否添加颜色条,默认为True
+    - cbar_position: 颜色条的位置,默认为None
+    - cbar_label: 颜色条的标签,默认为None
+    - mask: 三维numpy数组,其True值将用mask_color绘制(如果mask为None,则不会绘制mask)
+    - mask_color: mask的颜色,默认为MASK_COLOR
+    - voxel_kwargs: 传递给plt_voxel_3d的额外关键字参数
+    - cbar_kwargs: 传递给add_side_colorbar的额外关键字参数
 
     注意:
-    - 如果想要呈现无边框的效果，可以将edgecolors设置为None。
+    - 输入的ax需要是3D轴对象
+    - 如果想要呈现无边框的效果,可以将edgecolors设置为None
     '''
     # 设置默认参数
     cbar_position = update_dict(CBAR_POSITION_3D, cbar_position)
@@ -15516,6 +15539,9 @@ def plt_vstack(ax, x, y_values, z_sets, cmap=CMAP, alpha=FAINT_ALPHA):
     y_values = [1, 2, 3]
     z_sets = [np.sin(x), np.sin(2*x), np.sin(3*x)]
     plt_vstack(ax, x, y_values, z_sets)
+
+    注意
+    输入的ax需要是3D轴对象
     """
     
     # 定义辅助函数，生成位于(x, z)曲线之下的多边形的顶点
@@ -16668,6 +16694,24 @@ def set_ax_tick(ax, ticks, labels, axis, which='major'):
         ax.set_yticks(ticks, labels=labels, minor=minor)
     elif axis == 'z':
         ax.set_zticks(ticks, labels=labels, minor=minor)
+
+@iterate_over_axs
+def reduce_ax_tick(ax, axis='both', max_num=5):
+    """
+    减少指定坐标轴的刻度数量
+    
+    参数:
+    ax: matplotlib的Axes对象
+    axis: 要操作的轴 ('x', 'y', 'both')
+    max_num: 最大刻度数量 (默认5)
+    """
+    if axis in ['x', 'both']:
+        ax.xaxis.set_major_locator(plt.MaxNLocator(max_num))
+        ax.xaxis.set_minor_locator(plt.NullLocator())
+    
+    if axis in ['y', 'both']:
+        ax.yaxis.set_major_locator(plt.MaxNLocator(max_num))
+        ax.yaxis.set_minor_locator(plt.NullLocator())
 
 
 def set_cbar_tick(cbar, norm_mode='linear', ticks=None):
