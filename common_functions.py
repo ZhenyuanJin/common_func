@@ -4683,6 +4683,59 @@ def get_key_by_value(d, value):
         if v == value:
             return k
     raise  KeyError(f"值 '{value}' 不存在于字典中")
+
+
+def swap_dict_level(nested_dict, level_mapping):
+    """
+    交换嵌套字典的层顺序
+    
+    参数:
+        nested_dict: 多层嵌套的字典
+        level_mapping: 层映射字典,格式为 {原层位置: 新层位置}
+                      例如 {0: 2, 1: 0, 2: 1} 表示原来的第0层移到第2层,第1层移到第0层,第2层移到第1层
+    
+    返回:
+        重新排列层顺序后的新字典
+    """
+    def _flatten_dict(d, path=()):
+        flat = {}
+        for key, value in d.items():
+            current_path = path + (key,)
+            if isinstance(value, dict):
+                flat.update(_flatten_dict(value, current_path))
+            else:
+                flat[current_path] = value
+        return flat
+    
+    def _nest_dict(flat_dict):
+        result = {}
+        for path, value in flat_dict.items():
+            current = result
+            for key in path[:-1]:
+                current = current.setdefault(key, {})
+            current[path[-1]] = value
+        return result
+    
+    flat_dict = _flatten_dict(nested_dict)
+    
+    if not flat_dict:
+        return {}
+    
+    # 确定最大深度
+    max_depth = len(next(iter(flat_dict.keys())))
+    
+    # 创建完整的重排顺序
+    new_order = list(range(max_depth))
+    for old_pos, new_pos in level_mapping.items():
+        if old_pos < max_depth and new_pos < max_depth:
+            new_order[new_pos] = old_pos
+    
+    rearranged_flat = {}
+    for path, value in flat_dict.items():
+        new_path = tuple(path[new_order[i]] for i in range(max_depth))
+        rearranged_flat[new_path] = value
+    
+    return _nest_dict(rearranged_flat)
 # endregion
 
 
