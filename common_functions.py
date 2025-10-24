@@ -14613,7 +14613,7 @@ def plt_colorful_line(ax, x, y, c, cmap=CMAP, norm_mode='linear', vmin=None, vma
         return line
 
 
-def plt_group_bar(ax, x, y, label_list, width=None, colors=CMAP, vert=True, **kwargs):
+def plt_group_bar(ax, x, y, label_list, width=None, inner_gap=0.0, colors=CMAP, vert=True, **kwargs):
     '''
     绘制分组的柱状图。
     :param ax: matplotlib的轴对象,用于绘制图形
@@ -14621,6 +14621,7 @@ def plt_group_bar(ax, x, y, label_list, width=None, colors=CMAP, vert=True, **kw
     :param y: 一个二维列表或数组,表示每组中柱子的高度(shape=(len(x), len(label_list)),例如[[1, 2, 3], [4, 5, 6]])
     :param label_list: 每个柱子的标签,例如['x', 'y', 'z']
     :param bar_width: 单个柱子的宽度,默认为None,自动确定宽度
+    :param inner_gap: 柱子之间的间距,默认为0.0,其数值代表的是同组内柱子之间的间距占单个柱子宽度的比例
     :param colors: 柱状图的颜色序列,应与label_list的长度相匹配;也可以指定cmap,默认为CMAP,然后根据label_list的长度生成颜色序列
     :param kwargs: 其他plt.bar支持的参数
     '''
@@ -14632,14 +14633,18 @@ def plt_group_bar(ax, x, y, label_list, width=None, colors=CMAP, vert=True, **kw
     num_bars = len(y[0])  # 每组中柱子的数量，假设每组柱子数量相同
 
     if width is None:
-        width = BAR_WIDTH / num_bars
+        # Calculate width considering both number of bars and inner gaps
+        # Total group width = BAR_WIDTH (default group spacing)
+        # This is distributed as: num_bars * width + (num_bars - 1) * (width * inner_gap)
+        # So: width = BAR_WIDTH / (num_bars + (num_bars - 1) * inner_gap)
+        width = BAR_WIDTH / (num_bars + (num_bars - 1) * inner_gap)
+    gap_width = width * inner_gap
 
     # 为每个柱子计算中心位置
     indices = np.arange(num_groups)
     for i, lbl in enumerate(label_list):
-        offsets = (np.arange(num_bars) -
-                   np.arange(num_bars).mean()) * width
-        plt_bar(ax, indices + offsets[i], [y[j][i] for j in range(
+        offset = (i - (num_bars - 1) / 2) * (width + gap_width)
+        plt_bar(ax, indices + offset, [y[j][i] for j in range(
             num_groups)], label=lbl, color=colors[i], width=width, vert=vert, **kwargs)
 
     if vert:
@@ -14667,7 +14672,7 @@ def plt_two_side_bar(ax, x, y1, y2, label1=None, label2=None, width=BAR_WIDTH, c
     set_sym_positive_axis(ax, axis, local_max)
 
 
-def plt_group_box(ax, x, y, label_list, width=None, colors=CMAP, vert=True, **kwargs):
+def plt_group_box(ax, x, y, label_list, width=None, inner_gap=0.0, colors=CMAP, vert=True, **kwargs):
     '''
     绘制分组的箱线图。
     :param ax: matplotlib的轴对象,用于绘制图形
@@ -14676,6 +14681,7 @@ def plt_group_box(ax, x, y, label_list, width=None, colors=CMAP, vert=True, **kw
               (shape=(len(x), len(label_list), num_points), 例如[[[1,2], [2,3], [3,4]], [[4,5], [5,6], [6,7]]])
     :param label_list: 每个箱线图的标签,例如['x', 'y', 'z']
     :param width: 单个箱线图的宽度,默认为None,自动确定宽度
+    :param inner_gap: 箱线图之间的间距,默认为0.0,其数值代表的是同组内箱线图之间的间距占单个箱线图宽度的比例
     :param colors: 箱线图的颜色序列,应与label_list的长度相匹配;也可以指定cmap,默认为CMAP,然后根据label_list的长度生成颜色序列
     :param kwargs: 其他plt.boxplot支持的参数
     '''
@@ -14687,14 +14693,19 @@ def plt_group_box(ax, x, y, label_list, width=None, colors=CMAP, vert=True, **kw
     num_boxes = len(y[0])  # 每组中箱线图的数量，假设每组箱线图数量相同
 
     if width is None:
-        width = BAR_WIDTH / num_boxes
+        # Calculate width considering both number of bars and inner gaps
+        # Total group width = BAR_WIDTH (default group spacing)
+        # This is distributed as: num_bars * width + (num_bars - 1) * (width * inner_gap)
+        # So: width = BAR_WIDTH / (num_bars + (num_bars - 1) * inner_gap)
+        width = BAR_WIDTH / (num_bars + (num_bars - 1) * inner_gap)
+    gap_width = width * inner_gap
 
     # 为每个箱线图计算中心位置
     indices = np.arange(num_groups)
     for i, lbl in enumerate(label_list):
-        offsets = (np.arange(num_boxes) - np.arange(num_boxes).mean()) * width
+        offset = (i - (num_bars - 1) / 2) * (width + gap_width)
         group_data = [y[j][i] for j in range(num_groups)]
-        pos = indices + offsets[i]
+        pos = indices + offset
         plt_box(ax=ax, x=pos, y=group_data, label=lbl, vert=vert, width=width, boxprops={'facecolor': colors[i]}, **kwargs)
 
     # Set labels for the x or y axis based on orientation
