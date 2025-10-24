@@ -17495,8 +17495,8 @@ def set_ax(ax, xlabel=None, ylabel=None, zlabel=None, xlabel_pad=LABEL_PAD, ylab
     
     if (not is_3d) and adjust_tick_size:
         width, height = get_ax_size(ax)
-        xtick_size = suitable_tick_size(len(ax.get_xticks()), width, tick_size, tick_proportion)
-        ytick_size = suitable_tick_size(len(ax.get_yticks()), height, tick_size, tick_proportion)
+        xtick_size = suitable_tick_size(len(ax.get_xticks()), width, xtick_size, tick_proportion)
+        ytick_size = suitable_tick_size(len(ax.get_yticks()), height, ytick_size, tick_proportion)
 
     ax.tick_params(axis='x', labelsize=xtick_size, rotation=xtick_rotation)
     ax.tick_params(axis='x', which='minor', rotation=xtick_rotation)
