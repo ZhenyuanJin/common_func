@@ -9766,6 +9766,17 @@ class Visualizer(FlexibleTool):
         local_save_fig_kwargs = update_dict(local_save_fig_kwargs, save_fig_kwargs)
         save_fig(fig, filename, **local_save_fig_kwargs)
 
+    def auto_save_fig_no_close(self, filename=None, save_fig_kwargs=None, fig=None):
+        '''
+        不关闭图片,以便后面添加标签等操作后继续保存
+        '''
+        if filename is None:
+            filename = pj(self.figs_dir, sys._getframe(1).f_code.co_name)
+        local_save_fig_kwargs = self.save_fig_kwargs.copy()
+        local_save_fig_kwargs['close'] = False
+        local_save_fig_kwargs = update_dict(local_save_fig_kwargs, save_fig_kwargs)
+        save_fig(fig, filename, **local_save_fig_kwargs)
+
 
 class ToolsPipeLine:
     '''
