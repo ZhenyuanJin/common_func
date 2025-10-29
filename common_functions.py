@@ -10726,19 +10726,19 @@ def plt_line(ax, x, y, label=None, color=BLUE, vert=True, xlim=None, ylim=None, 
 
 def plt_bar(ax, x, y, label=None, color=BLUE, vert=True, equal_space=False, err=None, capsize=PLT_CAP_SIZE, ecolor=BLACK, elabel=None, width=BAR_WIDTH, **kwargs):
     '''
-    使用x和y绘制柱状图，可以接受plt.bar的其他参数,此函数的特性是会根据x的值作为bar的位置,当x包含字符串或者equal_space=True时,会自动变成等距离排列。
-    :param ax: matplotlib的轴对象，用于绘制图形
+    使用x和y绘制柱状图,可以接受plt.bar的其他参数,此函数的特性是会根据x的值作为bar的位置,当x包含字符串或者equal_space=True时,会自动变成等距离排列。
+    :param ax: matplotlib的轴对象,用于绘制图形
     :param x: x轴的数据
     :param y: y轴的数据
-    :param label: 图例标签，默认为None
-    :param color: 柱状图的颜色，默认为BLUE
-    :param vert: 是否为垂直柱状图，默认为True，即纵向
-    :param equal_space: 是否将x的值作为字符串处理，这将使得柱子等距排列，默认为False
-    :param err: 误差线的数据，默认为None
-    :param capsize: 误差线帽大小，默认为PLT_CAP_SIZE
-    :param ecolor: 误差线颜色，默认为BLACK
-    :param elabel: 误差线图例标签，默认为None
-    :param width: 柱子宽度，默认为None(当vert=False时,此参数将自动赋值给height)
+    :param label: 图例标签,默认为None
+    :param color: 柱状图的颜色,默认为BLUE
+    :param vert: 是否为垂直柱状图,默认为True,即纵向
+    :param equal_space: 是否将x的值作为字符串处理,这将使得柱子等距排列,默认为False
+    :param err: 误差线的数据,默认为None
+    :param capsize: 误差线帽大小,默认为PLT_CAP_SIZE
+    :param ecolor: 误差线颜色,默认为BLACK
+    :param elabel: 误差线图例标签,默认为None
+    :param width: 柱子宽度,默认为None(当vert=False时,此参数将自动赋值给height)
     :param kwargs: 其他plt.bar或plt.barh支持的参数
     '''
     if equal_space:
@@ -14085,7 +14085,7 @@ def add_annotation(ax, text, xy, xytext, xycoords='data', fontsize=FONT_SIZE, ar
     return ax.annotate(text, xy, xytext=xytext, xycoords=xycoords, fontsize=fontsize, arrowprops=arrowprops, **kwargs)
 
 
-def add_bar_label(ax, bars, labels, label_type='edge', padding=0., rotation=0., text_process=None, **kwargs):
+def add_bar_label(ax, bars, labels, label_type='edge', padding=0., rotation=0., text_process=None, fontsize=FONT_SIZE, **kwargs):
     '''
     在柱状图上添加标签
 
@@ -14097,13 +14097,14 @@ def add_bar_label(ax, bars, labels, label_type='edge', padding=0., rotation=0., 
     - padding: 标签与柱子的距离,默认为0(可以为负数)
     - rotation: 标签的旋转角度,默认为0
     - text_process: 文本处理参数,默认为TEXT_PROCESS
+    - fontsize: 标签的字体大小,默认为FONT_SIZE
 
     注意:
     不可以使用va和ha
     '''
     text_process = update_dict(TEXT_PROCESS, text_process)
     local_labels = [format_text(label, text_process) for label in labels]
-    return ax.bar_label(bars, labels=local_labels, label_type=label_type, padding=padding, rotation=rotation, **kwargs)
+    return ax.bar_label(bars, labels=local_labels, label_type=label_type, padding=padding, rotation=rotation, fontsize=fontsize, **kwargs)
 # endregion
 
 
@@ -14622,6 +14623,21 @@ def plt_colorful_line(ax, x, y, c, cmap=CMAP, norm_mode='linear', vmin=None, vma
         return line, cbars
     else:
         return line
+
+
+def plt_bar_with_value(ax, x, y, label=None, color=BLUE, width=BAR_WIDTH, vert=True, add_bar_label_kwargs=None, plt_bar_kwargs=None, round_kwargs=None):
+    '''
+    将柱状图的数值显示在柱子上
+    '''
+    add_bar_label_kwargs = update_dict({}, add_bar_label_kwargs)
+    plt_bar_kwargs = update_dict({}, plt_bar_kwargs)
+    round_kwargs = update_dict({}, round_kwargs)
+    bars = plt_bar(ax, x, y, label=label, color=color, width=width, vert=vert, **plt_bar_kwargs)
+    y_str_list = []
+    for val in y:
+        y_str_list.append(round_float(val, **round_kwargs))
+    add_bar_label(ax, bars, y_str_list, **add_bar_label_kwargs)
+    return bars
 
 
 def plt_group_bar(ax, x, y, label_list, width=None, inner_gap=0.0, colors=CMAP, vert=True, **kwargs):
