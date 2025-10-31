@@ -42,6 +42,7 @@ import lmdb
 from pympler import asizeof
 import traceback
 import tqdm
+import threading
 
 
 # 数学和科学计算库
@@ -1976,6 +1977,43 @@ def flexible_try(enable_try=True, print_info=True):
             else:
                 # 直接执行不捕获异常
                 return func(*args, **kwargs)
+        return wrapper
+    return decorator
+
+
+def timeout_skip(seconds, default_return=None):
+    """
+    超时直接跳过,返回默认值
+    
+    使用示例:
+    @timeout_skip(5, default_return=None)
+    def my_function(...):
+        ...
+    """
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            result = [default_return]  # 使用列表以便在内部函数中修改
+            finished = [False]         # 完成标志
+            
+            def worker():
+                try:
+                    result[0] = func(*args, **kwargs)
+                except Exception as e:
+                    result[0] = e  # 或者你可以选择记录日志但继续返回默认值
+                finally:
+                    finished[0] = True
+            
+            thread = threading.Thread(target=worker)
+            thread.daemon = True
+            thread.start()
+            thread.join(seconds)  # 等待指定时间
+            
+            if not finished[0]:
+                print(f"函数 {func.__name__} 执行超时，已跳过")
+                return default_return
+            
+            return result[0]
         return wrapper
     return decorator
 # endregion
