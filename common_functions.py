@@ -4036,7 +4036,7 @@ def multi_process(process_num, func, args_list=None, kwargs_list=None, func_name
 
 def part_list_for(func, for_list, for_idx_name, use_tqdm, *args, **kwargs):
     if use_tqdm and len(for_list) != 1:
-        iterable = tqdm.tqdm(for_list)
+        iterable = tqdm.tqdm(for_list, total=len(for_list))
     else:
         iterable = for_list
     results = []
@@ -4071,14 +4071,17 @@ def multi_process_list_for(process_num, func, args=None, kwargs=None, for_list=N
         process_num = len(for_list)
 
     divided_list = split_list(for_list, process_num)
-    args_list = [(func, divided, for_idx_name, use_tqdm)+args for divided in divided_list]
+    # args_list = [(func, divided, for_idx_name, use_tqdm)+args for divided in divided_list]
+    args_list = [(func, divided, for_idx_name, False)+args for divided in divided_list]
+    if use_tqdm:
+        args_list[0] = (func, divided_list[0], for_idx_name, True) + args # 只有第一个进程显示tqdm
     kwargs_list = [kwargs] * process_num
     return flatten_list(multi_process(process_num, part_list_for, args_list, kwargs_list, func_name), level=1)
 
 
 def part_enumerate_for(func, idx_list, for_list, for_idx_name, for_item_name, use_tqdm, *args, **kwargs):
     if use_tqdm and len(for_list) != 1:
-        iterable = tqdm.tqdm(zip(idx_list, for_list))
+        iterable = tqdm.tqdm(zip(idx_list, for_list), total=len(for_list))
     else:
         iterable = zip(idx_list, for_list)
     results = []
@@ -4112,14 +4115,17 @@ def multi_process_enumerate_for(process_num, func, args=None, kwargs=None, for_l
 
     divided_idx_list = split_list(range(len(for_list)), process_num)
     divided_list = split_list(for_list, process_num)
-    args_list = [(func, divided_idx, divided, for_idx_name, for_item_name, use_tqdm)+args for divided_idx, divided in zip(divided_idx_list, divided_list)]
+    # args_list = [(func, divided_idx, divided, for_idx_name, for_item_name, use_tqdm)+args for divided_idx, divided in zip(divided_idx_list, divided_list)]
+    args_list = [(func, divided_idx, divided, for_idx_name, for_item_name, False)+args for divided_idx, divided in zip(divided_idx_list, divided_list)]
+    if use_tqdm:
+        args_list[0] = (func, divided_idx_list[0], divided_list[0], for_idx_name, for_item_name, True) + args # 只有第一个进程显示tqdm
     kwargs_list = [kwargs] * process_num
     return flatten_list(multi_process(process_num, part_enumerate_for, args_list, kwargs_list, func_name), level=1)
 
 
 def part_items_for(func, key_list, value_list, for_key_name, for_value_name, use_tqdm, *args, **kwargs):
     if use_tqdm and len(key_list) != 1:
-        iterable = tqdm.tqdm(zip(key_list, value_list))
+        iterable = tqdm.tqdm(zip(key_list, value_list), total=len(key_list))
     else:
         iterable = zip(key_list, value_list)
     results = []
@@ -4160,7 +4166,10 @@ def multi_process_items_for(process_num, func, args=None, kwargs=None, for_dict=
     
     divided_key_list = split_list(list(for_dict.keys()), process_num)
     divided_value_list = split_list(list(for_dict.values()), process_num)
-    args_list = [(func, divided_key, divided_value, for_key_name, for_value_name, use_tqdm)+args for divided_key, divided_value in zip(divided_key_list, divided_value_list)]
+    # args_list = [(func, divided_key, divided_value, for_key_name, for_value_name, use_tqdm)+args for divided_key, divided_value in zip(divided_key_list, divided_value_list)]
+    args_list = [(func, divided_key, divided_value, for_key_name, for_value_name, False)+args for divided_key, divided_value in zip(divided_key_list, divided_value_list)]
+    if use_tqdm:
+        args_list[0] = (func, divided_key_list[0], divided_value_list[0], for_key_name, for_value_name, True) + args # 只有第一个进程显示tqdm
     kwargs_list = [kwargs] * process_num
     return flatten_list(multi_process(process_num, part_items_for, args_list, kwargs_list, func_name), level=1)
 # endregion
