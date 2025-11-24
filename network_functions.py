@@ -79,6 +79,70 @@ def weighted_adj_mat_to_networkx_graph(matrix, mode='directed'):
     else:
         G = nx.from_numpy_array(matrix, create_using=create_using)
     return G
+
+
+class TestGraphConversion(cf.RunAllMixin):
+    def test_binary_adj_mat_to_networkx_graph(self):
+        '''测试二进制邻接矩阵转换'''
+        adj_mat = np.array([[0, 1, 0],
+                            [1, 0, 1],
+                            [0, 1, 0]])
+        G = binary_adj_mat_to_networkx_graph(adj_mat, mode='undirected')
+        assert G.number_of_nodes() == 3
+        assert G.number_of_edges() == 2
+        G = binary_adj_mat_to_networkx_graph(adj_mat, mode='directed')
+        assert G.number_of_nodes() == 3
+        assert G.number_of_edges() == 4 # 有向图,两倍
+        print("binary_adj_mat_to_networkx_graph passed.")
+
+    def test_weighted_adj_mat_to_networkx_graph(self):
+        '''测试加权邻接矩阵转换'''
+        adj_mat = np.array([[0, 2, 0],
+                            [2, 0, 3],
+                            [0, 3, 0]])
+        G = weighted_adj_mat_to_networkx_graph(adj_mat, mode='undirected')
+        assert G.number_of_nodes() == 3
+        assert G.number_of_edges() == 2
+        # 检查权重
+        assert G[0][1]['weight'] == 2
+        assert G[1][2]['weight'] == 3
+
+        G = weighted_adj_mat_to_networkx_graph(adj_mat, mode='directed')
+        assert G.number_of_nodes() == 3
+        assert G.number_of_edges() == 4 # 有向图,两倍
+        # 检查权重
+        assert G[0][1]['weight'] == 2
+        assert G[1][0]['weight'] == 2
+        assert G[1][2]['weight'] == 3
+        assert G[2][1]['weight'] == 3
+        print("weighted_adj_mat_to_networkx_graph passed.")
+
+    def test_sparse_matrix_conversion(self):
+        '''测试稀疏矩阵转换'''
+        adj_mat = sps.csr_matrix(np.array([[0, 1, 0],
+                                         [1, 0, 1],
+                                         [0, 1, 0]]))
+        G = binary_adj_mat_to_networkx_graph(adj_mat, mode='undirected')
+        assert G.number_of_nodes() == 3
+        assert G.number_of_edges() == 2
+
+        G = binary_adj_mat_to_networkx_graph(adj_mat, mode='directed')
+        assert G.number_of_nodes() == 3
+        assert G.number_of_edges() == 4 # 有向图,两倍
+        print("sparse_matrix_conversion passed.")
+
+    def test_directed_graph_conversion(self):
+        '''测试有向图转换'''
+        adj_mat = np.array([[0, 1, 0],
+                            [0, 0, 1],
+                            [0, 0, 0]])
+        G = binary_adj_mat_to_networkx_graph(adj_mat, mode='directed')
+        assert G.number_of_nodes() == 3
+        assert G.number_of_edges() == 2
+        assert G.has_edge(0, 1)
+        assert G.has_edge(1, 2)
+        assert not G.has_edge(1, 0)  # 有向图,反向边不存在
+        print("directed_graph_conversion passed.")
 # endregion
 
 
@@ -112,18 +176,54 @@ def add_distances_to_graph(G, distance_dict):
     for (u, v), dist in distance_dict.items():
         G[u][v]['distance'] = dist
     return G
+
+
+class TestSpatialGraph(cf.RunAllMixin):
+    def test_add_coordinates_to_graph(self):
+        '''测试为图添加坐标信息'''
+        G = nx.Graph()
+        G.add_nodes_from([0, 1, 2])
+        coordinates_dict = {
+            0: (0, 0),
+            1: (1, 0),
+            2: (0, 1)
+        }
+        G = add_coordinates_to_graph(G, coordinates_dict)
+        assert G.nodes[0]['pos'] == (0, 0)
+        assert G.nodes[1]['pos'] == (1, 0)
+        assert G.nodes[2]['pos'] == (0, 1)
+        print("add_coordinates_to_graph passed.")
+
+    def test_add_distances_from_coordinates(self):
+        '''测试为图添加距离属性'''
+        G = nx.Graph()
+        G.add_nodes_from([0, 1])
+        G.add_edge(0, 1)
+        coordinates_dict = {
+            0: (0, 0),
+            1: (3, 4)
+        }
+        G = add_coordinates_to_graph(G, coordinates_dict)
+        G = add_distances_from_coordinates(G)
+        assert np.isclose(G[0][1]['distance'], 5.0)  # 距离应为5
+        print("add_distances_from_coordinates passed.")
 # endregion
 
 
 # region 基于距离的边的筛选和移除
-def get_edges_in_distance_range(G, min_dist=None, max_dist=None):
-    '''获取距离范围内的边'''
+def get_edges_in_distance_range(G, min_dist=None, max_dist=None, enable_no_distance_continue=True):
+    '''
+    获取距离范围内的边
+    min_dist 与 max_dist 为 None 时表示不设下限或上限
+    '''
     edges_in_range = set()
     
     for u, v, data in G.edges(data=True):
         if 'distance' not in data:
-            continue
-            
+            if enable_no_distance_continue:
+                continue
+            else:
+                raise ValueError(f"Edge ({u}, {v}) does not have 'distance' attribute.")
         dist = data['distance']
         if min_dist is not None and dist < min_dist:
             continue
@@ -135,12 +235,20 @@ def get_edges_in_distance_range(G, min_dist=None, max_dist=None):
     return edges_in_range
 
 
-def remove_edges_outside_distance_range(G, min_dist=None, max_dist=None):
-    '''移除距离范围外的边(保留范围内的边)'''
+def remove_edges_outside_distance_range(G, min_dist=None, max_dist=None, enable_no_distance_continue=True):
+    '''
+    移除距离范围外的边(保留范围内的边)
+    min_dist 与 max_dist 为 None 时表示不设下限或上限
+    '''
     H = G.copy()
     edges_to_remove = set()
     
     for u, v, data in H.edges(data=True):
+        if 'distance' not in data:
+            if enable_no_distance_continue:
+                continue
+            else:
+                raise ValueError(f"Edge ({u}, {v}) does not have 'distance' attribute.")
         dist = data['distance']
         # 如果边不在指定范围内,则标记为要移除
         if (min_dist is not None and dist < min_dist) or (max_dist is not None and dist > max_dist):
@@ -150,12 +258,20 @@ def remove_edges_outside_distance_range(G, min_dist=None, max_dist=None):
     return H
 
 
-def remove_edges_inside_distance_range(G, min_dist=None, max_dist=None):
-    '''移除距离范围内的边(保留范围外的边)'''
+def remove_edges_inside_distance_range(G, min_dist=None, max_dist=None, enable_no_distance_continue=True):
+    '''
+    移除距离范围内的边(保留范围外的边)
+    min_dist 与 max_dist 为 None 时表示不设下限或上限
+    '''
     H = G.copy()
     edges_to_remove = set()
     
     for u, v, data in H.edges(data=True):
+        if 'distance' not in data:
+            if enable_no_distance_continue:
+                continue
+            else:
+                raise ValueError(f"Edge ({u}, {v}) does not have 'distance' attribute.")
         dist = data['distance']
         # 如果边在指定范围内,则标记为要移除
         in_range = True
@@ -171,24 +287,134 @@ def remove_edges_inside_distance_range(G, min_dist=None, max_dist=None):
     return H
 
 
-def get_weight_proportion_in_distance_range(G, min_dist=None, max_dist=None):
-    '''计算距离范围内边的权重比例'''
-    total_weight = sum(data.get('weight', 0) for _, _, data in G.edges(data=True))
+def get_weight_proportion_in_distance_range(G, min_dist=None, max_dist=None, enable_no_distance_continue=True):
+    '''
+    计算距离范围内边的权重比例
+    min_dist 与 max_dist 为 None 时表示不设下限或上限
+    '''
+    total_weight = get_connection_weight_sum(G)
     
     filtered_weight = 0
     for u, v, data in G.edges(data=True):
         if 'distance' not in data:
-            continue
-            
+            if enable_no_distance_continue:
+                continue
+            else:
+                raise ValueError(f"Edge ({u}, {v}) does not have 'distance' attribute.")
         dist = data['distance']
         if min_dist is not None and dist < min_dist:
             continue
         if max_dist is not None and dist > max_dist:
             continue
             
-        filtered_weight += data.get('weight', 0)
+        filtered_weight += data.get('weight', 1) # 如果没有权重属性,则默认为1
     
     return filtered_weight / total_weight
+
+
+class TestDistanceRangeFunctions(cf.RunAllMixin):
+    def test_get_edges_in_distance_range_basic(self):
+        G = nx.Graph()
+        G.add_edge(1, 2, distance=5, weight=1)
+        G.add_edge(2, 3, distance=10, weight=2)
+        G.add_edge(3, 4, distance=15, weight=3)
+        
+        result = get_edges_in_distance_range(G, min_dist=8, max_dist=12)
+        expected = {(2, 3)}
+        
+        assert result == expected
+    
+    def test_get_edges_in_distance_range_no_bounds(self):
+        G = nx.Graph()
+        G.add_edge(1, 2, distance=5, weight=1)
+        G.add_edge(2, 3, distance=10, weight=2)
+        
+        result = get_edges_in_distance_range(G)
+        expected = {(1, 2), (2, 3)}
+        
+        assert result == expected
+    
+    def test_get_edges_in_distance_range_no_distance_attr(self):
+        G = nx.Graph()
+        G.add_edge(1, 2, weight=1)
+        G.add_edge(2, 3, distance=10, weight=2)
+        
+        result = get_edges_in_distance_range(G, min_dist=5, max_dist=15)
+        expected = {(2, 3)}
+        
+        assert result == expected
+    
+    def test_remove_edges_outside_distance_range(self):
+        G = nx.Graph()
+        G.add_edge(1, 2, distance=5, weight=1)
+        G.add_edge(2, 3, distance=10, weight=2)
+        G.add_edge(3, 4, distance=15, weight=3)
+        
+        result_graph = remove_edges_outside_distance_range(G, min_dist=8, max_dist=12)
+        
+        assert result_graph.has_edge(1, 2) == False
+        assert result_graph.has_edge(2, 3) == True
+        assert result_graph.has_edge(3, 4) == False
+        assert result_graph[2][3]['weight'] == 2
+    
+    def test_remove_edges_outside_distance_range_original_unchanged(self):
+        G = nx.Graph()
+        G.add_edge(1, 2, distance=5, weight=1)
+        
+        result_graph = remove_edges_outside_distance_range(G, min_dist=10, max_dist=20)
+        
+        assert G.has_edge(1, 2) == True
+        assert result_graph.has_edge(1, 2) == False
+    
+    def test_remove_edges_inside_distance_range(self):
+        G = nx.Graph()
+        G.add_edge(1, 2, distance=5, weight=1)
+        G.add_edge(2, 3, distance=10, weight=2)
+        G.add_edge(3, 4, distance=15, weight=3)
+        
+        result_graph = remove_edges_inside_distance_range(G, min_dist=8, max_dist=12)
+        
+        assert result_graph.has_edge(1, 2) == True
+        assert result_graph.has_edge(2, 3) == False
+        assert result_graph.has_edge(3, 4) == True
+        assert result_graph[1][2]['weight'] == 1
+    
+    def test_remove_edges_inside_distance_range_no_bounds(self):
+        G = nx.Graph()
+        G.add_edge(1, 2, distance=5, weight=1)
+        G.add_edge(2, 3, distance=10, weight=2)
+        
+        result_graph = remove_edges_inside_distance_range(G)
+        
+        assert result_graph.number_of_edges() == 0
+    
+    def test_get_weight_proportion_in_distance_range(self):
+        G = nx.Graph()
+        G.add_edge(1, 2, distance=5, weight=1)
+        G.add_edge(2, 3, distance=10, weight=2)
+        G.add_edge(3, 4, distance=15, weight=3)
+        
+        proportion = get_weight_proportion_in_distance_range(G, min_dist=8, max_dist=12)
+        
+        assert proportion == 2/6
+    
+    def test_get_weight_proportion_in_distance_range_no_matching_edges(self):
+        G = nx.Graph()
+        G.add_edge(1, 2, distance=5, weight=1)
+        G.add_edge(2, 3, distance=10, weight=2)
+        
+        proportion = get_weight_proportion_in_distance_range(G, min_dist=20, max_dist=30)
+        
+        assert proportion == 0
+    
+    def test_get_weight_proportion_in_distance_range_no_weight_attr(self):
+        G = nx.Graph()
+        G.add_edge(1, 2, distance=5)
+        G.add_edge(2, 3, distance=10)
+        
+        proportion = get_weight_proportion_in_distance_range(G, min_dist=3, max_dist=8)
+        
+        assert proportion == 1/2
 # endregion
 
 
@@ -202,6 +428,17 @@ def add_edges_to_graph(G, edges):
         edges = [edges]
     G.add_edges_from(edges)
     return G
+
+
+class TestAdjustConnections(cf.RunAllMixin):
+    def test_add_edges_to_graph(self):
+        '''测试添加边功能'''
+        G = nx.Graph()
+        G.add_nodes_from([0, 1, 2])
+        edges = [(0, 1), (1, 2)]
+        G = add_edges_to_graph(G, edges)
+        assert G.number_of_edges() == 2
+        print("add_edges_to_graph passed.")
 # endregion
 
 
@@ -261,6 +498,33 @@ def generate_newman_watts_strogatz_graph(n, k, p, seed=None, mode='undirected'):
     except:
         G = nx.newman_watts_strogatz_graph(n=n, k=2*k, p=p, seed=seed)
         return G
+
+
+class TestCommonGraphs(cf.RunAllMixin):
+    def test_generate_Erdos_Renyi_graph(self):
+        '''测试Erdos-Renyi图生成'''
+        G = generate_Erdos_Renyi_graph(n=10, p=0.3, seed=42, mode='undirected')
+        assert G.number_of_nodes() == 10
+        assert not G.is_directed()
+        print("generate_Erdos_Renyi_graph passed.")
+
+    def test_generate_lattice_graph(self):
+        '''测试格子图生成'''
+        G = generate_lattice_graph(n=10, k=2, mode='undirected')
+        assert G.number_of_nodes() == 10
+        degrees = [deg for node, deg in G.degree()]
+        assert np.allclose(np.sum(degrees) / len(degrees), 4), np.sum(degrees) / len(degrees)  # 每个节点度数应为4
+        print("generate_lattice_graph passed.")
+
+    def test_generate_newman_watts_strogatz_graph(self):
+        '''测试Newman-Watts-Strogatz图生成'''
+        n = 20
+        k = 2
+        p = 0.1
+        G = generate_newman_watts_strogatz_graph(n=20, k=2, p=0.1, seed=42, mode='undirected')
+        assert G.number_of_nodes() == 20
+        print('Number of edges:', G.number_of_edges(), 'Expected approx:', n * k + n * k * p)
+        print("generate_newman_watts_strogatz_graph passed.")
 # endregion
 
 
@@ -344,104 +608,9 @@ def get_small_world_index(G, seed=0):
     results['average_shortest_path_length_ratio'] = ASPL_ratio
     results['small_world_index'] = sigma
     return results
-# endregion
 
 
-# region 测试本py中的函数
-class TestNetworkFunctions:
-    def test_binary_adj_mat_to_networkx_graph(self):
-        '''测试二进制邻接矩阵转换'''
-        adj_mat = np.array([[0, 1, 0],
-                            [1, 0, 1],
-                            [0, 1, 0]])
-        G = binary_adj_mat_to_networkx_graph(adj_mat, mode='undirected')
-        assert G.number_of_nodes() == 3
-        assert G.number_of_edges() == 2
-        G = binary_adj_mat_to_networkx_graph(adj_mat, mode='directed')
-        assert G.number_of_nodes() == 3
-        assert G.number_of_edges() == 4 # 有向图,两倍
-        print("binary_adj_mat_to_networkx_graph passed.")
-
-    def test_weighted_adj_mat_to_networkx_graph(self):
-        '''测试加权邻接矩阵转换'''
-        adj_mat = np.array([[0, 2, 0],
-                            [2, 0, 3],
-                            [0, 3, 0]])
-        G = weighted_adj_mat_to_networkx_graph(adj_mat, mode='undirected')
-        assert G.number_of_nodes() == 3
-        assert G.number_of_edges() == 2
-        # 检查权重
-        assert G[0][1]['weight'] == 2
-        assert G[1][2]['weight'] == 3
-
-        G = weighted_adj_mat_to_networkx_graph(adj_mat, mode='directed')
-        assert G.number_of_nodes() == 3
-        assert G.number_of_edges() == 4 # 有向图,两倍
-        # 检查权重
-        assert G[0][1]['weight'] == 2
-        assert G[1][0]['weight'] == 2
-        assert G[1][2]['weight'] == 3
-        assert G[2][1]['weight'] == 3
-        print("weighted_adj_mat_to_networkx_graph passed.")
-
-    def test_sparse_matrix_conversion(self):
-        '''测试稀疏矩阵转换'''
-        adj_mat = sps.csr_matrix(np.array([[0, 1, 0],
-                                         [1, 0, 1],
-                                         [0, 1, 0]]))
-        G = binary_adj_mat_to_networkx_graph(adj_mat, mode='undirected')
-        assert G.number_of_nodes() == 3
-        assert G.number_of_edges() == 2
-
-        G = binary_adj_mat_to_networkx_graph(adj_mat, mode='directed')
-        assert G.number_of_nodes() == 3
-        assert G.number_of_edges() == 4 # 有向图,两倍
-        print("sparse_matrix_conversion passed.")
-
-    def test_directed_graph_conversion(self):
-        '''测试有向图转换'''
-        adj_mat = np.array([[0, 1, 0],
-                            [0, 0, 1],
-                            [0, 0, 0]])
-        G = binary_adj_mat_to_networkx_graph(adj_mat, mode='directed')
-        assert G.number_of_nodes() == 3
-        assert G.number_of_edges() == 2
-        assert G.has_edge(0, 1)
-        assert G.has_edge(1, 2)
-        assert not G.has_edge(1, 0)  # 有向图,反向边不存在
-        print("directed_graph_conversion passed.")
-
-    def test_add_edges_to_graph(self):
-        '''测试添加边功能'''
-        G = nx.Graph()
-        G.add_nodes_from([0, 1, 2])
-        edges = [(0, 1), (1, 2)]
-        G = add_edges_to_graph(G, edges)
-        assert G.number_of_edges() == 2
-        print("add_edges_to_graph passed.")
-
-    def test_generate_Erdos_Renyi_graph(self):
-        '''测试Erdos-Renyi图生成'''
-        G = generate_Erdos_Renyi_graph(n=10, p=0.3, seed=42, mode='undirected')
-        assert G.number_of_nodes() == 10
-        assert not G.is_directed()
-        print("generate_Erdos_Renyi_graph passed.")
-
-    def test_generate_lattice_graph(self):
-        '''测试格子图生成'''
-        G = generate_lattice_graph(n=10, k=2, mode='undirected')
-        assert G.number_of_nodes() == 10
-        degrees = [deg for node, deg in G.degree()]
-        assert np.allclose(np.sum(degrees) / len(degrees), 4), np.sum(degrees) / len(degrees)  # 每个节点度数应为4
-        print("generate_lattice_graph passed.")
-
-    def test_generate_newman_watts_strogatz_graph(self):
-        '''测试Newman-Watts-Strogatz图生成'''
-        G = generate_newman_watts_strogatz_graph(n=20, k=2, p=0.1, seed=42, mode='undirected')
-        assert G.number_of_nodes() == 20
-        print('Number of edges:', G.number_of_edges(), 'Expected approx:', 20 * 2 + 20 * 2 * 0.1)
-        print("generate_newman_watts_strogatz_graph passed.")
-
+class TestNetworkIndex(cf.RunAllMixin):
     def test_get_connection_num(self):
         """测试连接数计算"""
         G = nx.Graph()
@@ -520,25 +689,32 @@ class TestNetworkFunctions:
         if not np.isnan(results['small_world_index']):
             assert results['small_world_index'] > 1
         print("get_small_world_index passed.")
+# endregion
 
-    def run_all(self, exclude=None):
-        '''
-        运行所有公共方法
-        exclude: 要排除的方法名列表
-        '''
-        if exclude is None:
-            exclude = ['run_all']
-        
-        for method_name in dir(self):
-            # 排除特殊方法和私有方法
-            if (method_name.startswith('_') or 
-                method_name in exclude):
-                continue
-            
-            method = getattr(self, method_name)
-            if callable(method):
-                print(f"执行 {method_name}:")
-                result = method()
-                if result is not None:
-                    print(f"  返回: {result}")
+
+# region 测试本py中的函数
+class TestNetworkFunctions(cf.RunAllMixin):
+    def test_graph_conversions(self):
+        t = TestGraphConversion()
+        t.run_all()
+    
+    def test_spatial_graph(self):
+        t = TestSpatialGraph()
+        t.run_all()
+    
+    def test_distance_range_functions(self):
+        t = TestDistanceRangeFunctions()
+        t.run_all()
+    
+    def test_adjust_connections(self):
+        t = TestAdjustConnections()
+        t.run_all()
+    
+    def test_common_graphs(self):
+        t = TestCommonGraphs()
+        t.run_all()
+    
+    def test_network_index(self):
+        t = TestNetworkIndex()
+        t.run_all()
 # endregion

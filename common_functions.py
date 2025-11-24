@@ -6596,6 +6596,33 @@ def call_func_from_module(module_path, func_name, *args, **kwargs):
 
 
 # region class处理相关函数
+class RunAllMixin:
+    '''
+    可以运行类中所有公共方法的Mixin类
+    继承该类后,可以通过run_all方法运行类中所有公共方法
+    '''
+    def run_all(self, exclude=None):
+        '''
+        运行所有公共方法
+        exclude: 要排除的方法名列表
+        '''
+        if exclude is None:
+            exclude = ['run_all']
+        
+        for method_name in dir(self):
+            # 排除特殊方法和私有方法
+            if (method_name.startswith('_') or 
+                method_name in exclude):
+                continue
+            
+            method = getattr(self, method_name)
+            if callable(method):
+                print(f"执行 {method_name}:")
+                result = method()
+                if result is not None:
+                    print(f"  返回: {result}")
+
+
 def get_class_name(cls):
     return cls.__name__
 
