@@ -3381,9 +3381,27 @@ def compare_dict(dict1, dict2, ignore_key=None):
         elif isinstance(v1, dict) and isinstance(v2, dict):
             return compare_dict(v1, v2)
         
-        # 处理其他类型,列表、标量等
+        # 处理列表
+        elif isinstance(v1, list) and isinstance(v2, list):
+            if len(v1) != len(v2):
+                return False
+            return all(compare_values(item1, item2) for item1, item2 in zip(v1, v2))
+        
+        # 处理元组
+        elif isinstance(v1, tuple) and isinstance(v2, tuple):
+            if len(v1) != len(v2):
+                return False
+            return all(compare_values(item1, item2) for item1, item2 in zip(v1, v2))
+        
+        # 处理其他类型
         else:
-            return v1 == v2
+            try:
+                # 尝试直接比较
+                return v1 == v2
+            except (ValueError, TypeError):
+                # 如果直接比较失败,转换为字符串比较
+                print(f"Warning: Direct comparison of {v1} and {v2} failed, converting to string for comparison.")
+                return str(v1) == str(v2)
 
     # 比较所有键值对
     if set(d1.keys()) != set(d2.keys()):
