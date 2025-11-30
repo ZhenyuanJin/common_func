@@ -14854,7 +14854,7 @@ def plt_group_box(ax, x, y, label_list, width=None, inner_gap=0.0, colors=CMAP, 
     # 为每个箱线图计算中心位置
     indices = np.arange(num_groups)
     for i, lbl in enumerate(label_list):
-        offset = (i - (num_bars - 1) / 2) * (width + gap_width)
+        offset = (i - (num_boxes - 1) / 2) * (width + gap_width)
         group_data = [y[j][i] for j in range(num_groups)]
         pos = indices + offset
         plt_box(ax=ax, x=pos, y=group_data, label=lbl, vert=vert, width=width, boxprops={'facecolor': colors[i]}, **kwargs)
