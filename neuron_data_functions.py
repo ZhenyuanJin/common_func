@@ -371,12 +371,14 @@ def single_exp_fit(lag_times, acf, fix_amp_value=None):
         results['tau'] = single_popt[1]
         results['error'] = single_error
         results['cov'] = single_pcov
+        results['fitted_curve'] = single_exp(lag_times, results['amp'], results['tau'])
     except:
         results = {}
         results['amp'] = np.nan
         results['tau'] = np.nan
         results['error'] = np.nan
         results['cov'] = np.nan
+        results['fitted_curve'] = np.nan
     return results
 # endregion
 
