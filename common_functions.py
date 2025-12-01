@@ -10314,6 +10314,8 @@ class ComposedExperiment(abc.ABC):
         - 本函数会确保被设置为忽略参数中的特定键(通过ignore_key_list配置)不被传播,避免传播不必要的参数
         - 调用本函数前必须确保set_experiment_params_dict和set_experiment_config_dict已被正确调用
         '''
+        if self.timedir_injected:
+            return  # 如果timedir是外部注入的,则跳过参数传播,因为此时不需要搜索参数
         experiment_name_list = [self.experiments[i].name for i in range(len(self.experiments))]
         for i, experiment_name in enumerate(experiment_name_list):
             current_experiment_params = self.experiment_params_dict[experiment_name]
