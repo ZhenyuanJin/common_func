@@ -841,36 +841,6 @@ def is_mutable(obj_type):
 # endregion
 
 
-# region gpt
-def get_prompt(prompt_type):
-    '''
-    获取常用prompt
-    '''
-    if prompt_type == 'change_code':
-        return '帮我修改这个函数使得注释完整(注释使用中文,但注释的标点是英文标点),功能完整且正确,函数名和变量名规范协调简洁(但是并不是修改越多就越好,需要尊重我的命名方式但是在必要的时刻作出适当的改动),并给出运行测试例子甚至可视化的代码'
-    if prompt_type == 'write_code':
-        return '帮我写一个函数使得注释完整(注释使用中文,但注释的标点是英文标点),功能完整且正确,函数名和变量名规范协调简洁,并给出运行测试例子甚至可视化的代码'
-    if prompt_type == 'write_annotation':
-        return 'see rule'
-    if prompt_type == 'paper':
-        return '帮我修改这段文字使得语法通顺,逻辑清晰,表达准确,且符合学术规范'
-    if prompt_type == 'translate_english':
-        return '帮我翻译这段文字成英文使得语法通顺,逻辑清晰,表达准确'
-    if prompt_type == 'translate_chinese':
-        return '帮我翻译这段文字成中文使得语法通顺,逻辑清晰,表达准确'
-# endregion
-
-
-# region LATEX
-def get_latex(latex_type):
-    '''
-    获取常用latex代码
-    '''
-    if latex_type == 'fig':
-        return r'\begin{figure}[H]' + '\n' + r'\centering' + '\n' + r'\includegraphics[width=0.8\textwidth]{path/to/figure}' + '\n' + r'\caption{caption}' + '\n' + r'\label{fig:label}' + '\n' + r'\end{figure}'
-# endregion
-
-
 # region print
 def flex_print_sep(print_func=print, n=PRINT_WIDTH, char=PRINT_CHAR):
     '''灵活打印分隔符'''
