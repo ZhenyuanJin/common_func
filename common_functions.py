@@ -9835,14 +9835,16 @@ class FlexibleTool(AbstractTool):
     def __init__(self):
         super().__init__()
         self.enable_try = True # 失败了问题不大,先try尽可能往后运行
-        self.task_list = ['all']  # 默认是全部任务
+        self.task_list = ['all']  # 默认是全部任务,需要修改可以通过config传入
 
-    def whether_run_this_task(self, task):
+    def whether_run_this_task(self, task, print_info=True):
         if task in self.task_list or 'all' in self.task_list:
-            print_title(f'{self.name}: task {task} will be run')
+            if print_info:
+                print_title(f'{self.name}: task {task} will be run')
             return True
         else:
-            print_title(f'{self.name}: task {task} will be skipped')
+            if print_info:
+                print_title(f'{self.name}: task {task} will be skipped')
             return False
     
     @staticmethod
@@ -10349,7 +10351,7 @@ class ComposedExperiment(abc.ABC):
             current_experiment_first_tool_name = current_experiment_first_tool.name
             current_experiment_first_tool_params = current_experiment_params[current_experiment_first_tool_name]
             for j, following_experiment_name in enumerate(experiment_name_list[i+1:]):
-                following_experiment_config = self.experiment_config_dict[following_experiment_name]
+                following_experiment_config = self.experiment_config_dict.get(following_experiment_name, {})
                 following_experiment_first_tool = self.experiments[i+1+j].tools[0]
                 following_experiment_first_tool_name = following_experiment_first_tool.name
 
@@ -10358,7 +10360,7 @@ class ComposedExperiment(abc.ABC):
                 ignore_key_list = following_experiment_first_tool.dir_manager_kwargs.get('ignore_key_list', [])
                 
                 # 从config中获取ignore_key_list(因为config是在外部设置的,所以优先级高,可以覆盖上面的设置)
-                following_experiment_first_tool_config = following_experiment_config[following_experiment_first_tool_name]
+                following_experiment_first_tool_config = following_experiment_config.get(following_experiment_first_tool_name, {})
                 if 'dir_manager_kwargs' in following_experiment_first_tool_config:
                     # 如果有设置dir_manager_kwargs,则其必须提供ignore_key_list,所以这里没有使用get方法,出问题的话正好报错并修改外部的设置
                     ignore_key_list = following_experiment_first_tool_config['dir_manager_kwargs']['ignore_key_list']
