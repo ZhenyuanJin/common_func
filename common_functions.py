@@ -4790,6 +4790,11 @@ def swap_dict_level(nested_dict, level_mapping):
     返回:
         重新排列层顺序后的新字典
     """
+    def _validate_level_mapping(level_mapping):
+        for k, v in level_mapping.items():
+            if v not in level_mapping.keys():
+                raise ValueError(f"Invalid level mapping: {level_mapping}. Each new position must correspond to an existing original position.")
+
     def _flatten_dict(d, path=()):
         flat = {}
         for key, value in d.items():
@@ -4808,6 +4813,8 @@ def swap_dict_level(nested_dict, level_mapping):
                 current = current.setdefault(key, {})
             current[path[-1]] = value
         return result
+
+    _validate_level_mapping(level_mapping)
     
     flat_dict = _flatten_dict(nested_dict)
     
