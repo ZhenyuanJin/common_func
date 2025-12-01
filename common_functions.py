@@ -9700,6 +9700,15 @@ class AbstractTool(abc.ABC):
 
             timer.end()
     
+    def force_run(self):
+        original_already_done = self.already_done
+        original_read_only = self.data_keeper.read_only
+        self.already_done = False
+        self.data_keeper.set_read_only(False)
+        self.run()
+        self.already_done = original_already_done
+        self.data_keeper.set_read_only(original_read_only)
+
     def delete_after_pipeline_if_enabled(self):
         if self.enable_delete_after_pipeline:
             if self.data_keeper.check_all_saved():
