@@ -10058,6 +10058,7 @@ class Experiment(abc.ABC):
         self.code_file_list = []
         self.tool_config_dict = {}  # 不必须输入,所以设置默认值
         self.previous_experiment_name_list = []  # 用于compose多个experiment,记录其名称
+        self._minimal_init_tools()
 
     @abc.abstractmethod
     def _set_name(self):
@@ -10109,6 +10110,14 @@ class Experiment(abc.ABC):
         self._init_dir_manager()
         self.previous_timedir = load_pkl(pj(self.dir_manager.params_dir, 'previous_timedir'))
         return self.previous_timedir
+
+    def set_all_previous_timedir(self, all_previous_timedir):
+        '''
+        用于记录所有前置experiment的timedir,方便人工查阅,不用于get_previous_timedir
+        '''
+        save_pkl(all_previous_timedir, pj(self.dir_manager.params_dir, 'all_previous_timedir'))
+        save_txt(all_previous_timedir, pj(self.dir_manager.params_dir, 'all_previous_timedir'))
+        self.all_previous_timedir = all_previous_timedir
 
     def input_previous_info(self, info):
         name = info['name']
@@ -10241,7 +10250,7 @@ class ExperimentPipeLine:
 
     def set_dir_manager_timedir_in_reverse_order(self):
         for i, experiment in enumerate(self.experiments[::-1]):
-            if i == 0:
+            if i == 0: # the last experiment
                 experiment.set_timedir(self.timedir)
             else:
                 experiment.set_timedir(previous_timedir)
@@ -10259,6 +10268,9 @@ class ExperimentPipeLine:
             experiment.run()
             if i > 0: # 必须从前面获取,而不是向后面传递,后面的experiment尚未创建dir_manager
                 experiment.set_previous_timedir(self.experiments[i-1].dir_manager.timedir)
+                all_previous_timedir = [self.experiments[j].dir_manager.timedir for j in range(i)]
+                experiment.set_all_previous_timedir(all_previous_timedir)
+
             if i < len(self.experiments) - 1:
                 for downstream_experiment in self.experiments[i + 1:]:
                     downstream_experiment.input_previous_info(
@@ -10314,6 +10326,50 @@ class ComposedExperiment(abc.ABC):
         self.experiments = []
         self.timedir_injected = False
         self.experiment_config_dict = {}  # 不必须输入,所以设置默认值
+        self._minimal_init_experiments()
+
+    def _propagate_each_experiment_first_tool_params_to_following_experiments(self):
+        '''
+        此函数的主要功能是将每个实验的第一个工具参数传播到后续实验中
+        在参数搜索过程中,后续实验依赖于前面实验的运行结果,而这些结果又受到前面实验参数的影响
+        因此,即使后续实验搜索到相同的参数值,也不应被视为已运行过的缓存结果,因为其实际输出可能因前置实验的不同而有所差异
+        
+        具体实现中,本函数会提取每个实验的第一个工具参数,并将其作为一个整体参数块添加到后续实验的第一个工具参数集中
+        这种设计基于一个重要假设:只有每个实验的第一个工具参数会影响整个实验流程的最终结果,第二个及后续工具仅仅是分析和作图等
+        
+        注意事项:
+        - 第二个及后续工具的参数不会被传播,如果这些工具会影响结果,请将其设计为独立实验的第一个工具
+        - 本函数会确保被设置为忽略参数中的特定键(通过ignore_key_list配置)不被传播,避免传播不必要的参数
+        - 调用本函数前必须确保set_experiment_params_dict和set_experiment_config_dict已被正确调用
+        '''
+        experiment_name_list = [self.experiments[i].name for i in range(len(self.experiments))]
+        for i, experiment_name in enumerate(experiment_name_list):
+            current_experiment_params = self.experiment_params_dict[experiment_name]
+            current_experiment_first_tool = self.experiments[i].tools[0]
+            current_experiment_first_tool_name = current_experiment_first_tool.name
+            current_experiment_first_tool_params = current_experiment_params[current_experiment_first_tool_name]
+            for j, following_experiment_name in enumerate(experiment_name_list[i+1:]):
+                following_experiment_config = self.experiment_config_dict[following_experiment_name]
+                following_experiment_first_tool = self.experiments[i+1+j].tools[0]
+                following_experiment_first_tool_name = following_experiment_first_tool.name
+
+                # 从_set_dir_manager_kwargs中获取ignore_key_list(这是在子类中设置的,有可能被覆盖)
+                following_experiment_first_tool._config_dir_manager()
+                ignore_key_list = following_experiment_first_tool.dir_manager_kwargs.get('ignore_key_list', [])
+                
+                # 从config中获取ignore_key_list(因为config是在外部设置的,所以优先级高,可以覆盖上面的设置)
+                following_experiment_first_tool_config = following_experiment_config[following_experiment_first_tool_name]
+                if 'dir_manager_kwargs' in following_experiment_first_tool_config:
+                    # 如果有设置dir_manager_kwargs,则其必须提供ignore_key_list,所以这里没有使用get方法,出问题的话正好报错并修改外部的设置
+                    ignore_key_list = following_experiment_first_tool_config['dir_manager_kwargs']['ignore_key_list']
+
+                processed_current_experiment_first_tool_params = current_experiment_first_tool_params.copy()
+                for key in current_experiment_first_tool_params.keys():
+                    if key in ignore_key_list:
+                        processed_current_experiment_first_tool_params.pop(key)
+
+                # 添加到第一个tool里
+                self.experiment_params_dict[following_experiment_name][following_experiment_first_tool_name][experiment_name + '_params'] = processed_current_experiment_first_tool_params # 直接作为整体添加,而不是update,防止出现重名
 
     def set_experiment_params_dict(self, experiment_params_dict):
         self.experiment_params_dict = experiment_params_dict
@@ -10346,6 +10402,7 @@ class ComposedExperiment(abc.ABC):
         self.experiments = []
 
     def _finalize_init_experiments(self):
+        self._propagate_each_experiment_first_tool_params_to_following_experiments()
         for experiment in self.experiments:
             if self.timedir_injected:
                 pass
