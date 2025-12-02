@@ -43,6 +43,7 @@ from pympler import asizeof
 import traceback
 import tqdm
 import threading
+import natsort
 
 
 # 数学和科学计算库
@@ -2448,17 +2449,21 @@ def check_all_file_exist_with_any_extension(*paths):
 def get_subfile(basedir, full=True):
     '''找到文件夹下的所有文件(非文件夹),full为True则返回全路径,否则只返回文件名'''
     if full:
-        return [os.path.join(basedir, f) for f in os.listdir(basedir) if os.path.isfile(os.path.join(basedir, f))]
+        l = [os.path.join(basedir, f) for f in os.listdir(basedir) if os.path.isfile(os.path.join(basedir, f))]
     else:
-        return [f for f in os.listdir(basedir) if os.path.isfile(os.path.join(basedir, f))]
+        l = [f for f in os.listdir(basedir) if os.path.isfile(os.path.join(basedir, f))]
+    l = natsort.natsorted(l)
+    return l
 
 
 def get_subdir(basedir, full=True):
     '''找到文件夹下的一级子文件夹,full为True则返回全路径,否则只返回文件夹名'''
     if full:
-        return [os.path.join(basedir, d) for d in os.listdir(basedir) if os.path.isdir(os.path.join(basedir, d))]
+        l = [os.path.join(basedir, d) for d in os.listdir(basedir) if os.path.isdir(os.path.join(basedir, d))]
     else:
-        return [d for d in os.listdir(basedir) if os.path.isdir(os.path.join(basedir, d))]
+        l = [d for d in os.listdir(basedir) if os.path.isdir(os.path.join(basedir, d))]
+    l = natsort.natsorted(l)
+    return l
 
 
 def get_first_subdir(full_dir, part_dir):
@@ -9673,8 +9678,11 @@ class AbstractTool(abc.ABC):
         '''要把状态从data_keeper中获取出来,所以不要轻易移除这个接口'''
         self.already_done = self.data_keeper.check_all_saved()
 
-    def save_params(self):
-        if not check_all_file_exist_with_any_extension(pj(self.dir_manager.params_dir, cat(self.name, 'params'))):
+    def save_params(self, check=True):
+        if check:
+            if not check_all_file_exist_with_any_extension(pj(self.dir_manager.params_dir, cat(self.name, 'params'))):
+                save_dict(self.params, pj(self.dir_manager.params_dir, cat(self.name, 'params')))
+        else:
             save_dict(self.params, pj(self.dir_manager.params_dir, cat(self.name, 'params')))
 
     def before_run(self):
@@ -9712,6 +9720,7 @@ class AbstractTool(abc.ABC):
         original_read_only = self.data_keeper.read_only
         self.already_done = False
         self.data_keeper.set_read_only(False)
+        self.save_params(check=False)  # 强制运行时,params也需要重新保存
         self.run()
         self.already_done = original_already_done
         self.data_keeper.set_read_only(original_read_only)
@@ -9869,7 +9878,7 @@ class Visualizer(FlexibleTool):
     '''
     def __init__(self):
         super().__init__()
-        self.save_fig_kwargs = {}
+        self.save_fig_kwargs = {'formats': ['png', 'pdf']}
     
     def auto_save_fig(self, filename=None, save_fig_kwargs=None, fig=None, add_to_filename_dict=None):
         '''
@@ -10498,6 +10507,57 @@ class ExperimentContainer(InstanceContainer):
             value = tool.params[key]
             count_dict[repr(value)] += 1
         return count_dict
+
+
+def re_run_tool_in_experiment(experiment, tool_name, task_list, tool_params):
+    '''
+    重新运行experiment的某个tool
+
+    例如调整analyzer的参数后重新运行分析
+    '''
+    tool = getattr(experiment, tool_name)
+    tool.set_params(tool_params)
+    tool.task_list = task_list
+    tool.force_run()
+
+
+def re_run_tool_in_composed_experiment(composed_experiment, experiment_name, tool_name, task_list, tool_params):
+    '''
+    重新运行composed_experiment中的某个experiment的某个tool
+
+    例如调整analyzer的参数后重新运行分析
+    '''
+    tool = getattr(getattr(composed_experiment, experiment_name), tool_name)
+    tool.set_params(tool_params)
+    tool.task_list = task_list
+    tool.force_run()
+
+
+def re_run_tool_in_experiment_container(experiment_container, tool_name, task_list, tool_params, experiment_name=None, process_num=1):
+    '''
+    对于experiment_container中的每个experiment,重新运行其某个tool
+
+    如果是composed_experiment_container,则需要指定experiment_name
+    '''
+    if experiment_name is None:
+        kwargs_list = []
+        for experiment in experiment_container:
+            kwargs = {'experiment': experiment,
+                      'tool_name': tool_name,
+                      'task_list': task_list,
+                      'tool_params': tool_params}
+            kwargs_list.append(kwargs)
+        multi_process(process_num=process_num, func=re_run_tool_in_experiment, kwargs_list=kwargs_list)
+    else:
+        kwargs_list = []
+        for experiment in experiment_container:
+            kwargs = {'composed_experiment': experiment,
+                      'experiment_name': experiment_name,
+                      'tool_name': tool_name,
+                      'task_list': task_list,
+                      'tool_params': tool_params}
+            kwargs_list.append(kwargs)
+        multi_process(process_num=process_num, func=re_run_tool_in_composed_experiment, kwargs_list=kwargs_list)
 # endregion
 
 
