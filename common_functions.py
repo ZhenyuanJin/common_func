@@ -5463,6 +5463,13 @@ def is_sublist(sub_list, main_list):
 class InstanceContainer:
     '''
     用来存储一组实例,并提供一些常用的操作方法,如过滤/提取信息等
+
+    使用示例:
+    container = InstanceContainer(items=[obj1, obj2, obj3])
+    for item in container:
+        print(item)
+    print(len(container))
+    print(container[0])
     '''
     def __init__(self, items=None):
         self._instances = list(items) if items else []
