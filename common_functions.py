@@ -16842,6 +16842,16 @@ def get_ax_size(ax):
 # endregion
 
 
+# region 通用函数(ax_face_color)
+@iterate_over_axs
+def set_ax_face_color(ax, color):
+    '''
+    设置ax的背景颜色
+    '''
+    ax.set_facecolor(color)
+# endregion
+
+
 # region 通用函数(spine)
 @iterate_over_axs
 def move_spine_to_origin(ax, axis='both', arrow=True):
@@ -17549,8 +17559,23 @@ def add_axes_title(axes, title, text_process=None, title_size=TITLE_SIZE, pad=50
 
     merged_ax = merge_ax(axes, rm_mode=False)
     merged_ax.set_title(title, pad=pad, fontsize=title_size, **kwargs)
-
+    set_ax_face_color(merged_ax, color=TRANSPARENT)
     rm_ax_axis(merged_ax)
+
+
+def add_axes_xylabel(axes, xlabel=None, ylabel=None, text_process=None, label_size=TITLE_SIZE, pad=30., **kwargs):
+    '''
+    给多个ax添加xylabel,例如一列ax的ylabel位于中间位置
+    '''
+    text_process = update_dict(TEXT_PROCESS, text_process)
+    xlabel = format_text(xlabel, text_process)
+    ylabel = format_text(ylabel, text_process)
+
+    merged_ax = merge_ax(axes, rm_mode=False)
+    merged_ax.set_xlabel(xlabel, fontsize=label_size, labelpad=pad, **kwargs)
+    merged_ax.set_ylabel(ylabel, fontsize=label_size, labelpad=pad, **kwargs)
+    set_ax_face_color(merged_ax, color=TRANSPARENT)
+    rm_ax_specific_axis(merged_ax, axis='both')
 
 
 def get_tick_size(ax):
