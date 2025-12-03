@@ -10449,13 +10449,13 @@ class ComposedExperiment(abc.ABC):
 
 def find_incomplete_experiment(dir_before_timedir, tool_name, dir_after_timedir=None):
     '''
-    寻找不完整的模型文件夹,以输入的tool_name对应的tool的f'{tool_name}_results_saved'是否存在为判断标准
+    寻找不完整的模型文件夹,以输入的tool_name对应的tool的f'{tool_name}_all_saved'是否存在为判断标准
     '''
     incomplete_experiment_list = []
 
     sub_dir_list = get_subdir(dir_before_timedir)
     for sub_dir in sub_dir_list:
-        mark_file = pj(sub_dir, dir_after_timedir, 'outcomes', tool_name, f'{tool_name}_results_saved')
+        mark_file = pj(sub_dir, dir_after_timedir, 'outcomes', tool_name, f'{tool_name}_all_saved')
         if check_all_file_exist_with_any_extension(mark_file):
             pass
         else:
@@ -10467,7 +10467,7 @@ def find_incomplete_experiment(dir_before_timedir, tool_name, dir_after_timedir=
 
 def clean_incomplete_experiment(dir_before_timedir, tool_name, dir_after_timedir=None):
     '''
-    删除不完整的模型文件夹,以输入的tool_name对应的tool的f'{tool_name}_results_saved'是否存在为判断标准
+    删除不完整的模型文件夹,以输入的tool_name对应的tool的f'{tool_name}_all_saved'是否存在为判断标准
     '''
     print('Warning: The following incomplete experiment directories will be removed')
     incomplete_experiment_list = find_incomplete_experiment(dir_before_timedir, tool_name, dir_after_timedir)
