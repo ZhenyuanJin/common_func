@@ -10212,6 +10212,7 @@ class Experiment(abc.ABC):
         self.tool_config_dict = {}  # 不必须输入,所以设置默认值
         self.previous_experiment_name_list = []  # 用于compose多个experiment,记录其名称
         self._minimal_init_tools()
+        self.release_memory = False  # 是否在运行结束后释放内存,默认是False,子类可以修改
 
     @abc.abstractmethod
     def _set_name(self):
@@ -10374,6 +10375,10 @@ class Experiment(abc.ABC):
 
     def after_run(self):
         self.pipeline.after_run()
+        if self.release_memory:
+            for tool in self.tools:
+                tool.data_keeper.release_memory()
+            gc.collect()
 
     def run(self):
         self.before_run()
