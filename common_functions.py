@@ -10036,26 +10036,40 @@ class Visualizer(FlexibleTool):
         if len(plt.get_fignums()) > 10:
             plt.close('all')  # 防止打开过多图片导致内存泄漏
     
-    def auto_save_fig(self, filename=None, save_fig_kwargs=None, fig=None, add_to_filename_dict=None):
+    def auto_save_fig(self, filename=None, save_fig_kwargs=None, fig=None, add_to_filename_dict=None, mode='nest'):
         '''
         自动按照调用者的函数名保存fig
+        mode: 'flat' or 'nest'
         '''
         if add_to_filename_dict is not None:
-            _, add_to_filename = pop_dict_get_dir_flat(add_to_filename_dict, value_dir_key=[], both_dir_key=add_to_filename_dict.keys(), basedir='')
+            _, add_to_filename_flat = pop_dict_get_dir_flat(add_to_filename_dict, value_dir_key=[], both_dir_key=add_to_filename_dict.keys(), basedir='')
+            _, add_to_filename_nest = pop_dict_get_dir(add_to_filename_dict, value_dir_key=[], both_dir_key=add_to_filename_dict.keys(), basedir='')
         if filename is None:
-            filename = pj(self.figs_dir, cat(sys._getframe(1).f_code.co_name, add_to_filename))
+            if mode == 'flat':
+                filename = pj(self.figs_dir, cat(sys._getframe(1).f_code.co_name, add_to_filename_flat))
+            elif mode == 'nest':
+                filename = pj(self.figs_dir, sys._getframe(1).f_code.co_name, add_to_filename_nest, cat(sys._getframe(1).f_code.co_name, add_to_filename_flat))
+            else:
+                raise ValueError(f"Unknown mode: {mode}")
         local_save_fig_kwargs = self.save_fig_kwargs.copy()
         local_save_fig_kwargs = update_dict(local_save_fig_kwargs, save_fig_kwargs)
         save_fig(fig, filename, **local_save_fig_kwargs)
 
-    def auto_save_fig_no_close(self, filename=None, save_fig_kwargs=None, fig=None, add_to_filename_dict=None):
+    def auto_save_fig_no_close(self, filename=None, save_fig_kwargs=None, fig=None, add_to_filename_dict=None, mode='nest'):
         '''
         不关闭图片,以便后面添加标签等操作后继续保存
+        mode: 'flat' or 'nest'
         '''
         if add_to_filename_dict is not None:
-            _, add_to_filename = pop_dict_get_dir_flat(add_to_filename_dict, value_dir_key=[], both_dir_key=add_to_filename_dict.keys(), basedir='')
+            _, add_to_filename_flat = pop_dict_get_dir_flat(add_to_filename_dict, value_dir_key=[], both_dir_key=add_to_filename_dict.keys(), basedir='')
+            _, add_to_filename_nest = pop_dict_get_dir(add_to_filename_dict, value_dir_key=[], both_dir_key=add_to_filename_dict.keys(), basedir='')
         if filename is None:
-            filename = pj(self.figs_dir, cat(sys._getframe(1).f_code.co_name, add_to_filename))
+            if mode == 'flat':
+                filename = pj(self.figs_dir, cat(sys._getframe(1).f_code.co_name, add_to_filename_flat))
+            elif mode == 'nest':
+                filename = pj(self.figs_dir, sys._getframe(1).f_code.co_name, add_to_filename_nest, cat(sys._getframe(1).f_code.co_name, add_to_filename_flat))
+            else:
+                raise ValueError(f"Unknown mode: {mode}")
         local_save_fig_kwargs = self.save_fig_kwargs.copy()
         local_save_fig_kwargs['close'] = False
         local_save_fig_kwargs = update_dict(local_save_fig_kwargs, save_fig_kwargs)
