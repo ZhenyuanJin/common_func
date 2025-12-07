@@ -362,7 +362,8 @@ def single_exp_fit(lag_times, acf, fix_amp_value=None):
         if fix_amp_value is None:
             f = single_exp
         else:
-            f = partial(single_exp, amp=fix_amp_value)
+            def f(x, tau):
+                return single_exp(x, fix_amp_value, tau)
         single_popt, single_pcov, single_error = cf.get_curvefit(lag_times, acf, f)
         results = {}
         if fix_amp_value is not None:
