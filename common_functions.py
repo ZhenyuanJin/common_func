@@ -44,6 +44,8 @@ import traceback
 import tqdm
 import threading
 import natsort
+import psutil
+import gc
 
 
 # 数学和科学计算库
@@ -515,6 +517,74 @@ def get_top_n_memory_item(d, top_n=5, unit='gb', print_info=True):
         if print_info:
             print(f"Key: {key}, Memory Size: {size_value:.2f} {unit}")
     return result
+
+
+def get_memory_usage():
+    """
+    获取当前内存使用情况,以gb为单位
+    返回包含详细信息的字典
+    """
+    memory = psutil.virtual_memory()
+    
+    return {
+        'total': memory.total / (1024**3),  # 总内存(gb)
+        'available': memory.available / (1024**3),  # 可用内存(gb)
+        'used': memory.used / (1024**3),  # 已用内存(gb)
+        'free': memory.free / (1024**3),  # 空闲内存(gb)
+        'percent': memory.percent,  # 使用百分比
+        'timestamp': time.time()  # 时间戳
+    }
+
+
+def check_memory_and_stop(threshold_gb=None, threshold_percent=None, print_info=False):
+    """
+    检查内存使用情况,当内存超过阈值时停止程序
+    
+    参数:
+        threshold_gb: 内存使用量的阈值(gb),超过此值停止
+        threshold_percent: 内存使用百分比的阈值,超过此值停止
+        print_info: 是否打印详细信息,当需要停止时一定会打印
+    
+    注意: 至少需要提供threshold_gb或threshold_percent中的一个
+    """
+    if threshold_gb is None and threshold_percent is None:
+        raise ValueError("必须提供 threshold_gb 或 threshold_percent 参数")
+    
+    # 获取当前内存使用情况
+    mem_info = get_memory_usage()
+    
+    if print_info:
+        print("=" * 50)
+        print(f"内存使用情况检查 (时间: {time.strftime('%Y-%m-%d %H:%M:%S')})")
+        print(f"总内存: {mem_info['total']:.2f} gb")
+        print(f"已用内存: {mem_info['used']:.2f} gb")
+        print(f"可用内存: {mem_info['available']:.2f} gb")
+        print(f"空闲内存: {mem_info['free']:.2f} gb")
+        print(f"使用率: {mem_info['percent']:.1f}%")
+        print("=" * 50)
+    
+    should_stop = False
+    reason = ""
+    
+    # 检查GB阈值
+    if threshold_gb is not None and mem_info['used'] > threshold_gb:
+        should_stop = True
+        reason = f"内存使用量({mem_info['used']:.2f}gb)超过阈值({threshold_gb}gb)"
+    
+    # 检查百分比阈值
+    if threshold_percent is not None and mem_info['percent'] > threshold_percent:
+        should_stop = True
+        reason = f"内存使用率({mem_info['percent']:.1f}%)超过阈值({threshold_percent}%)"
+    
+    # 如果满足停止条件,则停止程序
+    if should_stop:
+        print(f"!!!{reason}")
+        print("!!!程序将停止执行!!!")
+        sys.exit(1)
+    elif print_info:
+        print("内存使用情况正常,继续执行")
+    
+    return mem_info
 # endregion
 
 
@@ -4093,7 +4163,6 @@ def multi_process_list_for(process_num, func, args=None, kwargs=None, for_list=N
         process_num = len(for_list)
 
     divided_list = split_list(for_list, process_num)
-    # args_list = [(func, divided, for_idx_name, use_tqdm)+args for divided in divided_list]
     args_list = [(func, divided, for_idx_name, False)+args for divided in divided_list]
     if use_tqdm:
         args_list[0] = (func, divided_list[0], for_idx_name, True) + args # 只有第一个进程显示tqdm
@@ -4137,7 +4206,6 @@ def multi_process_enumerate_for(process_num, func, args=None, kwargs=None, for_l
 
     divided_idx_list = split_list(range(len(for_list)), process_num)
     divided_list = split_list(for_list, process_num)
-    # args_list = [(func, divided_idx, divided, for_idx_name, for_item_name, use_tqdm)+args for divided_idx, divided in zip(divided_idx_list, divided_list)]
     args_list = [(func, divided_idx, divided, for_idx_name, for_item_name, False)+args for divided_idx, divided in zip(divided_idx_list, divided_list)]
     if use_tqdm:
         args_list[0] = (func, divided_idx_list[0], divided_list[0], for_idx_name, for_item_name, True) + args # 只有第一个进程显示tqdm
@@ -4188,7 +4256,6 @@ def multi_process_items_for(process_num, func, args=None, kwargs=None, for_dict=
     
     divided_key_list = split_list(list(for_dict.keys()), process_num)
     divided_value_list = split_list(list(for_dict.values()), process_num)
-    # args_list = [(func, divided_key, divided_value, for_key_name, for_value_name, use_tqdm)+args for divided_key, divided_value in zip(divided_key_list, divided_value_list)]
     args_list = [(func, divided_key, divided_value, for_key_name, for_value_name, False)+args for divided_key, divided_value in zip(divided_key_list, divided_value_list)]
     if use_tqdm:
         args_list[0] = (func, divided_key_list[0], divided_value_list[0], for_key_name, for_value_name, True) + args # 只有第一个进程显示tqdm
@@ -9653,6 +9720,7 @@ class AbstractTool(abc.ABC):
         self._set_optional_key_value_dict() # 子类必须实现_set_optional_key_value_dict方法,用于设置optional_key_value_dict属性
         self.enable_delete_after_pipeline = False # 是否在pipeline结束后删除结果,默认是False,子类可以修改
         self.process_num = 1 # datakeeper读取和保存的process数量
+        self.threshold_gb = 20. # 用于检查内存的阈值,单位gb
 
     @abc.abstractmethod
     def _set_name(self):
@@ -9794,6 +9862,8 @@ class AbstractTool(abc.ABC):
             self.after_run()
 
             timer.end()
+
+            check_memory_and_stop(threshold_gb=self.threshold_gb)
     
     def force_run(self):
         original_already_done = self.already_done
@@ -10607,6 +10677,7 @@ def re_run_tool_in_experiment(experiment, tool_name, task_list, tool_params, rel
     for t in experiment.tools:
         if release_memory:
             t.data_keeper.release_memory()
+            gc.collect()
 
 
 def re_run_tool_in_composed_experiment(composed_experiment, experiment_name, tool_name, task_list, tool_params, release_memory=True):
@@ -10623,6 +10694,7 @@ def re_run_tool_in_composed_experiment(composed_experiment, experiment_name, too
         for t in e.tools:
             if release_memory:
                 t.data_keeper.release_memory()
+                gc.collect()
 
 
 def re_run_tool_in_experiment_container(experiment_container, tool_name, task_list, tool_params, experiment_name=None, process_num=1):
