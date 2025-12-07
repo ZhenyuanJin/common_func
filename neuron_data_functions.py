@@ -358,7 +358,7 @@ def single_exp(x, amp, tau):
 
 
 def single_exp_fit(lag_times, acf, fix_amp_value=None):
-    try:
+    with cf.FlexibleTry() as ft:
         if fix_amp_value is None:
             f = single_exp
         else:
@@ -372,7 +372,7 @@ def single_exp_fit(lag_times, acf, fix_amp_value=None):
         results['error'] = single_error
         results['cov'] = single_pcov
         results['fitted_curve'] = single_exp(lag_times, results['amp'], results['tau'])
-    except:
+    if not ft.success:
         results = {}
         results['amp'] = np.nan
         results['tau'] = np.nan
