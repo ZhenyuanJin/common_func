@@ -9720,7 +9720,7 @@ class AbstractTool(abc.ABC):
         self._set_optional_key_value_dict() # 子类必须实现_set_optional_key_value_dict方法,用于设置optional_key_value_dict属性
         self.enable_delete_after_pipeline = False # 是否在pipeline结束后删除结果,默认是False,子类可以修改
         self.process_num = 1 # datakeeper读取和保存的process数量
-        self.threshold_gb = 20. # 用于检查内存的阈值,单位gb
+        self.threshold_gb = None # 用于检查内存的阈值,单位gb
 
     @abc.abstractmethod
     def _set_name(self):
@@ -9848,6 +9848,9 @@ class AbstractTool(abc.ABC):
             self.data_keeper.mark_all_saved()
         if self.release_memory:
             self.data_keeper.release_memory(**self.release_memory_kwargs)
+            gc.collect()
+        if self.threshold_gb is not None:
+            check_memory_and_stop(threshold_gb=self.threshold_gb)
 
     def run(self):
         if self.already_done:
@@ -9862,8 +9865,6 @@ class AbstractTool(abc.ABC):
             self.after_run()
 
             timer.end()
-
-            check_memory_and_stop(threshold_gb=self.threshold_gb)
     
     def force_run(self):
         original_already_done = self.already_done
