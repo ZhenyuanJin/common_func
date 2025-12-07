@@ -62,6 +62,7 @@ import statsmodels
 from statsmodels.tsa.stattools import acf, acovf, ccf
 from statsmodels.distributions.empirical_distribution import ECDF
 from statsmodels.nonparametric.smoothers_lowess import lowess
+import numbers
 
 
 # 数据处理和可视化库
@@ -5553,6 +5554,48 @@ class InstanceContainer:
     def get_info_by_func(self, func):
         return [func(item) for item in self._instances]
     
+    def get_grouped_container_list_by_func(self, func):
+        '''
+        根据func的返回值对实例进行分类
+        
+        :param func: 函数,接受一个实例作为输入,返回分类键
+                    返回值只能是字符串(str)或数字(Number)
+        :return: 包含两个列表的元组
+                第一个列表是func返回的不同值(分类键)
+                第二个列表是对应的InstanceContainer列表
+        :raises TypeError: 如果func的返回值不是字符串或数字
+        '''
+        groups = {}
+        
+        # 遍历所有实例,按照func的返回值进行分类
+        for item in self._instances:
+            key = func(item)
+            
+            # 检查key的类型
+            if not (isinstance(key, str) or isinstance(key, numbers.Number)):
+                raise TypeError(
+                    f"func的返回值必须是字符串或数字,但得到类型: {type(key).__name__}, 值: {key}"
+                )
+            
+            if key not in groups:
+                groups[key] = []
+            groups[key].append(item)
+        
+        # 创建结果列表
+        keys = []
+        containers = []
+        
+        # 将分组结果转换为列表形式
+        for key, items in groups.items():
+            keys.append(key)
+            containers.append(InstanceContainer(items))
+        
+        # 排序
+        sorted_pairs = sorted(zip(keys, containers), key=lambda x: x[0])
+        keys, containers = zip(*sorted_pairs)
+
+        return keys, containers
+
     def __len__(self):
         return len(self._instances)
     
@@ -5561,6 +5604,43 @@ class InstanceContainer:
     
     def __getitem__(self, index):
         return self._instances[index]
+
+    def get_one_param_and_property(self, get_param_func, get_property_func, param_name, property_name, save_dir):
+        '''
+        注意点: 要用flexible try的方式,要统计成功的数量,要获得mean和variance,要保存,并且要存好name
+        '''
+        pass
+
+    def visualize_one_param_and_property(self, ax, get_param_func, get_property_func, param_name, property_name, mode='only_mean'):
+        '''
+        注意点: 要画两个版本,其中一个只有mean,其中一个有mean和variance
+        '''
+        pass
+
+    def get_two_param_and_property(self, get_param_func_0, get_param_func_1, get_property_func, param_name_0, param_name_1, property_name, save_dir):
+        '''
+        注意点: 要用flexible try的方式,要统计成功的数量,要获得mean和variance,要保存
+        '''
+        pass
+
+    def visualize_two_param_and_property_heatmap(self, ax, get_param_func_0, get_param_func_1, get_property_func, param_name_0, param_name_1, property_name):
+        '''
+        注意点: 要调整heatmap的tick,不要有太多位数导致很难看,要annot,
+        除了heatmap之外也增加一个可以固定一个param只画另一个的东西
+        '''
+        pass
+
+    def visualize_two_param_and_property_fix_one(self, ax, get_param_func_0, get_param_func_1, get_property_func, param_name_0, param_name_1, property_name, fixed_param_name, fixed_param_value):
+        '''
+        注意点: 固定一个param只画另一个的东西,需要输入固定的值
+        '''
+        pass
+
+    def visualize_two_param_and_property_fix_one_iterate(self, get_param_func_0, get_param_func_1, get_property_func, param_name_0, param_name_1, property_name, fixed_param_name):
+        '''
+        注意点: 固定一个param只画另一个的东西,会自己遍历,不用手动确定
+        '''
+        pass
 
 
 def group_values_by_keys(keys, values):
@@ -9708,10 +9788,10 @@ class AbstractTool(abc.ABC):
             timer = Timer(title=f'{self.name}: running')
             timer.start()
             
+            self.before_run()
             with FlexibleTry(enable_try=self.enable_try):
-                self.before_run()
                 self.run_detail()
-                self.after_run()
+            self.after_run()
 
             timer.end()
     
@@ -9879,6 +9959,11 @@ class Visualizer(FlexibleTool):
     def __init__(self):
         super().__init__()
         self.save_fig_kwargs = {'formats': ['png', 'pdf']}
+    
+    def after_run(self):
+        super().after_run()
+        if len(plt.get_fignums()) > 10:
+            plt.close('all')  # 防止打开过多图片导致内存泄漏
     
     def auto_save_fig(self, filename=None, save_fig_kwargs=None, fig=None, add_to_filename_dict=None):
         '''
@@ -10509,7 +10594,7 @@ class ExperimentContainer(InstanceContainer):
         return count_dict
 
 
-def re_run_tool_in_experiment(experiment, tool_name, task_list, tool_params):
+def re_run_tool_in_experiment(experiment, tool_name, task_list, tool_params, release_memory=True):
     '''
     重新运行experiment的某个tool
 
@@ -10519,9 +10604,12 @@ def re_run_tool_in_experiment(experiment, tool_name, task_list, tool_params):
     tool.set_params(tool_params)
     tool.task_list = task_list
     tool.force_run()
+    for t in experiment.tools:
+        if release_memory:
+            t.data_keeper.release_memory()
 
 
-def re_run_tool_in_composed_experiment(composed_experiment, experiment_name, tool_name, task_list, tool_params):
+def re_run_tool_in_composed_experiment(composed_experiment, experiment_name, tool_name, task_list, tool_params, release_memory=True):
     '''
     重新运行composed_experiment中的某个experiment的某个tool
 
@@ -10531,6 +10619,10 @@ def re_run_tool_in_composed_experiment(composed_experiment, experiment_name, too
     tool.set_params(tool_params)
     tool.task_list = task_list
     tool.force_run()
+    for e in composed_experiment.experiments:
+        for t in e.tools:
+            if release_memory:
+                t.data_keeper.release_memory()
 
 
 def re_run_tool_in_experiment_container(experiment_container, tool_name, task_list, tool_params, experiment_name=None, process_num=1):
@@ -10545,7 +10637,8 @@ def re_run_tool_in_experiment_container(experiment_container, tool_name, task_li
             kwargs = {'experiment': experiment,
                       'tool_name': tool_name,
                       'task_list': task_list,
-                      'tool_params': tool_params}
+                      'tool_params': tool_params,
+                      'release_memory': True}
             kwargs_list.append(kwargs)
         multi_process(process_num=process_num, func=re_run_tool_in_experiment, kwargs_list=kwargs_list)
     else:
@@ -10555,7 +10648,8 @@ def re_run_tool_in_experiment_container(experiment_container, tool_name, task_li
                       'experiment_name': experiment_name,
                       'tool_name': tool_name,
                       'task_list': task_list,
-                      'tool_params': tool_params}
+                      'tool_params': tool_params,
+                      'release_memory': True}
             kwargs_list.append(kwargs)
         multi_process(process_num=process_num, func=re_run_tool_in_composed_experiment, kwargs_list=kwargs_list)
 # endregion
