@@ -12121,7 +12121,18 @@ def sns_heatmap(ax, data, cmap=HEATMAP_CMAP, square=True, cbar=True, cbar_positi
     elif vmax < np.nanmax(local_data.values):
         cbar_kwargs['add_geq'] = True
     if heatmap_kwargs is None:
-        heatmap_kwargs = {}
+        local_heatmap_kwargs = {}
+    else:
+        local_heatmap_kwargs = heatmap_kwargs.copy()
+        # auto annot fontsize setup
+        if 'annot' in local_heatmap_kwargs:
+            annot_kws = local_heatmap_kwargs.get('annot_kws', {})
+            if 'fontsize' not in annot_kws:
+                ax_width, ax_height = get_ax_size(ax)
+                from_height = suitable_tick_size(data.shape[0], ax_height)
+                from_width = suitable_tick_size(data.shape[1], ax_width) / 3 # 考虑到宽度方向通常会更拥挤一些
+                annot_kws['fontsize'] = min(from_height, from_width)
+                local_heatmap_kwargs['annot_kws'] = annot_kws
     cbar_position = update_dict(CBAR_POSITION, cbar_position)
 
     # 获取norm
@@ -12131,10 +12142,10 @@ def sns_heatmap(ax, data, cmap=HEATMAP_CMAP, square=True, cbar=True, cbar_positi
     if np.allclose(vmin, vmax):
         local_cmap = get_cmap([cmap(0.5), cmap(0.5)])
         sns.heatmap(local_data, ax=ax, cmap=local_cmap,
-                    square=square, cbar=False, norm=norm, **heatmap_kwargs)
+                    square=square, cbar=False, norm=norm, **local_heatmap_kwargs)
     else:
         sns.heatmap(local_data, ax=ax, cmap=cmap,
-                    square=square, cbar=False, norm=norm, **heatmap_kwargs)
+                    square=square, cbar=False, norm=norm, **local_heatmap_kwargs)
 
     # 绘制mask矩阵
     if mask is not None and mask_color is not None:
