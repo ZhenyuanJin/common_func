@@ -17773,6 +17773,8 @@ def get_tick_size(ax):
 def suitable_tick_size(num_ticks, plt_size, tick_size=TICK_SIZE, proportion=TICK_PROPORTION):
     '''
     Adjusts the font size of the tick labels based on the number of ticks and the size of the axis.
+
+    plt_size是标量,单位inch
     '''
     if num_ticks == 0:
         return tick_size
