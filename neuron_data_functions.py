@@ -381,6 +381,81 @@ def single_exp_fit(lag_times, acf, fix_amp_value=None):
         results['cov'] = np.nan
         results['fitted_curve'] = np.nan
     return results
+
+
+def double_exp(x, tau1, tau2, amp1, amp2):
+    return amp1 * np.exp(-x / tau1) + amp2 * np.exp(-x / tau2)
+
+
+def double_exp_fit(lag_times, acf):
+    with cf.FlexibleTry() as ft:
+        f = double_exp
+        
+        single_results = single_exp_fit(lag_times, acf)
+        p0 = [single_results['tau'], single_results['tau'] / 10, single_results['amp'], 0]
+        bounds = (0, np.inf)
+        
+        double_popt, double_pcov, double_error = cf.get_curvefit(
+            lag_times, acf, f, p0=p0, bounds=bounds, maxfev=5000
+        )
+        
+        results = {}
+        params_list = list(double_popt)
+        
+        results['tau1'] = params_list[0]
+        results['tau2'] = params_list[1]
+        results['amp1'] = params_list[2]
+        results['amp2'] = params_list[3]
+        results['tau'] = (results['amp1'] * results['tau1'] + results['amp2'] * results['tau2']) / (results['amp1'] + results['amp2'])
+        results['error'] = double_error
+        results['cov'] = double_pcov
+        results['fitted_curve'] = double_exp(lag_times, **{k: results[k] for k in ['tau1', 'tau2', 'amp1', 'amp2']})
+    
+    if not ft.success:
+        results = {}
+        results['tau1'] = np.nan
+        results['tau2'] = np.nan
+        results['amp1'] = np.nan
+        results['amp2'] = np.nan
+        results['tau'] = np.nan
+        results['error'] = np.nan
+        results['cov'] = np.nan
+        results['fitted_curve'] = np.nan
+    
+    return results
+
+
+def select_exp_fit(lag_times, acf, threshold=8.0, fix_amp_value=None):
+    single_results = single_exp_fit(lag_times, acf, fix_amp_value=fix_amp_value)
+    double_results = double_exp_fit(lag_times, acf)
+    
+    if np.isfinite(single_results['error']) and np.isfinite(double_results['error']):
+        error_ratio = single_results['error'] / double_results['error']
+        
+        if error_ratio > threshold:
+            selected_model = 'double'
+            selected_results = double_results
+            selected_tau = double_results['tau']
+        else:
+            selected_model = 'single'
+            selected_results = single_results
+            selected_tau = single_results['tau']
+    else:
+        error_ratio = np.nan
+        selected_model = 'single' if np.isfinite(single_results['tau']) else 'none'
+        selected_results = single_results if selected_model == 'single' else {}
+        selected_tau = single_results.get('tau', np.nan)
+    
+    results = {
+        'selected_model': selected_model,
+        'error_ratio': error_ratio,
+        'single_results': single_results,
+        'double_results': double_results,
+        'selected_results': selected_results,
+        'selected_tau': selected_tau
+    }
+    
+    return results
 # endregion
 
 
