@@ -10877,9 +10877,16 @@ class ExperimentContainer(InstanceContainer):
         results_list = super().get_close_items_info_by_func(func, target_value, num)
         for results in results_list:
             if isinstance(results['item'], ComposedExperiment):
-                results['timedir'] = [results['item'].experiments[i].dir_manager.timedir for i in range(len(results['item'].experiments))]
+                results['timedir'] = [results['item'].experiments[i].timedir for i in range(len(results['item'].experiments))]
             elif isinstance(results['item'], Experiment):
                 results['timedir'] = results['item'].timedir
+            else:
+                try:
+                    results['timedir'] = [results['item'].experiments[i].timedir for i in range(len(results['item'].experiments))]
+                except:
+                    results['timedir'] = results['item'].timedir
+                finally:
+                    pass
         return results_list
 
 
