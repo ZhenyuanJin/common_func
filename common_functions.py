@@ -5673,41 +5673,194 @@ class InstanceContainer:
         return self._instances[index]
 
     def get_one_param_and_property(self, get_param_func, get_property_func, param_name, property_name, save_dir):
-        '''
-        注意点: 要用flexible try的方式,要统计成功的数量,要获得mean和variance,要保存,并且要存好name
-        '''
-        pass
+        param_list = []
+        property_list = []
+        success_count = 0
+        total_count = len(self._instances)
+        for instance in self._instances:
+            with FlexibleTry() as ft:
+                param_value = get_param_func(instance)
+                property_value = get_property_func(instance)
+            if ft.success:
+                param_list.append(param_value)
+                property_list.append(property_value)
+                success_count += 1
+        print(f"Successfully for {success_count} instances in {total_count} for param '{param_name}' and property '{property_name}'")
+        param_property_dict = get_group_values_by_keys(param_list, property_list)
+        mean_param_property_dict = {k: np.mean(v) for k, v in param_property_dict.items()}
+        std_param_property_dict = {k: np.std(v) for k, v in param_property_dict.items()}
+        sorted_param_list, mean_property_list, std_property_list = get_sorted_keys_and_mean_variance_arrays_from_dict_of_list(param_property_dict)
+        results = {
+            'param_name': param_name,
+            'property_name': property_name,
+            'param_list': param_list,
+            'property_list': property_list,
+            'param_property_dict': param_property_dict,
+            'mean_param_property_dict': mean_param_property_dict,
+            'std_param_property_dict': std_param_property_dict,
+            'sorted_param_list': sorted_param_list,
+            'mean_property_list': mean_property_list,
+            'std_property_list': std_property_list
+        }
+        if save_dir is not None:
+            save_path = pj(save_dir, f"param_{param_name}_property_{property_name}")
+            save_dict(results, save_path)
+        return results
 
-    def visualize_one_param_and_property(self, ax, get_param_func, get_property_func, param_name, property_name, mode='only_mean'):
+    def visualize_one_param_and_property(self, ax, get_param_func, get_property_func, param_name, property_name, mode='all_points_mean_std', scatter_kwargs=None, mean_kwargs=None, std_kwargs=None):
         '''
-        注意点: 要画两个版本,其中一个只有mean,其中一个有mean和variance
+        mode:
+        1. only_mean: 只画mean的线
+        2. mean_std: 画mean的线和std
+        3. all_points: 画所有的点
+        4. all_points_mean_std: 画所有的点,mean的线和std
         '''
-        pass
+        scatter_kwargs = update_dict({}, scatter_kwargs)
+        mean_kwargs = update_dict({'label': 'Mean'}, mean_kwargs)
+        std_kwargs = update_dict({'label': 'Mean ± STD'}, std_kwargs)
+
+        results = self.get_one_param_and_property(get_param_func, get_property_func, param_name, property_name, save_dir=None)
+        param_list = results['param_list']
+        property_list = results['property_list']
+        param_values = results['sorted_param_list']
+        mean_values = results['mean_property_list']
+        std_values = results['std_property_list']
+
+        if mode in ['all_points', 'all_points_mean_std']:
+            plt_scatter(ax, param_list, property_list, **scatter_kwargs)
+        if mode in ['only_mean', 'mean_std', 'all_points_mean_std']:
+            plt_line(ax, param_values, mean_values, **mean_kwargs)
+        if mode in ['mean_std', 'all_points_mean_std']:
+            plt_fill_between_line(ax, param_values, 
+                                  np.array(mean_values) - np.array(std_values),
+                                  np.array(mean_values) + np.array(std_values),
+                                  **std_kwargs)
+        set_ax(ax, xlabel=param_name, ylabel=property_name)
 
     def get_two_param_and_property(self, get_param_func_0, get_param_func_1, get_property_func, param_name_0, param_name_1, property_name, save_dir):
         '''
         注意点: 要用flexible try的方式,要统计成功的数量,要获得mean和variance,要保存
         '''
-        pass
+        param_0_list = []
+        param_1_list = []
+        property_list = []
+        success_count = 0
+        total_count = len(self._instances)
+        for instance in self._instances:
+            with FlexibleTry() as ft:
+                param_value_0 = get_param_func_0(instance)
+                param_value_1 = get_param_func_1(instance)
+                property_value = get_property_func(instance)
+            if ft.success:
+                param_0_list.append(param_value_0)
+                param_1_list.append(param_value_1)
+                property_list.append(property_value)
+                success_count += 1
+        print(f"Successfully for {success_count} instances in {total_count} for params '{param_name_0}, {param_name_1}' and property '{property_name}'")
+        param_property_dict = get_multigroup_values_by_keys(param_0_list, param_1_list, property_list)
+        mean_param_property_dict = {k: np.mean(v) for k, v in param_property_dict.items()}
+        std_param_property_dict = {k: np.std(v) for k, v in param_property_dict.items()}
+        mean_property_df, std_property_df = get_2d_mean_variance_df(param_property_dict)
+        results = {
+            'param_name_0': param_name_0,
+            'param_name_1': param_name_1,
+            'property_name': property_name,
+            'param_0_list': param_0_list,
+            'param_1_list': param_1_list,
+            'property_list': property_list,
+            'param_property_dict': param_property_dict,
+            'mean_param_property_dict': mean_param_property_dict,
+            'std_param_property_dict': std_param_property_dict,
+            'mean_property_df': mean_property_df,
+            'std_property_df': std_property_df
+        }
+        if save_dir is not None:
+            save_path = pj(save_dir, f"param_{param_name_0}_{param_name_1}_property_{property_name}")
+            save_dict(results, save_path)
+        return results
 
-    def visualize_two_param_and_property_heatmap(self, ax, get_param_func_0, get_param_func_1, get_property_func, param_name_0, param_name_1, property_name):
-        '''
-        注意点: 要调整heatmap的tick,不要有太多位数导致很难看,要annot,
-        除了heatmap之外也增加一个可以固定一个param只画另一个的东西
-        '''
-        pass
+    def visualize_two_param_and_property_heatmap(self, ax, get_param_func_0, get_param_func_1, get_property_func, param_name_0, param_name_1, property_name, sns_heatmap_kwargs=None):
+        sns_heatmap_kwargs = update_dict({'heatmap_kwargs': {'annot': True, 'fmt': '.2f'}}, sns_heatmap_kwargs)
+        results = self.get_two_param_and_property(get_param_func_0, get_param_func_1, get_property_func, param_name_0, param_name_1, property_name, save_dir=None)
+        mean_property_df = results['mean_property_df']
+        # 调整key的顺序以匹配heatmap的要求(因为heatmap纵向会把从上往下,但是按照普遍的顺序应该把小的参数值放在下面)
+        sorted_mean_property_df = mean_property_df.loc[mean_property_df.index[::-1], :]
+        sns_heatmap(ax, sorted_mean_property_df, **sns_heatmap_kwargs)
+        set_ax(ax, xlabel=param_name_1, ylabel=param_name_0, title=f"Mean {property_name} Heatmap")
 
-    def visualize_two_param_and_property_fix_one(self, ax, get_param_func_0, get_param_func_1, get_property_func, param_name_0, param_name_1, property_name, fixed_param_name, fixed_param_value):
-        '''
-        注意点: 固定一个param只画另一个的东西,需要输入固定的值
-        '''
-        pass
+    def visualize_two_param_and_property_fix_one(self, ax, get_param_func_0, get_param_func_1, get_property_func, param_name_0, param_name_1, property_name, fixed_param_name, fixed_param_value, mode='all_points_mean_std', scatter_kwargs=None, mean_kwargs=None, std_kwargs=None):
+        scatter_kwargs = update_dict({}, scatter_kwargs)
+        mean_kwargs = update_dict({'label': 'Mean'}, mean_kwargs)
+        std_kwargs = update_dict({'label': 'Mean ± STD'}, std_kwargs)
 
-    def visualize_two_param_and_property_fix_one_iterate(self, get_param_func_0, get_param_func_1, get_property_func, param_name_0, param_name_1, property_name, fixed_param_name):
-        '''
-        注意点: 固定一个param只画另一个的东西,会自己遍历,不用手动确定
-        '''
-        pass
+        results = self.get_two_param_and_property(get_param_func_0, get_param_func_1, get_property_func, param_name_0, param_name_1, property_name, save_dir=None)
+        mean_df, std_df = results['mean_property_df'], results['std_property_df']
+        
+        if fixed_param_name == param_name_0:
+            search_values = mean_df.index.to_numpy()
+            is_row_fixed = True
+            xlabel = param_name_1
+            raw_fixed_arr = np.array(results['param_0_list'])
+            raw_vary_arr = np.array(results['param_1_list'])
+        elif fixed_param_name == param_name_1:
+            search_values = mean_df.columns.to_numpy()
+            is_row_fixed = False
+            xlabel = param_name_0
+            raw_fixed_arr = np.array(results['param_1_list'])
+            raw_vary_arr = np.array(results['param_0_list'])
+        else:
+            raise ValueError(f"fixed_param_name '{fixed_param_name}' must be one of {param_name_0}, {param_name_1}")
+
+        idx = np.abs(search_values - fixed_param_value).argmin()
+        if not np.isclose(search_values[idx], fixed_param_value):
+            raise ValueError(f"fixed_param_value '{fixed_param_value}' not found in available values: {search_values}")
+        actual_fixed_value = search_values[idx]
+        
+        mask = np.isclose(raw_fixed_arr, actual_fixed_value)
+
+        raw_prop_arr = np.array(results['property_list'])
+        scatter_x = raw_vary_arr[mask]
+        scatter_y = raw_prop_arr[mask]
+        
+        if is_row_fixed:
+            x_data = mean_df.columns.to_numpy()
+            y_mean = mean_df.iloc[idx, :].to_numpy()
+            y_std = std_df.iloc[idx, :].to_numpy()
+        else:
+            x_data = mean_df.index.to_numpy()
+            y_mean = mean_df.iloc[:, idx].to_numpy()
+            y_std = std_df.iloc[:, idx].to_numpy()
+        
+        if mode in ['all_points', 'all_points_mean_std']:
+            plt_scatter(ax, scatter_x, scatter_y, **scatter_kwargs)
+        if mode in ['only_mean', 'mean_std', 'all_points_mean_std']:
+            plt_line(ax, x_data, y_mean, **mean_kwargs)
+        if mode in ['mean_std', 'all_points_mean_std']:
+            plt_fill_between_line(ax, x_data, 
+                                  y_mean - y_std,
+                                  y_mean + y_std,
+                                  **std_kwargs)
+        set_ax(ax, xlabel=xlabel, ylabel=property_name, title=f"{fixed_param_name}={actual_fixed_value}")
+
+    def visualize_two_param_and_property_fix_one_iterate(self, get_param_func_0, get_param_func_1, get_property_func, param_name_0, param_name_1, property_name, fixed_param_name, fig_dir):
+        results = self.get_two_param_and_property(get_param_func_0, get_param_func_1, get_property_func, param_name_0, param_name_1, property_name, save_dir=None)
+        param_0_list = results['param_0_list']
+        param_1_list = results['param_1_list']
+        if fixed_param_name == param_name_0:
+            fixed_param_list = param_0_list
+        elif fixed_param_name == param_name_1:
+            fixed_param_list = param_1_list
+        else:
+            raise ValueError(f"fixed_param_name '{fixed_param_name}' must be one of {param_name_0}, {param_name_1}")
+        unique_fixed_values = sorted(set(fixed_param_list))
+        for fixed_param_value in unique_fixed_values:
+            fig, ax = get_fig_ax()
+            self.visualize_two_param_and_property_fix_one(
+                ax, get_param_func_0, get_param_func_1, get_property_func,
+                param_name_0, param_name_1, property_name,
+                fixed_param_name, fixed_param_value
+            )
+            save_fig(fig, pj(fig_dir, f"{fixed_param_name}_{fixed_param_value}"))
 
 
 def group_values_by_keys(keys, values):
