@@ -5672,6 +5672,37 @@ class InstanceContainer:
     def __getitem__(self, index):
         return self._instances[index]
 
+    def get_close_items_by_func(self, func, target_value, num=5):
+        '''
+        查找容器中的项,使其在给定函数下的返回值最接近目标值的num个,func的输出可以是多维的
+        '''
+        items_with_dist = []
+        for item in self._instances:
+            value = func(item)
+            if isinstance(value, np.ndarray):
+                distance = np.linalg.norm(value - target_value)
+            elif isinstance(value, (list, tuple)):
+                distance = np.linalg.norm(np.array(value) - np.array(target_value))
+            else:
+                distance = abs(value - target_value)
+            items_with_dist.append((distance, item))
+
+        items_with_dist.sort(key=lambda x: x[0])
+        return [item for _, item in items_with_dist[:num]]
+
+    def get_closest_item_by_func(self, func, target_value):
+        return self.get_close_items_by_func(func, target_value, num=1)[0]
+    
+    def get_close_items_info_by_func(self, func, target_value, num=5):
+        close_items = self.get_close_items_by_func(func, target_value, num)
+        results_list = []
+        for item in close_items:
+            results_list.append({'item': item, 'value': func(item)})
+        return results_list
+    
+    def get_closest_item_info_by_func(self, func, target_value):
+        return self.get_close_items_info_by_func(func, target_value, num=1)[0]
+
     def get_one_param_and_property(self, get_param_func, get_property_func, param_name, property_name, save_dir):
         param_list = []
         property_list = []
@@ -9653,6 +9684,12 @@ class MetaModelContainer(InstanceContainer):
             value = instance.params[key]
             count_dict[repr(value)] += 1
         return count_dict
+
+    def get_close_items_info_by_func(self, func, target_value, num=5):
+        results_list = super().get_close_items_info_by_func(func, target_value, num)
+        for results in results_list:
+            results['timedir'] = results['item'].timedir
+        return results_list
 # endregion
 
 
@@ -10835,6 +10872,15 @@ class ExperimentContainer(InstanceContainer):
             value = tool.params[key]
             count_dict[repr(value)] += 1
         return count_dict
+
+    def get_close_items_info_by_func(self, func, target_value, num=5):
+        results_list = super().get_close_items_info_by_func(func, target_value, num)
+        for results in results_list:
+            if isinstance(results['item'], ComposedExperiment):
+                results['timedir'] = [results['item'].experiments[i].dir_manager.timedir for i in range(len(results['item'].experiments))]
+            elif isinstance(results['item'], Experiment):
+                results['timedir'] = results['item'].timedir
+        return results_list
 
 
 def re_run_tool_in_experiment(experiment, tool_name, task_list, tool_params, release_memory=True):
