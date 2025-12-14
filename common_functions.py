@@ -3713,10 +3713,10 @@ def save_list_merge_to_exist(new_data, filename, format_list=None, unique=True):
     '''
     将新的列表数据合并到已存在的列表文件中,并保存
     '''
-    if os.path.exists(filename) or os.path.exists(filename + '.txt') or os.path.exists(filename + '.pkl') or os.path.exists(filename + '.joblib'):
+    try:
         exist_data = load_pkl(filename)
         merged_data = exist_data + new_data
-    else:
+    except:
         merged_data = new_data
     if unique:
         merged_data = get_unique_element_list_keep_order(merged_data)
