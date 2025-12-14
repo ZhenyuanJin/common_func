@@ -9,7 +9,7 @@ class EarlyStop(Exception):
 
 
 def find_input_for_target_with_max_iter(
-    forward_fn,
+    func,
     target_value,
     bounds=None,
     x0=None,
@@ -33,7 +33,7 @@ def find_input_for_target_with_max_iter(
     }
 
     def compute_residual_vector(x):
-        output = np.asarray(forward_fn(x))
+        output = np.asarray(func(x))
         residual = output - target_array
         if weights_array is not None:
             residual = residual * weights_array
@@ -170,7 +170,7 @@ def plot_optimization_trajectory(history, ax=None):
 
 
 def test_find_input_and_plot():
-    def forward_fn(x):
+    def func(x):
         return np.array([
             np.sin(x[0]) + x[1] ** 2,
             x[0] ** 2 + np.cos(x[1]),
@@ -182,7 +182,7 @@ def test_find_input_and_plot():
     bounds = [(-3, 3), (-3, 3)]
 
     x_opt, objective_opt, history = find_input_for_target_with_max_iter(
-        forward_fn=forward_fn,
+        func=func,
         target_value=target_value,
         x0=x0,
         bounds=bounds,

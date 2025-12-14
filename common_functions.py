@@ -794,6 +794,10 @@ def get_time(char='_', unit='us'):
         return now.strftime(full_format) % truncated
 
 
+def get_timedir(basedir):
+    return os.path.join(basedir, get_time())
+
+
 def get_start_time():
     '''获取开始时间'''
     return time.perf_counter()
