@@ -3684,6 +3684,45 @@ def save_list_txt(data, filename):
             f.write(str(item) + '\n')
 
 
+def save_list(data, filename, format_list=None):
+    '''保存list到txt和pkl文件'''
+    if format_list is None:
+        format_list = ['txt', 'pkl']
+
+    # 创建文件夹
+    mkdir(os.path.dirname(filename))
+
+    # 假如filename有后缀,则添加到format_list中
+    if filename.endswith('.txt'):
+        format_list.append(filename.split('.')[-1])
+        filename = os.path.splitext(filename)[0]
+    if filename.endswith('.pkl') or filename.endswith('.pickle') or filename.endswith('.joblib'):
+        format_list.append('.pkl')
+        filename = os.path.splitext(filename)[0]
+
+    # 保存到txt
+    if 'txt' in format_list:
+        save_list_txt(data, filename)
+
+    # 保存到pkl
+    if 'pkl' in format_list:
+        save_pkl(data, filename)
+
+
+def save_list_merge_to_exist(new_data, filename, format_list=None, unique=True):
+    '''
+    将新的列表数据合并到已存在的列表文件中,并保存
+    '''
+    if os.path.exists(filename) or os.path.exists(filename + '.txt') or os.path.exists(filename + '.pkl') or os.path.exists(filename + '.joblib'):
+        exist_data = load_pkl(filename)
+        merged_data = exist_data + new_data
+    else:
+        merged_data = new_data
+    if unique:
+        merged_data = get_unique_element_list_keep_order(merged_data)
+    save_list(merged_data, filename, format_list=format_list)
+
+
 def load_txt(filename):
     '''
     从txt文件中加载数据
@@ -5403,25 +5442,43 @@ def flatten_list(input_list, level=None):
     return flatten_recursive(input_list, 0)
 
 
+def get_unique_element_list_keep_order(lst):
+    '''
+    去除列表中的重复元素,保持原有顺序
+    
+    参数:
+    - lst: 输入列表
+    
+    返回:
+    - 去重后的列表,保持原顺序
+    '''
+    seen = set()
+    result = []
+    for item in lst:
+        if item not in seen:
+            seen.add(item)
+            result.append(item)
+    return result
+
+
 def union_list(*lists, rm_repeat=True):
     '''
     获取多个列表的并集(去重)
     
     参数:
     - lists: 一个或多个列表的可变参数
+    - rm_repeat: 是否去重,默认为True
     
     返回:
     - 一个列表,包含所有输入列表的并集
     '''
+    merged_list = []
+    for lst in lists:
+        merged_list.extend(lst)
+    
     if rm_repeat:
-        union_set = set()
-        for lst in lists:
-            union_set = union_set.union(set(lst))
-        return list(union_set)
+        return get_unique_element_list_keep_order(merged_list)
     else:
-        merged_list = []
-        for lst in lists:
-            merged_list.extend(lst)
         return merged_list
 
 
@@ -10038,6 +10095,8 @@ class AbstractTool(abc.ABC):
 
     def after_run(self):
         self.data_keeper.save()
+        key_list = self.data_keeper.data.keys()
+        save_list_merge_to_exist(key_list, pj(self.dir_manager.logs_dir, cat(self.name, 'data_keys.txt'))) # 这里是为了防止enable_delete_after_pipeline时,data_keeper被删除后无法查看有哪些key,导致写代码时不方便
         if self.enable_skip:
             self.data_keeper.mark_all_saved()
         if self.release_memory:
