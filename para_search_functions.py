@@ -21,6 +21,7 @@ def find_input_for_target_with_max_iter(
     patience=10,
     verbose=False,
     plot_history=False,
+    plot_every=None,
     save_figdir=None,
 ):
     target_array = np.asarray(target_value)
@@ -28,20 +29,30 @@ def find_input_for_target_with_max_iter(
 
     history = {
         "x": [],
-        "residual_sq": [],
+        "func_value": [],
         "objective": [],
     }
 
-    def compute_residual_vector(x):
-        output = np.asarray(func(x))
-        residual = output - target_array
+    func_cache = {}
+
+    def x_to_key(x):
+        return tuple(np.round(np.asarray(x, dtype=float), 12))
+
+    def eval_func(x):
+        key = x_to_key(x)
+        if key not in func_cache:
+            func_cache[key] = np.asarray(func(x))
+        return func_cache[key]
+
+    def compute_objective(func_value):
+        residual = func_value - target_array
         if weights_array is not None:
             residual = residual * weights_array
-        return residual
+        return np.sum(residual ** 2)
 
     def objective_scalar(x):
-        r = compute_residual_vector(x)
-        return np.sum(r ** 2)
+        func_value = eval_func(x)
+        return compute_objective(func_value)
 
     best_objective = np.inf
     stall_counter = 0
@@ -49,11 +60,11 @@ def find_input_for_target_with_max_iter(
     def callback(xk):
         nonlocal best_objective, stall_counter
 
-        r = compute_residual_vector(xk)
-        obj = np.sum(r ** 2)
+        func_value = eval_func(xk)
+        obj = compute_objective(func_value)
 
         history["x"].append(np.copy(xk))
-        history["residual_sq"].append(r ** 2)
+        history["func_value"].append(func_value)
         history["objective"].append(obj)
 
         if verbose:
@@ -76,16 +87,19 @@ def find_input_for_target_with_max_iter(
             dx = np.linalg.norm(history["x"][-1] - history["x"][-2])
             if dx < tol_x:
                 raise EarlyStop("x converged")
-        
-        if plot_history:
+
+        if (
+            plot_history
+            and plot_every is not None
+            and plot_every > 0
+            and len(history["x"]) % plot_every == 0
+        ):
             fig, ax = plot_optimization_trajectory(history)
             fig.suptitle("Optimization trajectory")
             plt.tight_layout()
             if save_figdir is not None:
                 os.makedirs(save_figdir, exist_ok=True)
-                fig.savefig(
-                    f"{save_figdir}/optimization_trajectory"
-                )
+                fig.savefig(f"{save_figdir}/optimization_trajectory")
             plt.close(fig)
 
     if method == "auto":
@@ -98,11 +112,12 @@ def find_input_for_target_with_max_iter(
 
     try:
         if method == "local":
+            if bounds is not None:
+                print('Bounds are not used in local optimization.')
             result = scipy.optimize.minimize(
                 objective_scalar,
                 np.asarray(x0),
-                method="L-BFGS-B" if bounds is not None else "Nelder-Mead",
-                bounds=bounds,
+                method="Nelder-Mead",
                 options={"maxiter": max_iter},
                 callback=callback,
             )
@@ -117,36 +132,33 @@ def find_input_for_target_with_max_iter(
             )
             return result.x, result.fun, history
 
-    except EarlyStop:
+    except EarlyStop as e:
+        print("Early stopping:", e)
         return history["x"][-1], history["objective"][-1], history
 
 
 def plot_optimization_trajectory(history, ax=None):
     xs = np.asarray(history["x"])
-    residual_sq = np.asarray(history["residual_sq"])
+    func_value = np.asarray(history["func_value"])
 
     if xs.ndim != 2:
         raise ValueError("history['x'] must be 2D")
 
+    if func_value.ndim == 1:
+        func_value = func_value[:, None]
+
+    if func_value.ndim != 2:
+        raise ValueError("history['func_value'] must be 1D or 2D")
+
     n_iter, n_param = xs.shape
-
-    if residual_sq.ndim == 1:
-        residual_sq = residual_sq[:, None]
-
-    if residual_sq.ndim != 2:
-        raise ValueError("history['residual_sq'] must be 1D or 2D")
-
-    _, n_output = residual_sq.shape
+    _, n_output = func_value.shape
 
     n_axes = n_param + n_output
 
     if ax is None:
         fig, ax = plt.subplots(n_axes, 1, figsize=(7, 4 * n_axes))
     else:
-        fig = ax[0].figure if isinstance(ax, (list, tuple, np.ndarray)) else ax.figure
-
-    if not isinstance(ax, (list, tuple, np.ndarray)):
-        raise ValueError("ax must be an iterable of Axes")
+        fig = ax[0].figure
 
     if len(ax) != n_axes:
         raise ValueError("len(ax) must equal n_param + n_output")
@@ -159,8 +171,8 @@ def plot_optimization_trajectory(history, ax=None):
         k += 1
 
     for j in range(n_output):
-        ax[k].plot(residual_sq[:, j], marker="o")
-        ax[k].set_ylabel(f"residual_sq[{j}]")
+        ax[k].plot(func_value[:, j], marker="o")
+        ax[k].set_ylabel(f"func_value[{j}]")
         ax[k].grid(True)
         k += 1
 
@@ -171,15 +183,16 @@ def plot_optimization_trajectory(history, ax=None):
 
 def test_find_input_and_plot():
     def func(x):
+        print(f"func called with x={x}")
         return np.array([
             np.sin(x[0]) + x[1] ** 2,
             x[0] ** 2 + np.cos(x[1]),
         ])
 
-    target_value = np.array([1.0, 1.5])
+    target_value = np.array([10.0, 15.5])
 
     x0 = np.array([0.5, 0.5])
-    bounds = [(-3, 3), (-3, 3)]
+    bounds = [(-10, 10), (-10, 10)]
 
     x_opt, objective_opt, history = find_input_for_target_with_max_iter(
         func=func,
@@ -190,7 +203,10 @@ def test_find_input_and_plot():
         patience=20,
         verbose=True,
         plot_history=True,
-        save_figdir='./test_results',
+        plot_every=5,
+        save_figdir="./test_results",
+        tol_objective=0.,
+        tol_x=0.,
     )
 
     fig, ax = plot_optimization_trajectory(history)
@@ -198,11 +214,4 @@ def test_find_input_and_plot():
     plt.tight_layout()
     plt.show()
 
-    results = {
-        "x_opt": x_opt,
-        "objective_opt": objective_opt,
-        "history": history,
-        "fig": fig,
-        "ax": ax,
-    }
-    return results
+    return x_opt, objective_opt, history
