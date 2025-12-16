@@ -163,13 +163,16 @@ def test_ccovf():
     # 模拟一个ODE,并验证自协方差函数
     x = np.zeros((n, 100000))
     dt = 0.01
+    C = np.array([[2.0, 0.5, 0.2],
+                  [0.5, 5.0, 0.3],
+                  [0.2, 0.3, 10.0]])
     for t in range(1, x.shape[1]):
-        dx = A @ x[:, t-1] * dt + np.random.multivariate_normal(np.zeros(n), D * dt)
+        dx = A @ x[:, t-1] * dt + C @ np.random.multivariate_normal(np.zeros(n), D * dt)
         x[:, t] = x[:, t-1] + dx
     nlags = 1000
     lag_times, empirical_ccovf = cf.get_multi_ccovf(x, x, T=dt, nlags=nlags)
-    theoretical_ccovf = ccovf_multiple_lags_from_A(A, D, lag_times)
-    fit_results = get_acovf_and_fit_from_A_D(A, D, dt, nlags, fit_method='auto')
+    theoretical_ccovf = ccovf_multiple_lags_from_A(A, C@D@C.T, lag_times)
+    fit_results = get_acovf_and_fit_from_A_D(A, C@D@C.T, dt, nlags, fit_method='auto')
     
     if n > 4:
         raise ValueError("Too many variables to plot.")
