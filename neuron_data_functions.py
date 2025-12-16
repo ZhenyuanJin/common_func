@@ -452,7 +452,9 @@ def select_exp_fit(lag_times, acf, threshold=8.0, fix_amp_value=None):
         'single_results': single_results,
         'double_results': double_results,
         'selected_results': selected_results,
-        'selected_tau': selected_tau
+        'selected_tau': selected_tau,
+        'tau': selected_tau, # 维持一致性,重复存储tau
+        'fitted_curve': selected_results['fitted_curve'] # 维持一致性,重复存储fitted_curve
     }
     
     return results
