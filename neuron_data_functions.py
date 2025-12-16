@@ -393,7 +393,11 @@ def double_exp_fit(lag_times, acf):
         
         single_results = single_exp_fit(lag_times, acf)
         p0 = [single_results['tau'], single_results['tau'] / 10, single_results['amp'], 0]
-        bounds = (0, np.inf)
+        if p0[0] <= 0:
+            p0[0] = 1.0
+        if p0[1] <= 0:
+            p0[1] = 1.0 / 10
+        bounds = ([0, 0, -np.inf, -np.inf], [np.inf, np.inf, np.inf, np.inf])
         
         double_popt, double_pcov, double_error = cf.get_curvefit(
             lag_times, acf, f, p0=p0, bounds=bounds, maxfev=5000
