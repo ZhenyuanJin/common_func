@@ -121,6 +121,65 @@ def get_acovf_and_fit_from_A_D(A, D, dt, nlags, fit_method='auto', **kwargs):
     return fit_results
 
 
+def eigen_decompose_linear_dynamics(A, tolerance=1e-12):
+    """
+    Performs spectral decomposition on the linear stability matrix A.
+    Sorts eigenmodes from slowest to fastest.
+    
+    Args:
+        A (np.ndarray): The Jacobian or linear stability matrix.
+        tolerance (float): Threshold below which a decay rate is considered zero.
+                           Rates < tolerance will result in NaN timescales.
+    
+    Returns:
+        dict: Contains sorted eigenvalues, mode decay times, eigenvectors,
+              and node-specific projection weights.
+    """
+    # 1. Eigen decomposition
+    evals, evecs = np.linalg.eig(A)
+    
+    # 2. Sort by decay rate (absolute real part) in ascending order
+    # Smallest rate = Slowest decay = Largest time constant
+    decay_rates = np.abs(np.real(evals))
+    sorted_indices = np.argsort(decay_rates)
+    
+    # 3. Reorder arrays based on the sorted indices
+    sorted_evals = evals[sorted_indices]
+    sorted_evecs = evecs[:, sorted_indices]
+    sorted_rates = decay_rates[sorted_indices]
+    
+    # 4. Calculate characteristic decay times for each mode (Tau = 1 / |Re(lambda)|)
+    # logic: if rate is close to 0, set to NaN to represent infinite/undefined timescale
+    
+    # Initialize an array full of NaNs
+    mode_decay_times = np.full_like(sorted_rates, np.nan)
+    
+    # Create a mask for values that are effectively non-zero
+    valid_mask = sorted_rates > tolerance
+    
+    # Only perform division where the rate is valid
+    # This prevents RuntimeWarning: divide by zero encountered in true_divide
+    np.divide(1.0, sorted_rates, out=mode_decay_times, where=valid_mask)
+    
+    # 5. Calculate projection weights matrix (magnitude of eigenvectors)
+    # Shape: (N_nodes, N_modes)
+    projection_matrix = np.abs(sorted_evecs)
+    
+    # 6. Organize projection weights by node index for easy retrieval
+    node_projections = {}
+    n_nodes = A.shape[0]
+    for i in range(n_nodes):
+        node_projections[i] = projection_matrix[i, :]
+        
+    return {
+        'sorted_eigenvalues': sorted_evals,
+        'mode_decay_times': mode_decay_times,    # Array: [Slowest_Tau (or NaN), ..., Fastest_Tau]
+        'sorted_eigenvectors': sorted_evecs,     # Matrix: Columns are eigenvectors
+        'node_projections': node_projections,    # Dict: access node i's k-th mode weight via node_projections[i][k]
+        'projection_matrix': projection_matrix   # Matrix: For heatmap visualization
+    }
+
+
 def test_ccovf():
     # 生成随机稳定矩阵A（特征值实部为负）
     n = 3
