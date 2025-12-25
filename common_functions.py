@@ -5594,6 +5594,28 @@ def is_sublist(sub_list, main_list):
 
 
 # region instance container
+def _configure_plot_labels(add_property_name_to_label, simplify_label, property_name, scatter_kwargs, mean_kwargs, std_kwargs):
+    if add_property_name_to_label:
+        if simplify_label:
+            scatter_kwargs = update_dict({'label': property_name}, scatter_kwargs)
+            mean_kwargs = update_dict({}, mean_kwargs)
+            std_kwargs = update_dict({}, std_kwargs)
+        else:
+            scatter_kwargs = update_dict({'label': property_name}, scatter_kwargs)
+            mean_kwargs = update_dict({'label': f'Mean {property_name}'}, mean_kwargs)
+            std_kwargs = update_dict({'label': f'Mean ± STD {property_name}'}, std_kwargs)
+    else:
+        if simplify_label:
+            scatter_kwargs = update_dict({}, scatter_kwargs)
+            mean_kwargs = update_dict({}, mean_kwargs)
+            std_kwargs = update_dict({}, std_kwargs)
+        else:
+            scatter_kwargs = update_dict({}, scatter_kwargs)
+            mean_kwargs = update_dict({'label': 'Mean'}, mean_kwargs)
+            std_kwargs = update_dict({'label': 'Mean ± STD'}, std_kwargs)
+    return scatter_kwargs, mean_kwargs, std_kwargs
+
+
 class InstanceContainer:
     '''
     用来存储一组实例,并提供一些常用的操作方法,如过滤/提取信息等
@@ -5799,7 +5821,7 @@ class InstanceContainer:
             save_dict(results, save_path)
         return results
 
-    def visualize_one_param_and_property(self, ax, get_param_func, get_property_func, param_name, property_name, mode='all_points_mean_std', scatter_kwargs=None, mean_kwargs=None, std_kwargs=None):
+    def visualize_one_param_and_property(self, ax, get_param_func, get_property_func, param_name, property_name, mode='all_points_mean_std', scatter_kwargs=None, mean_kwargs=None, std_kwargs=None, add_property_name_to_label=False, simplify_label=False):
         '''
         mode:
         1. only_mean: 只画mean的线
@@ -5807,10 +5829,10 @@ class InstanceContainer:
         3. all_points: 画所有的点
         4. all_points_mean_std: 画所有的点,mean的线和std
         '''
-        scatter_kwargs = update_dict({}, scatter_kwargs)
-        mean_kwargs = update_dict({'label': 'Mean'}, mean_kwargs)
-        std_kwargs = update_dict({'label': 'Mean ± STD'}, std_kwargs)
-
+        scatter_kwargs, mean_kwargs, std_kwargs = _configure_plot_labels(
+            add_property_name_to_label, simplify_label, property_name, scatter_kwargs, mean_kwargs, std_kwargs
+        )
+        
         results = self.get_one_param_and_property(get_param_func, get_property_func, param_name, property_name, save_dir=None)
         param_list = results['param_list']
         property_list = results['property_list']
@@ -5828,6 +5850,38 @@ class InstanceContainer:
                                   np.array(mean_values) + np.array(std_values),
                                   **std_kwargs)
         set_ax(ax, xlabel=param_name, ylabel=property_name)
+
+    def get_two_property(self, get_property_func_0, get_property_func_1, property_name_0, property_name_1, save_dir):
+        property_0_list = []
+        property_1_list = []
+        success_count = 0
+        total_count = len(self._instances)
+        for instance in self._instances:
+            with FlexibleTry() as ft:
+                property_value_0 = get_property_func_0(instance)
+                property_value_1 = get_property_func_1(instance)
+            if ft.success:
+                property_0_list.append(property_value_0)
+                property_1_list.append(property_value_1)
+                success_count += 1
+        print(f"Successfully for {success_count} instances in {total_count} for properties '{property_name_0}, {property_name_1}'")
+        results = {
+            'property_name_0': property_name_0,
+            'property_name_1': property_name_1,
+            'property_0_list': property_0_list,
+            'property_1_list': property_1_list
+        }
+        if save_dir is not None:
+            save_path = pj(save_dir, f"property_{property_name_0}_{property_name_1}")
+            save_dict(results, save_path)
+        return results
+
+    def visualize_two_property_scatter(self, ax, get_property_func_0, get_property_func_1, property_name_0, property_name_1, scatter_kwargs=None):
+        results = self.get_two_property(get_property_func_0, get_property_func_1, property_name_0, property_name_1, save_dir=None)
+        property_0_list = results['property_0_list']
+        property_1_list = results['property_1_list']
+        plt_scatter(ax, property_0_list, property_1_list, **(scatter_kwargs or {}))
+        set_ax(ax, xlabel=property_name_0, ylabel=property_name_1)
 
     def get_two_param_and_property(self, get_param_func_0, get_param_func_1, get_property_func, param_name_0, param_name_1, property_name, save_dir):
         '''
@@ -5871,19 +5925,24 @@ class InstanceContainer:
             save_dict(results, save_path)
         return results
 
-    def visualize_two_param_and_property_heatmap(self, ax, get_param_func_0, get_param_func_1, get_property_func, param_name_0, param_name_1, property_name, sns_heatmap_kwargs=None):
+    def visualize_two_param_and_property_heatmap(self, ax, get_param_func_0, get_param_func_1, get_property_func, param_name_0, param_name_1, property_name, sns_heatmap_kwargs=None, mean_or_std='mean'):
         sns_heatmap_kwargs = update_dict({'heatmap_kwargs': {'annot': True, 'fmt': '.2f'}}, sns_heatmap_kwargs)
         results = self.get_two_param_and_property(get_param_func_0, get_param_func_1, get_property_func, param_name_0, param_name_1, property_name, save_dir=None)
-        mean_property_df = results['mean_property_df']
+        if mean_or_std == 'mean':
+            property_df = results['mean_property_df']
+        elif mean_or_std == 'std':
+            property_df = results['std_property_df']
+        else:
+            raise ValueError("mean_or_std must be 'mean' or 'std'")
         # 调整key的顺序以匹配heatmap的要求(因为heatmap纵向会把从上往下,但是按照普遍的顺序应该把小的参数值放在下面)
-        sorted_mean_property_df = mean_property_df.loc[mean_property_df.index[::-1], :]
+        sorted_mean_property_df = property_df.loc[property_df.index[::-1], :]
         sns_heatmap(ax, sorted_mean_property_df, **sns_heatmap_kwargs)
-        set_ax(ax, xlabel=param_name_1, ylabel=param_name_0, title=f"Mean {property_name} Heatmap")
+        set_ax(ax, xlabel=param_name_1, ylabel=param_name_0, title=f"Mean {property_name}" if mean_or_std=='mean' else f"STD {property_name}")
 
-    def visualize_two_param_and_property_fix_one(self, ax, get_param_func_0, get_param_func_1, get_property_func, param_name_0, param_name_1, property_name, fixed_param_name, fixed_param_value, mode='all_points_mean_std', scatter_kwargs=None, mean_kwargs=None, std_kwargs=None):
-        scatter_kwargs = update_dict({}, scatter_kwargs)
-        mean_kwargs = update_dict({'label': 'Mean'}, mean_kwargs)
-        std_kwargs = update_dict({'label': 'Mean ± STD'}, std_kwargs)
+    def visualize_two_param_and_property_fix_one(self, ax, get_param_func_0, get_param_func_1, get_property_func, param_name_0, param_name_1, property_name, fixed_param_name, fixed_param_value, mode='all_points_mean_std', scatter_kwargs=None, mean_kwargs=None, std_kwargs=None, add_property_name_to_label=False, simplify_label=False):
+        scatter_kwargs, mean_kwargs, std_kwargs = _configure_plot_labels(
+            add_property_name_to_label, simplify_label, property_name, scatter_kwargs, mean_kwargs, std_kwargs
+        )
 
         results = self.get_two_param_and_property(get_param_func_0, get_param_func_1, get_property_func, param_name_0, param_name_1, property_name, save_dir=None)
         mean_df, std_df = results['mean_property_df'], results['std_property_df']
@@ -5934,7 +5993,7 @@ class InstanceContainer:
                                   **std_kwargs)
         set_ax(ax, xlabel=xlabel, ylabel=property_name, title=f"{fixed_param_name}={actual_fixed_value}")
 
-    def visualize_two_param_and_property_fix_one_iterate(self, get_param_func_0, get_param_func_1, get_property_func, param_name_0, param_name_1, property_name, fixed_param_name, fig_dir):
+    def visualize_two_param_and_property_fix_one_iterate(self, get_param_func_0, get_param_func_1, get_property_func, param_name_0, param_name_1, property_name, fixed_param_name, fig_dir, **kwargs):
         results = self.get_two_param_and_property(get_param_func_0, get_param_func_1, get_property_func, param_name_0, param_name_1, property_name, save_dir=None)
         param_0_list = results['param_0_list']
         param_1_list = results['param_1_list']
@@ -5950,7 +6009,7 @@ class InstanceContainer:
             self.visualize_two_param_and_property_fix_one(
                 ax, get_param_func_0, get_param_func_1, get_property_func,
                 param_name_0, param_name_1, property_name,
-                fixed_param_name, fixed_param_value
+                fixed_param_name, fixed_param_value, **kwargs
             )
             save_fig(fig, pj(fig_dir, f"{fixed_param_name}_{fixed_param_value}"))
 
