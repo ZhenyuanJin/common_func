@@ -123,71 +123,138 @@ def get_acovf_and_fit_from_A_D(A, D, dt, nlags, fit_method='auto', **kwargs):
 
 def eigen_decompose_linear_dynamics(A, tolerance=1e-12):
     """
-    Performs spectral decomposition on the linear stability matrix A.
-    Sorts eigenmodes from slowest to fastest.
-    
+    Performs spectral decomposition with comprehensive sorting and projection analysis.
+
+    SORTING BEHAVIOR:
+    -----------------
+    1. Global Lists (eigenvalues_all): Sorted Algebraically (Real part: -Inf to +Inf).
+    2. Dynamic Modes (decay/growth): Filtered and sorted by Slow -> Fast.
+       - Index 0: Largest Timescale.
+       - Index -1: Smallest Timescale.
+
     Args:
-        A (np.ndarray): The Jacobian or linear stability matrix.
-        tolerance (float): Threshold below which a decay rate is considered zero.
-                           Rates < tolerance will result in NaN timescales.
-    
+        A (np.ndarray): The Jacobian matrix (NxN).
+        tolerance (float): Threshold for timescale calculations, if the real part of an eigenvalue is within
+                           ±tolerance, it is not considered for decay/growth modes.
+
     Returns:
-        dict: Contains sorted eigenvalues, mode decay times, eigenvectors,
-              and node-specific projection weights.
+        dict: exhaustive dictionary containing:
+            - Global eigen-info (algebraic sort)
+            - Global projections
+            - Decay-specific info (timescale sort, including projections)
+            - Growth-specific info (timescale sort, including projections)
+            - Stability and math info
     """
+    n_nodes = A.shape[0]
+    
     # 1. Eigen decomposition
     evals, evecs = np.linalg.eig(A)
     
-    # 2. Sort by decay rate (absolute real part) in ascending order
-    # Smallest rate = Slowest decay = Largest time constant
-    decay_rates = np.abs(np.real(evals))
-    sorted_indices = np.argsort(decay_rates)
+    # --- GLOBAL SORTING (Algebraic: Most Negative -> Most Positive) ---
+    # Useful for mathematical analysis of the spectrum spectrum
+    real_parts_all = np.real(evals)
+    global_sort_idx = np.argsort(real_parts_all)
     
-    # 3. Reorder arrays based on the sorted indices
-    sorted_evals = evals[sorted_indices]
-    sorted_evecs = evecs[:, sorted_indices]
-    sorted_rates = decay_rates[sorted_indices]
+    sorted_evals_complex = evals[global_sort_idx]
+    sorted_evecs = evecs[:, global_sort_idx]
     
-    # 4. Calculate characteristic decay times for each mode (Tau = 1 / |Re(lambda)|)
-    # logic: if rate is close to 0, set to NaN to represent infinite/undefined timescale
+    # --- GLOBAL PROJECTIONS ---
+    # Magnitude of eigenvectors: Rows=Nodes, Cols=Modes
+    global_projection_matrix = np.abs(sorted_evecs)
     
-    # Initialize an array full of NaNs
-    mode_decay_times = np.full_like(sorted_rates, np.nan)
-    
-    # Create a mask for values that are effectively non-zero
-    valid_mask = sorted_rates > tolerance
-    
-    # Only perform division where the rate is valid
-    # This prevents RuntimeWarning: divide by zero encountered in true_divide
-    np.divide(1.0, sorted_rates, out=mode_decay_times, where=valid_mask)
-    
-    # 5. Calculate projection weights matrix (magnitude of eigenvectors)
-    # Shape: (N_nodes, N_modes)
-    projection_matrix = np.abs(sorted_evecs)
-    
-    # 6. Organize projection weights by node index for easy retrieval
-    node_projections = {}
-    n_nodes = A.shape[0]
+    global_node_projections = {}
     for i in range(n_nodes):
-        node_projections[i] = projection_matrix[i, :]
+        global_node_projections[i] = global_projection_matrix[i, :]
     
-    # 7. characteristic polynomial coefficients
-    poly_coeffs = np.poly(evals)  # Returns [a_n, a_{n-1}, ..., a_0], where a_n=1
-    
-    # Create a dictionary format of characteristic polynomial coefficients
-    poly_coeffs_dict = {}
-    n = len(poly_coeffs) - 1
-    for i, coeff in enumerate(poly_coeffs):
-        power = n - i
-        poly_coeffs_dict[power] = coeff
+    # --- HELPER: FILTERING, SORTING & PROJECTION ---
+    def process_modes(condition_mask):
+        """
+        Extracts modes, calculates timescales, sorts by slowness, 
+        and computes specific projection matrices.
+        """
+        # 1. Extract raw candidates
+        subset_evals = sorted_evals_complex[condition_mask]
+        subset_evecs = sorted_evecs[:, condition_mask]
+        
+        # Handle empty case (e.g., no unstable modes)
+        if len(subset_evals) == 0:
+            return {
+                'timescales': np.array([]),
+                'eigenvalues': np.array([]),
+                'eigenvectors': np.empty((n_nodes, 0)),
+                'projection_matrix': np.empty((n_nodes, 0)),
+                'node_projections': {i: np.array([]) for i in range(n_nodes)}
+            }
+
+        # 2. Calculate Timescales: Tau = 1 / |Re(lambda)|
+        timescales = 1.0 / np.abs(np.real(subset_evals))
+        
+        # 3. Sort by Timescale: Descending (Largest Tau/Slowest -> Smallest Tau/Fastest)
+        sort_idx = np.argsort(timescales)[::-1]
+        
+        # Apply sorting
+        final_timescales = timescales[sort_idx]
+        final_evals = subset_evals[sort_idx]
+        final_evecs = subset_evecs[:, sort_idx]
+        
+        # 4. Compute Projections for this specific subset
+        # This tells you node participation specifically in these modes (ordered by slowness)
+        proj_matrix = np.abs(final_evecs)
+        
+        node_projs = {}
+        for i in range(n_nodes):
+            node_projs[i] = proj_matrix[i, :]
             
+        return {
+            'timescales': final_timescales,
+            'eigenvalues': final_evals,
+            'eigenvectors': final_evecs,
+            'projection_matrix': proj_matrix,
+            'node_projections': node_projs
+        }
+
+    # Identify masks based on algebraic real part
+    real_parts_sorted = np.real(sorted_evals_complex)
+    
+    decay_mask = real_parts_sorted < -tolerance
+    growth_mask = real_parts_sorted > tolerance
+    
+    # Process the specific lists
+    decay_info = process_modes(decay_mask)
+    growth_info = process_modes(growth_mask)
+
+    # 4. Characteristic polynomial
+    poly_coeffs = np.poly(evals)
+    poly_coeffs_dict = {}
+    for i, coeff in enumerate(poly_coeffs):
+        poly_coeffs_dict[n_nodes - i] = coeff
+
     return {
-        'sorted_eigenvalues': sorted_evals,
-        'mode_decay_times': mode_decay_times,    # Array: [Slowest_Tau (or NaN), ..., Fastest_Tau]
-        'sorted_eigenvectors': sorted_evecs,     # Matrix: Columns are eigenvectors
-        'node_projections': node_projections,    # Dict: access node i's k-th mode weight via node_projections[i][k]
-        'projection_matrix': projection_matrix,  # Matrix: For heatmap visualization
-        'characteristic_polynomial_coefficients': poly_coeffs_dict  # Dict: {power: coefficient}
+        # 1. GLOBAL INFO (Sorted Algebraically: -Re to +Re)
+        'eigenvalues_all': sorted_evals_complex,
+        'eigenvectors_all': sorted_evecs,
+        'projection_matrix_all': global_projection_matrix,
+        'node_projections_all': global_node_projections,
+        
+        # 2. DECAY MODES (Stable)
+        # Sorted: Slowest -> Fastest
+        'decay_modes_timescales': decay_info['timescales'],
+        'decay_modes_eigenvalues': decay_info['eigenvalues'], 
+        'decay_modes_eigenvectors': decay_info['eigenvectors'],
+        'decay_modes_projection_matrix': decay_info['projection_matrix'],
+        'decay_modes_node_projections': decay_info['node_projections'], # node_projections[node_index][mode_index]
+        
+        # 3. GROWTH MODES (Unstable)
+        # Sorted: Slowest -> Fastest
+        'growth_modes_timescales': growth_info['timescales'],
+        'growth_modes_eigenvalues': growth_info['eigenvalues'],
+        'growth_modes_eigenvectors': growth_info['eigenvectors'],
+        'growth_modes_projection_matrix': growth_info['projection_matrix'],
+        'growth_modes_node_projections': growth_info['node_projections'], # node_projections[node_index][mode_index]
+        
+        # 4. SUMMARY STATS
+        'is_stable_system': len(growth_info['timescales']) == 0,
+        'characteristic_polynomial_coefficients': poly_coeffs_dict
     }
 
 
