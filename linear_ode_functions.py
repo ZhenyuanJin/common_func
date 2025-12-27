@@ -170,13 +170,24 @@ def eigen_decompose_linear_dynamics(A, tolerance=1e-12):
     n_nodes = A.shape[0]
     for i in range(n_nodes):
         node_projections[i] = projection_matrix[i, :]
-        
+    
+    # 7. characteristic polynomial coefficients
+    poly_coeffs = np.poly(evals)  # Returns [a_n, a_{n-1}, ..., a_0], where a_n=1
+    
+    # Create a dictionary format of characteristic polynomial coefficients
+    poly_coeffs_dict = {}
+    n = len(poly_coeffs) - 1
+    for i, coeff in enumerate(poly_coeffs):
+        power = n - i
+        poly_coeffs_dict[power] = coeff
+            
     return {
         'sorted_eigenvalues': sorted_evals,
         'mode_decay_times': mode_decay_times,    # Array: [Slowest_Tau (or NaN), ..., Fastest_Tau]
         'sorted_eigenvectors': sorted_evecs,     # Matrix: Columns are eigenvectors
         'node_projections': node_projections,    # Dict: access node i's k-th mode weight via node_projections[i][k]
-        'projection_matrix': projection_matrix   # Matrix: For heatmap visualization
+        'projection_matrix': projection_matrix,  # Matrix: For heatmap visualization
+        'characteristic_polynomial_coefficients': poly_coeffs_dict  # Dict: {power: coefficient}
     }
 
 
