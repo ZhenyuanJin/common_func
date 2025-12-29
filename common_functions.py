@@ -10164,9 +10164,10 @@ class AbstractTool(abc.ABC):
         if self.threshold_gb is not None:
             check_memory_and_stop(threshold_gb=self.threshold_gb)
 
-    def run(self):
+    def run(self, print_info=True):
         if self.already_done:
-            print_title(f'{self.name}: already done, skip')
+            if print_info:
+                print_title(f'{self.name}: already done, skip')
         else:
             timer = Timer(title=f'{self.name}: running')
             timer.start()
@@ -10465,9 +10466,9 @@ class ToolsPipeLine:
             self.check_results_for_each_tool()
             self.code_saver.save_code()
 
-    def run_detail(self):
+    def run_detail(self, print_info=True):
         for i, tool in enumerate(self._pipeline):
-            tool.run()
+            tool.run(print_info=print_info)
             if i < len(self._pipeline) - 1:
                 for downstream_tool in self._pipeline[i + 1:]:
                     downstream_tool.input_previous_info(tool.propagate_info())
@@ -10484,9 +10485,9 @@ class ToolsPipeLine:
         for tool in self._pipeline:
             tool.delete_after_pipeline_if_enabled()
 
-    def run(self):
+    def run(self, print_info=True):
         self.before_run()
-        self.run_detail()
+        self.run_detail(print_info=print_info)
         self.after_run()
 
 
@@ -10613,9 +10614,10 @@ class Experiment(abc.ABC):
                 'name': self.name}
         return info
 
-    def load(self, timedir):
+    def load(self, timedir, print_info=False):
+        # typically, when loading, we do not want to print info
         self.set_timedir(timedir)
-        self.run()
+        self.run(print_info=print_info)
 
     def set_basedir(self, basedir):
         self.basedir = basedir
@@ -10696,8 +10698,8 @@ class Experiment(abc.ABC):
         self._init_pipeline()
         self.pipeline.before_run()
 
-    def run_detail(self):
-        self.pipeline.run_detail()
+    def run_detail(self, print_info=True):
+        self.pipeline.run_detail(print_info=print_info)
 
     def after_run(self):
         self.pipeline.after_run()
@@ -10706,9 +10708,9 @@ class Experiment(abc.ABC):
                 tool.data_keeper.release_memory()
             gc.collect()
 
-    def run(self):
+    def run(self, print_info=True):
         self.before_run()
-        self.run_detail()
+        self.run_detail(print_info=print_info)
         self.after_run()
 
 
@@ -10747,9 +10749,9 @@ class ExperimentPipeLine:
         else:
             pass
 
-    def run_detail(self):
+    def run_detail(self, print_info=True):
         for i, experiment in enumerate(self.experiments):
-            experiment.run()
+            experiment.run(print_info=print_info)
             if i > 0: # 必须从前面获取,而不是向后面传递,后面的experiment尚未创建dir_manager
                 experiment.set_previous_timedir(self.experiments[i-1].dir_manager.timedir)
                 all_previous_timedir = [self.experiments[j].dir_manager.timedir for j in range(i)]
@@ -10764,9 +10766,9 @@ class ExperimentPipeLine:
     def after_run(self):
         pass
 
-    def run(self):
+    def run(self, print_info=True):
         self.before_run()
-        self.run_detail()
+        self.run_detail(print_info=print_info)
         self.after_run()
 
 
@@ -10870,9 +10872,10 @@ class ComposedExperiment(abc.ABC):
     def set_current_time(self, current_time):
         self.current_time = current_time
 
-    def load(self, timedir):
+    def load(self, timedir, print_info=False):
+        # typically, when loading, we do not want to print info
         self.set_timedir(timedir)
-        self.run()
+        self.run(print_info=print_info)
 
     def set_basedir(self, basedir):
         self.basedir = basedir
@@ -10922,15 +10925,15 @@ class ComposedExperiment(abc.ABC):
         self._init_pipeline()
         self.pipeline.before_run()
 
-    def run_detail(self):
-        self.pipeline.run_detail()
+    def run_detail(self, print_info=True):
+        self.pipeline.run_detail(print_info=print_info)
 
     def after_run(self):
         self.pipeline.after_run()
 
-    def run(self):
+    def run(self, print_info=True):
         self.before_run()
-        self.run_detail()
+        self.run_detail(print_info=print_info)
         self.after_run()
 
 
