@@ -226,8 +226,8 @@ def eigen_decompose_linear_dynamics(A, tolerance=1e-12):
     # 4. Characteristic polynomial
     poly_coeffs = np.poly(evals)
     poly_coeffs_dict = {}
-    for i, coeff in enumerate(poly_coeffs):
-        poly_coeffs_dict[n_nodes - i] = coeff
+    for i, coeff in enumerate(poly_coeffs[::-1]):
+        poly_coeffs_dict[i] = coeff
 
     return {
         # 1. GLOBAL INFO (Sorted Algebraically: -Re to +Re)
