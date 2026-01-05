@@ -794,6 +794,30 @@ def get_time(char='_', unit='us'):
         return now.strftime(full_format) % truncated
 
 
+def sort_time_str(time_str_list, char='_', descending=False):
+    def convert_to_datetime(time_str):
+        parts = time_str.split(char)
+        if len(parts[0]) == 4:
+            year = int(parts[0])
+            month = int(parts[1])
+            day = int(parts[2])
+            hour = int(parts[3])
+            minute = int(parts[4])
+            second = int(parts[5])
+            microsecond = 0
+            if len(parts) == 7:
+                fractional = parts[6]
+                if len(fractional) == 3:
+                    microsecond = int(fractional) * 1000
+                elif len(fractional) == 6:
+                    microsecond = int(fractional)
+            return datetime.datetime(year, month, day, hour, minute, second, microsecond)
+        else:
+            return datetime.datetime.min
+    
+    return sorted(time_str_list, key=convert_to_datetime, reverse=descending)
+
+
 def get_timedir(basedir):
     return os.path.join(basedir, get_time())
 
@@ -3421,6 +3445,7 @@ def search_dict_subdir(dict_data, basedir, pkl_name, ext='joblib', value_dir_key
     str: 时间文件夹的路径(没找到则为None)
     bool: 是否找到对应的文件
     '''
+    all_timedir = []
     local_dict_data, basedir = pop_dict_get_dir(dict_data, value_dir_key, both_dir_key, basedir)
     if pop:
         pass
@@ -3433,8 +3458,19 @@ def search_dict_subdir(dict_data, basedir, pkl_name, ext='joblib', value_dir_key
         if os.path.exists(pkl_dir):
             exist_dict_data = load_pkl(pkl_dir)
             if compare_dict(local_dict_data, exist_dict_data, ignore_key):
-                return time_dir, True
-    return None, False
+                all_timedir.append(time_dir)
+    only_time_str = []
+    for timedir in all_timedir:
+        only_time_str.append(os.path.basename(timedir))
+    sorted_only_time_str = sort_time_str(only_time_str)
+    sort_indices = get_sorted_index_from_sorted_list(only_time_str, sorted_only_time_str)
+    all_timedir = sort_list_using_index(all_timedir, sort_indices)
+    if len(all_timedir) > 0:
+        if len(all_timedir) > 1:
+            print(f"Warning: Multiple matching directories found for the given parameters. Returning the latest one: {all_timedir[-1]}")
+        return all_timedir[-1], True
+    else:
+        return None, False
 
 
 def compare_dict(dict1, dict2, ignore_key=None):
@@ -6926,6 +6962,26 @@ def sort_df(df, sort_by='index', axis=0, key=None, reverse=False):
         return df.sort_values(by=key, ascending=not reverse)
     else:
         raise ValueError("sort_by must be 'index' or 'values'")
+
+
+def get_sorted_index_from_sorted_list(l, sorted_l):
+    index_map = {}
+    for i, val in enumerate(l):
+        if val not in index_map:
+            index_map[val] = []
+        index_map[val].append(i)
+    
+    result = []
+    for val in sorted_l:
+        result.append(index_map[val].pop(0))
+    return result
+
+
+def sort_list_using_index(l, indices):
+    new_l = [0] * len(l)
+    for i, idx in enumerate(indices):
+        new_l[i] = l[idx]
+    return new_l
 # endregion
 
 
