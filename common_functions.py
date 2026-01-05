@@ -14851,7 +14851,7 @@ def add_annotation(ax, text, xy, xytext, xycoords='data', fontsize=FONT_SIZE, ar
     return ax.annotate(text, xy, xytext=xytext, xycoords=xycoords, fontsize=fontsize, arrowprops=arrowprops, **kwargs)
 
 
-def add_bar_label(ax, bars, labels, label_type='edge', padding=0., rotation=0., text_process=None, fontsize=FONT_SIZE, **kwargs):
+def add_bar_label(ax, bars, labels, label_type='edge', padding=0., rotation=90., text_process=None, fontsize=FONT_SIZE, **kwargs):
     '''
     在柱状图上添加标签
 
