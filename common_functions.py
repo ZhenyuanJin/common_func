@@ -15395,12 +15395,20 @@ def plt_bar_with_value(ax, x, y, label=None, color=BLUE, width=BAR_WIDTH, vert=T
     '''
     将柱状图的数值显示在柱子上
     '''
+    if isinstance(x, np.ndarray) or isinstance(x, list):
+        x_local = x
+    else:
+        x_local = [x]
+    if isinstance(y, np.ndarray) or isinstance(y, list):
+        y_local = y
+    else:
+        y_local = [y]
     add_bar_label_kwargs = update_dict({}, add_bar_label_kwargs)
     plt_bar_kwargs = update_dict({}, plt_bar_kwargs)
     round_kwargs = update_dict({}, round_kwargs)
-    bars = plt_bar(ax, x, y, label=label, color=color, width=width, vert=vert, **plt_bar_kwargs)
+    bars = plt_bar(ax, x_local, y_local, label=label, color=color, width=width, vert=vert, **plt_bar_kwargs)
     y_str_list = []
-    for val in y:
+    for val in y_local:
         y_str_list.append(round_float(val, **round_kwargs))
     add_bar_label(ax, bars, y_str_list, **add_bar_label_kwargs)
     return bars
