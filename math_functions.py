@@ -164,6 +164,22 @@ def cubic_spline_fit(x, y):
     参数:
     x: 自变量数据点
     y: 因变量数据点
+    
+    返回:
+    spline: 一个CubicSpline对象,可以像函数一样调用来进行插值计算
+            基本用法示例:
+                spline = cubic_spline_fit(x_data, y_data)
+                y_new = spline(x_new)  # 计算新x值对应的y值
+                
+            对象属性:
+                - spline.c: 样条系数
+                - spline.x: 节点位置
+                - spline.derivative(): 返回样条的导数函数
+                - spline.antiderivative(): 返回样条的原函数(积分)
+                
+            注意:
+                由于设置了extrapolate=True,可以在数据范围外进行外推
+                但外推结果可能不可靠，特别是在远离数据点的区域
     """
     x = np.asarray(x)
     y = np.asarray(y)
