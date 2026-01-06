@@ -195,6 +195,80 @@ def cubic_spline_fit(x, y):
     return spline
 
 
+def piecewise_linear_interpolate(x, y):
+    """
+    线性分段插值函数
+    
+    参数:
+    x: 自变量数据点
+    y: 因变量数据点
+    
+    返回:
+    interpolant: 可调用函数,接收x_new参数返回插值结果
+                基本用法示例:
+                    f = piecewise_linear_interp(x_data, y_data)
+                    y_new = f(x_new)
+                    
+                内部属性:
+                    - f.x_nodes: 节点位置
+                    - f.y_nodes: 节点值
+                    
+                注意:
+                    - 支持单点输入和数组输入
+                    - 输入超出数据范围时使用最近邻外推
+    """
+    x_nodes = np.asarray(x, dtype=np.float64)
+    y_nodes = np.asarray(y, dtype=np.float64)
+    
+    if len(x_nodes) != len(y_nodes):
+        raise ValueError("x和y的长度必须相同")
+    
+    if len(x_nodes) < 2:
+        raise ValueError("至少需要2个点才能进行插值")
+    
+    # 确保节点按升序排列
+    sort_idx = np.argsort(x_nodes)
+    x_sorted = x_nodes[sort_idx]
+    y_sorted = y_nodes[sort_idx]
+    
+    def interpolate(x_new):
+        x_new_arr = np.asarray(x_new, dtype=np.float64)
+        is_scalar = x_new_arr.ndim == 0
+        
+        if is_scalar:
+            x_new_arr = np.array([x_new_arr])
+        
+        # 查找每个x_new对应的区间索引
+        idx = np.searchsorted(x_sorted, x_new_arr, side='right') - 1
+        
+        # 处理边界外的情况
+        idx = np.clip(idx, 0, len(x_sorted) - 2)
+        
+        # 计算插值权重
+        x_left = x_sorted[idx]
+        x_right = x_sorted[idx + 1]
+        y_left = y_sorted[idx]
+        y_right = y_sorted[idx + 1]
+        
+        # 避免除零（处理重复节点）
+        with np.errstate(divide='ignore', invalid='ignore'):
+            slope = (y_right - y_left) / (x_right - x_left)
+            result = y_left + slope * (x_new_arr - x_left)
+        
+        # 对于重复节点，使用左侧值
+        mask_duplicate = x_right == x_left
+        if mask_duplicate.any():
+            result = np.where(mask_duplicate, y_left, result)
+        
+        return result[0] if is_scalar else result
+    
+    # 添加属性便于访问
+    interpolate.x_nodes = x_sorted
+    interpolate.y_nodes = y_sorted
+    
+    return interpolate
+
+
 def inverse_function(f, domain, n_points=1000, tol=1e-10):
     """
     数值求解函数的反函数
