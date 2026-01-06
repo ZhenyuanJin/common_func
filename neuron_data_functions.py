@@ -462,6 +462,16 @@ def select_exp_fit(lag_times, acf, threshold=8.0, fix_amp_value=None):
     }
     
     return results
+
+
+def get_timescale_by_area_under_curve(lag_times, acf):
+    processed_acf = acf / acf[0]
+    timescale = 0.0
+    for i in range(1, len(lag_times)):
+        width = lag_times[i] - lag_times[i-1]
+        avg_height = (processed_acf[i] + processed_acf[i-1]) / 2
+        timescale += width * avg_height
+    return timescale
 # endregion
 
 
