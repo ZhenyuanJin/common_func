@@ -131,6 +131,25 @@ def find_monotonic_intervals(func, domain=(-1e6, 1e6), num_points=10000, min_int
     return monotonic_intervals
 
 
+def estimate_derivative(x, y):
+    n = len(x)
+    if n != len(y):
+        raise ValueError("x and y must have the same length")
+    if n == 0:
+        return [], []
+    if n == 1:
+        return [x[0]], [float('nan')]
+    
+    d = [0.0] * n
+    d[0] = (y[1] - y[0]) / (x[1] - x[0])
+    d[-1] = (y[-1] - y[-2]) / (x[-1] - x[-2])
+    
+    for i in range(1, n - 1):
+        d[i] = (y[i + 1] - y[i - 1]) / (x[i + 1] - x[i - 1])
+    
+    return d
+
+
 def get_numerical_derivative_f(f, h=1e-5, method='central'):
     """
     数值求导函数
@@ -440,3 +459,24 @@ def transform_pdf(original_pdf, transform_func, find_monotonic_kwargs=None, inve
             return result
     
     return transformed_pdf
+
+
+def find_local_extreme(x, y):
+    '''
+    找到局部极值点,返回局部极小值点和局部极大值点的坐标数组
+    '''
+    x = np.array(x)
+    y = np.array(y)
+    
+    min_list = []
+    max_list = []
+    
+    for i in range(1, len(y)-1):
+        if y[i] < y[i-1] and y[i] < y[i+1]:
+            min_list.append([x[i], y[i]])
+            
+    for i in range(1, len(y)-1):
+        if y[i] > y[i-1] and y[i] > y[i+1]:
+            max_list.append([x[i], y[i]])
+    
+    return min_list, max_list
