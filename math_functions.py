@@ -480,3 +480,24 @@ def find_local_extreme(x, y):
             max_list.append([x[i], y[i]])
     
     return min_list, max_list
+
+
+def matrix_norm(A, mode):
+    '''
+    '1', '2', 'inf', 'fro' 都可用于估计特征值模长上界
+    '''
+    if mode == '1':
+        return np.max(np.sum(np.abs(A), axis=0))
+    
+    elif mode == '2':
+        s = np.linalg.svd(A, compute_uv=False)
+        return np.max(s) if s.size > 0 else 0.0
+    
+    elif mode == 'inf':
+        return np.max(np.sum(np.abs(A), axis=1))
+    
+    elif mode == 'fro':
+        return np.linalg.norm(A, 'fro')
+    
+    else:
+        raise ValueError(f"Unsupported mode: {mode}")
