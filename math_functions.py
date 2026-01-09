@@ -60,6 +60,34 @@ def find_roots_multi_dim(func, initial_guesses, repeat_tol=1e-6, method='hybr', 
     return get_unique_roots(candidates, repeat_tol)
 
 
+def get_closest_root(roots, point, keep_shape=False):
+    """
+    从根列表中找到最接近指定点的根
+    
+    参数:
+    roots: numpy数组,形状为(n, d),其中n是根的数量,d是维度
+    point: numpy数组,形状为(d,),指定点的坐标
+    keep_shape: 是否保持roots为二维
+    
+    返回:
+    closest_root: 最接近指定点的根
+    """
+    if len(roots) == 0:
+        raise ValueError("根列表为空")
+    
+    # 计算每个根到指定点的距离
+    distances = np.linalg.norm(roots - point, axis=1)
+    
+    # 找到最小距离的索引
+    min_idx = np.argmin(distances)
+    
+    # 返回最接近的根
+    if keep_shape:
+        return roots[min_idx:min_idx+1]
+    else:
+        return roots[min_idx]
+
+
 def test_root_finding():
     """测试函数正确性"""
     
