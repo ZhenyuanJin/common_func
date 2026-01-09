@@ -10869,6 +10869,7 @@ class ComposedExperiment(abc.ABC):
         self.timedir_injected = False
         self.experiment_config_dict = {}  # 不必须输入,所以设置默认值
         self._minimal_init_experiments()
+        self.release_memory = False  # 是否在运行结束后释放内存,默认是False,子类可以修改
 
     def _propagate_each_experiment_first_tool_params_to_following_experiments(self):
         '''
@@ -10986,6 +10987,11 @@ class ComposedExperiment(abc.ABC):
 
     def after_run(self):
         self.pipeline.after_run()
+        if self.release_memory:
+            for experiment in self.experiments:
+                for tool in experiment.tools:
+                    tool.data_keeper.release_memory()
+            gc.collect()
 
     def run(self, print_info=True):
         self.before_run()
