@@ -5420,6 +5420,20 @@ class DataKeeper:
         """删除数据"""
         self.delete_func(self._get_data_path(), **kwargs)
 
+    def mark_deleted(self):
+        """标记数据已删除"""
+        save_dict({f"{self.name}_deleted": True},
+                  pj(self._get_data_path(), f"{self.name}_deleted"),
+                  format_list=['txt'])
+    
+    def check_deleted(self):
+        """检查删除状态"""
+        flag_path = pj(self._get_data_path(), f"{self.name}_deleted")
+        if check_all_file_exist_with_any_extension(flag_path):
+            return True
+        else:
+            return False
+
     def release_memory(self, keys_to_keep=None, keys_to_release=None):
         """
         释放内存中的数据,提供细粒度控制
@@ -10182,15 +10196,29 @@ class AbstractTool(abc.ABC):
             params_exist = self.dir_manager.search_params(prefix=self.name)
             self.init_data_keeper() # 切换了dir_manager,需要重新初始化data_keeper
             self.check_all_saved()
-            if params_exist and (not self.already_done):
-                print_title(f'{self.name}: Not all results saved, create new dir')
-                self.dir_manager.set_current_time(current_time='now', update_timedir=True)
+            self.check_deleted()
+            if params_exist:
+                # 在参数存在的情况下,根据data_keeper的状态决定是否创建新目录,有几种情况:
+                if not self.already_done:
+                    # 结果没有保存好,则创建新目录
+                    print_title(f'{self.name}: Not all results saved, create new dir')
+                    self.dir_manager.set_current_time(current_time='now', update_timedir=True)
+                elif self.already_deleted:
+                    # 结果被删除了,则提示用户
+                    print_title(f'{self.name}: Results deleted, some results may be missing')
+                else:
+                    # 所有结果都保存好了,则不创建新目录
+                    pass
         else:
             print_title(f'{self.name}: Search params is disabled, skip search')
 
     def check_all_saved(self):
         '''要把状态从data_keeper中获取出来,所以不要轻易移除这个接口'''
         self.already_done = self.data_keeper.check_all_saved()
+
+    def check_deleted(self):
+        '''要把状态从data_keeper中获取出来,所以不要轻易移除这个接口'''
+        self.already_deleted = self.data_keeper.check_deleted()
 
     def save_params(self, check=True):
         if check:
@@ -10250,6 +10278,7 @@ class AbstractTool(abc.ABC):
             if self.data_keeper.check_all_saved():
                 self.data_keeper.delete()
                 self.data_keeper.mark_all_saved()  # 确保运行完成的标志仍然存在
+                self.data_keeper.mark_deleted()  # 标记data_keeper被删除
             else:
                 raise ValueError(f'{self.name}: Cannot delete results, only after all results are saved can you delete them')
 
