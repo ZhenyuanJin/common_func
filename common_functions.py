@@ -6237,6 +6237,85 @@ def get_2d_mean_variance_df(grouped_dict):
 # endregion
 
 
+# region 整理结果相关函数
+def get_grouped_dict_from_list_of_dict(data, *args):
+    """
+    从嵌套字典列表中提取数据,创建字典
+    
+    参数:
+    data: 包含字典的列表(支持嵌套字典)
+    *args: 键参数,最后一个键作为值键,前面的键作为元组键的组成部分
+    嵌套的键可以使用点号分隔的字符串或元组表示路径
+
+    返回:
+    defaultdict(list): 以(args[:-1]的值)元组为键,args[-1]的值列表为值的字典
+
+    示例:
+    data = [
+        {'config': {'lr': 0.01, 'batch_size': 32}, 'results': {'accuracy': 0.85}},
+        {'config': {'lr': 0.01, 'batch_size': 64}, 'results': {'accuracy': 0.82}},
+        {'config': {'lr': 0.1, 'batch_size': 32}, 'results': {'accuracy': 0.87}},
+        {'config': {'lr': 0.1, 'batch_size': 64}, 'results': {'accuracy': 0.79}},
+    ]
+    result = get_grouped_dict_from_list_of_dict(
+        data, 
+        'config.lr', # 使用点号分隔的字符串路径 
+        ('config', 'batch_size'), # 使用元组路径
+        ('results', 'accuracy')
+    )
+    print(result)
+    {
+        (0.01, 32): [0.85],
+        (0.01, 64): [0.82],
+        (0.1, 32): [0.87],
+        (0.1, 64): [0.79]
+    }
+    """
+    if len(args) < 2:
+        raise ValueError("至少需要2个键参数: 至少1个元组键和1个值键")
+    
+    def get_nested_value(item, key):
+        """从嵌套字典中获取值,支持点号分隔的字符串和元组路径"""
+        keys = []
+        
+        if isinstance(key, tuple):
+            keys = list(key)
+        elif isinstance(key, str) and '.' in key:
+            keys = key.split('.')
+        else:
+            keys = [key]
+        
+        value = item
+        for k in keys:
+            if isinstance(value, dict) and k in value:
+                value = value[k]
+            else:
+                return None
+        return value
+    
+    result_dict = defaultdict(list)
+    
+    for item in data:
+        # 获取元组键的值
+        tuple_vals = []
+        all_valid = True
+        for key in args[:-1]:
+            val = get_nested_value(item, key)
+            if val is None:
+                all_valid = False
+                break
+            tuple_vals.append(val)
+        
+        # 获取值键的值
+        if all_valid:
+            value_val = get_nested_value(item, args[-1])
+            if value_val is not None:
+                result_dict[tuple(tuple_vals)].append(value_val)
+    
+    return result_dict
+# endregion
+
+
 # region tuple处理相关函数
 def flatten_tuple(tpl, level=None):
     '''
