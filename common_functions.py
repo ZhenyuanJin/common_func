@@ -6197,6 +6197,9 @@ def get_2d_mean_variance_df(grouped_dict):
     """
     将二维分组字典转换为均值和方差的DataFrame
     
+    注意:
+    当用于热力图时,DataFrame的行表示第一个维度,列表示第二个维度,这可能和一般的习惯相反,可以转置DataFrame以适应需求
+    
     参数:
     grouped_dict -- 字典,键为二维元组(dim1, dim2),值为数值列表
     
