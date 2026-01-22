@@ -1,5 +1,9 @@
 import numpy as np
 import scipy.optimize
+import os
+import sys
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+import common_functions as cf
 
 
 def get_unique_roots(candidates, repeat_tol=1e-6):
@@ -529,3 +533,168 @@ def matrix_norm(A, mode):
     
     else:
         raise ValueError(f"Unsupported mode: {mode}")
+
+
+def get_refined_grid(start, end, coarse_num, keypoints, near_num, refine_factor):
+    '''
+    refine_factor: 关键点附近细化倍数
+    '''
+    coarse_pts = np.linspace(start, end, coarse_num + 1)
+    fine_spacing = (end - start) / coarse_num / refine_factor
+    fine_points = []
+    
+    for kp in keypoints:
+        left_idx = max(0, int((kp - start - near_num * fine_spacing) / fine_spacing))
+        right_idx = int((kp - start + near_num * fine_spacing) / fine_spacing) + 1
+        left_bound = start + left_idx * fine_spacing
+        right_bound = start + right_idx * fine_spacing
+        
+        fine_segment = np.linspace(left_bound, right_bound, right_idx - left_idx + 1)
+        fine_points.append(fine_segment)
+    
+    if fine_points:
+        fine_points = np.concatenate(fine_points)
+        all_points = np.sort(np.unique(np.concatenate([coarse_pts, fine_points])))
+    else:
+        all_points = coarse_pts
+    
+    return all_points
+
+
+# region poly
+def get_poly_root(coef):
+    '''
+    coef: 多项式系数,升序 (index 0 is s^0)
+    '''
+    coef_rev = coef[::-1]
+    roots = np.roots(coef_rev)
+    return roots
+
+
+def poly_mul(p1_coef, p2_coef):
+    '''
+    多项式乘法辅助函数.
+    输入 p1_coef, p2_coef 为升序系数 (index 0 is s^0).
+    np.convolve 在这种定义下直接对应多项式乘法,结果也是升序.
+    '''
+    return np.convolve(p1_coef, p2_coef)
+
+
+def poly_linear_comb(coef1, coef2, a, b):
+    '''
+    多项式线性组合辅助函数.
+    输入 coef1, coef2 为升序系数 (index 0 is s^0).
+    '''
+    len1 = len(coef1)
+    len2 = len(coef2)
+    if len1 < len2:
+        coef1 = np.pad(coef1, (0, len2 - len1), 'constant')
+    elif len2 < len1:
+        coef2 = np.pad(coef2, (0, len1 - len2), 'constant')
+    return a * coef1 + b * coef2
+
+
+def poly_val(coef, s):
+    '''
+    多项式求值辅助函数.
+    输入 coef 为升序系数 (index 0 is s^0).
+    np.polyval 需要降序系数,所以先反转.
+    '''
+    coef_rev = coef[::-1]
+    return np.polyval(coef_rev, s)
+
+
+def cancel_poles_zeros(zeros, poles, tol=1e-5):
+    '''
+    对比分子根(Zeros)和分母根(Poles),如果足够接近则约去.
+    返回约分后的 Zeros 和 Poles.
+    '''
+    final_poles = list(poles)
+    final_zeros = []
+    
+    for z in zeros:
+        best_idx = -1
+        min_dist = float('inf')
+        
+        for idx, p in enumerate(final_poles):
+            dist = np.abs(z - p)
+            if dist < min_dist:
+                min_dist = dist
+                best_idx = idx
+        
+        if min_dist < tol:
+            final_poles.pop(best_idx)
+        else:
+            final_zeros.append(z)
+            
+    return np.array(final_zeros), np.array(final_poles)
+
+
+def visualize_rational_function_on_real_axis(ax, numerator_coef, denominator_coef):
+    zeros = get_poly_root(numerator_coef)
+    poles = get_poly_root(denominator_coef)
+    def f(x):
+        return poly_val(numerator_coef, x) / poly_val(denominator_coef, x)
+
+    zeros_real_min = np.min(zeros.real)
+    zeros_real_max = np.max(zeros.real)
+
+    poles_real_min = np.min(poles.real)
+    poles_real_max = np.max(poles.real)
+
+    real_min = min(zeros_real_min, poles_real_min)
+    real_max = max(zeros_real_max, poles_real_max)
+    
+    x_range = cf.scale_range(real_min, real_max, prop=2)
+    
+    x_grid = get_refined_grid(x_range[0], x_range[1], coarse_num=1000, keypoints=np.concatenate([zeros.real, poles.real]), near_num=50, refine_factor=10)
+    
+    f_values = f(x_grid)
+    magnitude = np.abs(f_values)
+    
+    cf.plt_line(ax, x_grid, magnitude)
+    
+    for zero in zeros:
+        cf.add_vline(ax, zero.real, color='green', linestyle='--', label=f'Zero, x={zero.real:.3f}')
+    for pole in poles:
+        cf.add_vline(ax, pole.real, color='red', linestyle='--', label=f'Pole, x={pole.real:.3f}')
+    
+    cf.set_ax(ax, xlabel='Real', ylabel='|f|', ylog=True)
+    cf.set_symlog_scale(ax, axis='x', linthresh=1e-2)
+# endregion
+
+
+# region Laplace
+def inverse_laplace(F, t, sigma=1.0, max_omega=1000, n_points=10000):
+    """
+    数值计算拉普拉斯逆变换
+    
+    Args:
+        F: 拉普拉斯变换函数 F(s)，接受复数 s
+        t: 时间点（可标量或数组）
+        sigma: Bromwich 积分路径实部
+        max_omega: 积分上限 ω
+        n_points: 积分点数
+        
+    Returns:
+        拉普拉斯逆变换结果 f(t)
+    """
+    if np.isscalar(t):
+        t = np.array([t])
+    
+    def integrand(omega, t_val):
+        s = sigma + 1j * omega
+        return (np.exp(s * t_val) * F(s)).real
+    
+    result = np.zeros_like(t, dtype=float)
+    
+    for i, t_val in enumerate(t):
+        if t_val <= 0:
+            result[i] = 0.0
+        else:
+            omega_vals = np.linspace(-max_omega, max_omega, n_points)
+            f_vals = integrand(omega_vals, t_val)
+            result[i] = (np.exp(sigma * t_val) / np.pi) * np.trapz(f_vals, omega_vals)
+    
+    return result[0] if len(result) == 1 else result
+# endregion
