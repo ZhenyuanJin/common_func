@@ -630,17 +630,21 @@ def cancel_poles_zeros(zeros, poles, tol=1e-5):
     return np.array(final_zeros), np.array(final_poles)
 
 
-def visualize_rational_function_on_real_axis(ax, numerator_coef, denominator_coef):
+def visualize_rational_function_on_real_axis(ax, numerator_coef, denominator_coef, linthresh=1e-3, cancel_mode=True, cancel_tol=1e-5):
     zeros = get_poly_root(numerator_coef)
     poles = get_poly_root(denominator_coef)
+    if cancel_mode:
+        zeros_processed, poles_processed = cancel_poles_zeros(zeros, poles, cancel_tol)
+    else:
+        zeros_processed, poles_processed = zeros, poles
     def f(x):
         return poly_val(numerator_coef, x) / poly_val(denominator_coef, x)
 
-    zeros_real_min = np.min(zeros.real)
-    zeros_real_max = np.max(zeros.real)
+    zeros_real_min = np.min(zeros_processed.real)
+    zeros_real_max = np.max(zeros_processed.real)
 
-    poles_real_min = np.min(poles.real)
-    poles_real_max = np.max(poles.real)
+    poles_real_min = np.min(poles_processed.real)
+    poles_real_max = np.max(poles_processed.real)
 
     real_min = min(zeros_real_min, poles_real_min)
     real_max = max(zeros_real_max, poles_real_max)
@@ -654,13 +658,13 @@ def visualize_rational_function_on_real_axis(ax, numerator_coef, denominator_coe
     
     cf.plt_line(ax, x_grid, magnitude)
     
-    for zero in zeros:
-        cf.add_vline(ax, zero.real, color='green', linestyle='--', label=f'Zero, x={zero.real:.3f}')
-    for pole in poles:
-        cf.add_vline(ax, pole.real, color='red', linestyle='--', label=f'Pole, x={pole.real:.3f}')
+    for zero in zeros_processed:
+        cf.add_vline(ax, zero.real, color='green', linestyle='--', label=f'Zero: {zero.real:.3f}, timescale: { -1/zero.real:.2f}')
+    for pole in poles_processed:
+        cf.add_vline(ax, pole.real, color='red', linestyle='--', label=f'Pole: {pole.real:.3f}, timescale: { -1/pole.real:.2f}')
     
     cf.set_ax(ax, xlabel='Real', ylabel='|f|', ylog=True)
-    cf.set_symlog_scale(ax, axis='x', linthresh=1e-2)
+    cf.set_symlog_scale(ax, axis='x', linthresh=linthresh)
 # endregion
 
 
