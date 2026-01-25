@@ -317,40 +317,32 @@ def get_spike_FF(spike, dt, timebin_list, neuron_idx=None, **kwargs):
     return FF
 
 
-def get_spike_avalanche(spike, dt, bin_size, neuron_idx=None, **kwargs):
-    '''
-    计算spike的avanlance
-    '''
-    partial_spike = neuron_idx_data(spike, neuron_idx, keep_size=True)
+def get_avalanche(timeseries, dt, bin_size, neuron_idx=None, threshold=0, timeseries_mode='discrete', **kwargs):
+    partial_timeseries = neuron_idx_data(timeseries, neuron_idx, keep_size=True)
+    if timeseries_mode == 'discrete':
+        timeseries_sum = np.sum(partial_timeseries, axis=1)
+        bin_timeseries = cf.bin_timeseries(timeseries_sum, bin_size, mode='sum')
 
-    # 获得所有神经元的spike相加得到的总spike
-    spike_sum = np.sum(partial_spike, axis=1)
+        is_active = bin_timeseries > threshold
+        is_active_padded = np.pad(is_active, (1, 1), mode='constant', constant_values=False)
+        diff_active = np.diff(is_active_padded.astype(int))
 
-    # 利用bin_size计算bin内的spike数量
-    bin_spike = cf.bin_timeseries(spike_sum, bin_size, mode='sum')
+        non_zero_starts = np.where(diff_active == 1)[0]
+        non_zero_ends = np.where(diff_active == -1)[0] - 1
 
-    # 获取avalanche的开始和结束
-    non_zero_starts = np.where((bin_spike != 0) & (np.roll(bin_spike, 1) == 0))[0]
-    non_zero_ends = np.where((bin_spike != 0) & (np.roll(bin_spike, -1) == 0))[0]
+        avalanche_size = []
+        avalanche_duration = []
+        for start, end in zip(non_zero_starts, non_zero_ends):
+            avalanche_size.append(np.sum(bin_timeseries[start:end+1]))
+            avalanche_duration.append((end - start + 1) * bin_size * dt)
 
-    # 记录avalanche的各种性质
-    avalanche_size = []
-    avalanche_duration = []
-    for start, end in zip(non_zero_starts, non_zero_ends):
-        avalanche_size.append(np.sum(bin_spike[start:end+1]))
-        avalanche_duration.append((end - start) * bin_size * dt)
-
-    # 计算特定duration下size的平均值
-    duration_size_map = {}
-    for d, s in zip(avalanche_duration, avalanche_size):
-        if d in duration_size_map:
-            duration_size_map[d].append(s)
-        else:
-            duration_size_map[d] = [s]
-
-    duration_avg_size = {d: np.mean(sizes) for d, sizes in duration_size_map.items()}
-
-    return avalanche_size, avalanche_duration, duration_avg_size
+        results = {}
+        results['avalanche_size'] = avalanche_size
+        results['avalanche_duration'] = avalanche_duration
+        return results
+    elif timeseries_mode == 'continuous':
+        partial_timeseries = partial_timeseries[partial_timeseries > 0]
+        raise NotImplementedError('continuous mode is not implemented yet.')
 
 
 def single_exp(x, amp, tau):
