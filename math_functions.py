@@ -2,6 +2,7 @@ import numpy as np
 import scipy.optimize
 import os
 import sys
+import tqdm
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 import common_functions as cf
 
@@ -705,19 +706,24 @@ def inverse_laplace(F, t, sigma=1.0, max_omega=1000, n_points=10000):
 
 
 # region fit distribution (power-law)
-def fit_powerlaw_mle(data, xmin=None):
-    '''
-    return: alpha (positive), P(x) ~ x^(-alpha)
-    '''
+def fit_powerlaw_mle(data, xmin=None, mode='continuous'):
     if isinstance(data, list):
         data = np.array(data)
     if xmin is None:
         xmin = np.min(data)
+    
     data_filtered = data[data >= xmin]
     n = len(data_filtered)
     if n == 0:
-        return np.nan
-    alpha = 1 + n / np.sum(np.log(data_filtered / xmin))
+        raise ValueError("No data points within the specified range [xmin, inf)")
+
+    if mode == 'continuous':
+        alpha = 1 + n / np.sum(np.log(data_filtered / xmin))
+    elif mode == 'discrete':
+        alpha = 1 + n / np.sum(np.log(data_filtered / (xmin - 0.5)))
+    else:
+        raise ValueError("mode must be 'continuous' or 'discrete'")
+        
     return alpha
 
 
@@ -736,7 +742,7 @@ def fit_powerlaw_scatter(x, y):
     y_fit = y[mask]
 
     if len(x_fit) < 2:
-        return np.nan, np.nan
+        raise ValueError("Not enough data points to perform fitting.")
 
     logx = np.log10(x_fit)
     logy = np.log10(y_fit)
@@ -749,13 +755,16 @@ def fit_powerlaw_scatter(x, y):
     return alpha, C
 
 
-def plot_powerlaw_pdf_line(ax, alpha, xmin, xmax, C=None):
-    '''
-    alpha is positive
-    '''
+def plot_powerlaw_pdf_line(ax, alpha, xmin, xmax, C=None, mode='continuous'):
     x_range = np.array([xmin, xmax])
     if C is None:
-        C = (alpha - 1) * xmin**(alpha - 1)
+        if mode == 'continuous':
+            C = (alpha - 1) * xmin**(alpha - 1)
+        elif mode == 'discrete':
+            C = (alpha - 1) * (xmin - 0.5)**(alpha - 1)
+        else:
+            raise ValueError("mode must be 'continuous' or 'discrete'")
+            
     y_range = C * x_range**(-alpha)
     ax.plot(x_range, y_range, 'k--', label=f'slope={-alpha:.2f}')
 
@@ -765,7 +774,7 @@ def get_log_bin_pdf(data, n_bins):
         data = np.array(data)
     data = data[data > 0]
     if len(data) == 0:
-        return np.array([]), np.array([])
+        raise ValueError("Data must contain positive values for logarithmic binning.")
     
     min_val = np.min(data)
     max_val = np.max(data)
@@ -779,4 +788,254 @@ def get_log_bin_pdf(data, n_bins):
     
     mask = pdf > 0
     return bin_centers[mask], pdf[mask]
+
+
+def get_powerlaw_deviation_index_D(sizes, n_bins, mode='discrete'):
+    """
+    Calculates the normalized distance D to the best-fitting power-law distribution
+    using logarithmic bins and a least-squares fit on the log-log histogram.
+
+    D = sum(S * |P(S) - P_fit(S)|) / sum(S * P(S))
+
+    Parameters
+    ----------
+    sizes : array_like
+        Array of avalanche sizes.
+
+    Returns
+    -------
+    float
+        The normalized distance D.
+    """
+    assert mode == 'discrete', "Currently only 'discrete' mode is supported."
+    sizes = np.array(sizes)
+    bin_centers, pdf = get_log_bin_pdf(sizes, n_bins=n_bins)
+    
+    if len(bin_centers) < 2:
+        raise ValueError("Not enough data points to perform fitting.")
+
+    log_s = np.log10(bin_centers)
+    log_p = np.log10(pdf)
+
+    b1, b0 = np.polyfit(log_s, log_p, 1)
+
+    p_fit = 10**(b0 + b1 * log_s)
+
+    numerator = np.sum(bin_centers * np.abs(pdf - p_fit))
+    denominator = np.sum(bin_centers * pdf)
+
+    return numerator / denominator
+
+
+def fit_powerlaw_mle_doubly_truncated(data, xmin, xmax, mode='continuous'):
+    """
+    Estimates the power-law exponent alpha for a doubly truncated distribution 
+    (xmin <= x <= xmax) using Maximum Likelihood Estimation (MLE).
+    """
+    data = np.array(data)
+    data = data[(data >= xmin) & (data <= xmax)]
+    n = len(data)
+    
+    if n == 0:
+        raise ValueError("No data points within the specified range [xmin, xmax]")
+
+    sum_log_data = np.sum(np.log(data))
+
+    def neg_log_likelihood(alpha):
+        if alpha <= 0: 
+            raise ValueError("alpha must be positive")
+        
+        if mode == 'discrete':
+            term_range = np.arange(int(xmin), int(xmax) + 1)
+            normalization = np.sum(term_range**(-alpha))
+        elif mode == 'continuous':
+            if np.isclose(alpha, 1):
+                normalization = np.log(xmax / xmin)
+            else:
+                normalization = (xmax**(1 - alpha) - xmin**(1 - alpha)) / (1 - alpha)
+        else:
+            raise ValueError("mode must be 'continuous' or 'discrete'")
+
+        ll = -alpha * sum_log_data - n * np.log(normalization)
+        return -ll
+
+    res = scipy.optimize.minimize_scalar(neg_log_likelihood, bounds=(0.1, 5.0), method='bounded')
+    return res.x
+
+
+def get_powerlaw_ks_statistic_truncated(data, alpha, xmin, xmax, mode='continuous'):
+    """
+    Calculates the Kolmogorov-Smirnov (KS) statistic for a doubly truncated 
+    power-law distribution within the range [xmin, xmax].
+    """
+    data = np.array(data)
+    data = data[(data >= xmin) & (data <= xmax)]
+    n = len(data)
+    
+    if n == 0:
+        raise ValueError("No data points within the specified range [xmin, xmax]")
+
+    data_sorted = np.sort(data)
+    empirical_cdf = np.arange(1, n + 1) / n
+    
+    if mode == 'discrete':
+        x_values = np.arange(int(xmin), int(xmax) + 1)
+        pdf_theoretical = x_values**(-alpha)
+        pdf_theoretical /= np.sum(pdf_theoretical)
+        
+        cdf_theoretical_lookup = np.cumsum(pdf_theoretical)
+        
+        indices = (data_sorted - xmin).astype(int)
+        theoretical_cdf_vals = cdf_theoretical_lookup[indices]
+        
+    elif mode == 'continuous':
+        if np.isclose(alpha, 1):
+            num = np.log(data_sorted / xmin)
+            den = np.log(xmax / xmin)
+        else:
+            num = data_sorted**(1 - alpha) - xmin**(1 - alpha)
+            den = xmax**(1 - alpha) - xmin**(1 - alpha)
+        theoretical_cdf_vals = num / den
+        
+    else:
+        raise ValueError("mode must be 'continuous' or 'discrete'")
+
+    d_plus = np.abs(empirical_cdf - theoretical_cdf_vals)
+    d_minus = np.abs(theoretical_cdf_vals - (np.arange(0, n) / n))
+    
+    return np.max(np.concatenate((d_plus, d_minus)))
+
+
+def find_optimal_powerlaw_truncated_range(data, n_sims=100, mode='continuous', step=1, min_width_ratio=1/3):
+    """
+    Identifies the largest valid doubly truncated data range [xmin, xmax] according to 
+    the KS-statistic criteria described Liang et al 2020 Frontiers, with adaptations.
+
+    This function performs a search over possible start (xmin) and end (xmax) points 
+    to find the widest range (on a logarithmic scale) where the data consistently 
+    follows a power-law distribution.
+
+    The validity of a range is determined by two conditions derived from the text:
+    1. The logarithmic width of the range is at least min_width_ratio of the total 
+       data range.
+    2. The Goodness-of-Fit p-value is the best.
+
+    The p-value is calculated using a Monte Carlo (parametric bootstrap) approach:
+    - The KS statistic (D) is computed for the empirical data against the fitted model.
+    - 'n_sims' synthetic datasets are generated using the estimated parameters.
+    - For each synthetic set, parameters are re-fitted and a new KS statistic (D_sim) is computed.
+    - The p-value is the fraction of synthetic sets where D_sim > D (i.e., the model 
+      generates a worse fit than the empirical data).
+
+    Parameters
+    ----------
+    data : array-like
+        The input dataset containing avalanche sizes or durations.
+    n_sims : int, optional
+        The number of Monte Carlo simulations to run for p-value estimation. 
+        Higher values provide more precision but increase computation time. 
+        Default is 100.
+    mode : str, optional
+        The nature of the data, either 'continuous' or 'discrete'. 
+        Default is 'continuous'.
+    step : int, optional
+        The step size for iterating over unique data values when selecting 
+        potential xmin and xmax. Larger steps reduce computation time but may 
+        miss optimal ranges. Default is 1.
+
+    Returns
+    -------
+    dict or None
+        A dictionary containing the optimal boundary parameters if found, otherwise None.
+        Keys:
+            - 'xmin': Lower bound of the truncated range.
+            - 'xmax': Upper bound of the truncated range.
+            - 'alpha': The MLE estimated exponent for this range.
+            - 'p_value': The bootstrap p-value.
+            - 'ks_stat': The KS statistic for the empirical data.
+            - 'log_width': The width of the range in log10 scale.
+    """
+    data = np.sort(np.array(data))
+    data = data[data > 0] 
+    
+    unique_vals = np.unique(data)
+    n_unique = len(unique_vals)
+    
+    if n_unique < 2:
+        raise ValueError("Data must contain at least two unique positive values.")
+        
+    global_log_min = np.log10(unique_vals[0])
+    global_log_max = np.log10(unique_vals[-1])
+    total_log_width = global_log_max - global_log_min
+    min_width_threshold = total_log_width * min_width_ratio
+
+    best_result = {'p_value': -np.inf}
+
+    for i in range(0, n_unique, step):
+        xmin = unique_vals[i]
+        
+        remaining_log_width = global_log_max - np.log10(xmin)
+        if remaining_log_width < min_width_threshold:
+            break
+
+        for j in range(n_unique - 1, i, -step):
+            xmax = unique_vals[j]
+            
+            current_log_width = np.log10(xmax) - np.log10(xmin)
+            if current_log_width < min_width_threshold:
+                break
+
+            subset = data[(data >= xmin) & (data <= xmax)]
+            n = len(subset)
+            if n < 10:
+                continue
+
+            with cf.FlexibleTry():
+                alpha = fit_powerlaw_mle_doubly_truncated(subset, xmin, xmax, mode=mode)
+                ks_real = get_powerlaw_ks_statistic_truncated(subset, alpha, xmin, xmax, mode=mode)
+
+            ks_greater_count = 0
+            valid_sims = 0
+
+            for _ in range(n_sims):
+                if np.isclose(alpha, 1):
+                    rand_vals = np.random.random(n)
+                    sim_data = xmin * (xmax / xmin) ** rand_vals
+                else:
+                    rand_vals = np.random.random(n)
+                    term1 = xmax ** (1 - alpha)
+                    term2 = xmin ** (1 - alpha)
+                    sim_data = ((term1 - term2) * rand_vals + term2) ** (1 / (1 - alpha))
+                
+                if mode == 'discrete':
+                    sim_data = np.floor(sim_data)
+                    sim_data = sim_data[(sim_data >= xmin) & (sim_data <= xmax)]
+                    if len(sim_data) == 0:
+                        continue
+
+                with cf.FlexibleTry():
+                    alpha_sim = fit_powerlaw_mle_doubly_truncated(sim_data, xmin, xmax, mode=mode)
+                    ks_sim = get_powerlaw_ks_statistic_truncated(sim_data, alpha_sim, xmin, xmax, mode=mode)
+                    valid_sims += 1
+                    if ks_sim > ks_real:
+                        ks_greater_count += 1
+
+            if valid_sims == 0:
+                continue
+
+            p_value = ks_greater_count / valid_sims
+
+            if p_value > best_result['p_value']:
+                C = (1 - alpha) / (xmax ** (1 - alpha) - xmin ** (1 - alpha))
+                best_result = {
+                    'xmin': xmin,
+                    'xmax': xmax,
+                    'alpha': alpha,
+                    'C': C,
+                    'p_value': p_value,
+                    'ks_stat': ks_real,
+                    'log_width': current_log_width,
+                }
+
+    return best_result
 # endregion

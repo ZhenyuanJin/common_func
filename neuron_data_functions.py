@@ -390,6 +390,60 @@ def get_average_size_per_duration(sizes, durations, n_bins):
     return np.array(valid_centers), np.array(avg_sizes)
 
 
+def fit_scaling_law_weighted(sizes, durations, min_duration, max_duration):
+    """
+    Fits the scaling relation S(T) ~ T^(1/sigma*nu*z) using a weighted 
+    least squares method for avalanches with durations in the specified range.
+    
+    The weights are based on the number of samples for each duration.
+
+    Parameters
+    ----------
+    sizes : array_like
+        Array of avalanche sizes.
+    durations : array_like
+        Array of avalanche durations (corresponding to sizes).
+    min_duration : float
+        Lower bound of the truncated duration range.
+    max_duration : float
+        Upper bound of the truncated duration range.
+
+    Returns
+    -------
+    float
+        The estimated scaling exponent (gamma).
+    """
+    sizes = np.asarray(sizes)
+    durations = np.asarray(durations)
+
+    mask = (durations >= min_duration) & (durations <= max_duration)
+    sizes = sizes[mask]
+    durations = durations[mask]
+
+    unique_durations = np.unique(durations)
+
+    mean_sizes = []
+    counts = []
+
+    for T in unique_durations:
+        s_T = sizes[durations == T]
+        mean_sizes.append(np.mean(s_T))
+        counts.append(len(s_T))
+
+    mean_sizes = np.asarray(mean_sizes)
+    counts = np.asarray(counts)
+
+    log_T = np.log(unique_durations)
+    log_mean_S = np.log(mean_sizes)
+
+    weights = counts
+
+    coeffs = np.polyfit(log_T, log_mean_S, 1, w=weights)
+    gamma = coeffs[0]
+    gamma_C = np.exp(coeffs[1])
+    return gamma, gamma_C
+
+
 def check_criticality(tau, alpha, gamma):
     '''
     tau: avalanche size exponent (from P(S) ~ S^(-tau))
@@ -409,7 +463,7 @@ def check_criticality(tau, alpha, gamma):
 
 
 class AvalancheToolbox:
-    def __init__(self, spikes, dt, n_bins, neuron_idx=None, get_avalanche_kwargs=None, use_ISI_bin_size=True):
+    def __init__(self, spikes, dt, n_bins, neuron_idx=None, get_avalanche_kwargs=None, use_ISI_bin_size=True, doubly_truncate=True, step=1, fit_scaling_law_by_weight=False, truncate_min_prop=None, truncate_max_prop=None, use_injected_truncate=False):
         if get_avalanche_kwargs is None:
             local_get_avalanche_kwargs = {}
         else:
@@ -421,25 +475,77 @@ class AvalancheToolbox:
             bin_size = int(ISI_mean[0] / dt)
         else:
             bin_size = local_get_avalanche_kwargs.pop('bin_size')
-        self.get_avalanche_results = get_avalanche(spikes, dt, bin_size=bin_size, neuron_idx=neuron_idx, **local_get_avalanche_kwargs)
+        self.avalanche_results = get_avalanche(spikes, dt, bin_size=bin_size, neuron_idx=neuron_idx, **local_get_avalanche_kwargs)
     
-        size_bin_centers, size_pdf = math_functions.get_log_bin_pdf(self.get_avalanche_results['avalanche_size'], n_bins=n_bins)
-        tau, tau_C = math_functions.fit_powerlaw_scatter(size_bin_centers, size_pdf)
+        size_bin_centers, size_pdf = math_functions.get_log_bin_pdf(self.avalanche_results['avalanche_size'], n_bins=n_bins)
+        if doubly_truncate:
+            if use_injected_truncate:
+                size_truncate_min, size_truncate_max = self.log_shrink(min_val=np.min(size_bin_centers), max_val=np.max(size_bin_centers), left_prop=truncate_min_prop, right_prop=truncate_max_prop)
+                tau, tau_C = math_functions.fit_powerlaw_scatter(
+                    size_bin_centers[(size_bin_centers >= size_truncate_min) & (size_bin_centers <= size_truncate_max)],
+                    size_pdf[(size_bin_centers >= size_truncate_min) & (size_bin_centers <= size_truncate_max)]
+                )
+            else:
+                size_truncate_result = math_functions.find_optimal_powerlaw_truncated_range(self.avalanche_results['avalanche_size'], n_sims=100, mode='discrete', step=step)
+                size_truncate_min = size_truncate_result['xmin']
+                size_truncate_max = size_truncate_result['xmax']
+                tau = size_truncate_result['alpha']
+                tau_C = size_truncate_result['C']
+        else:
+            size_truncate_min = np.min(self.avalanche_results['avalanche_size'])
+            size_truncate_max = np.max(self.avalanche_results['avalanche_size'])
+            tau, tau_C = math_functions.fit_powerlaw_scatter(size_bin_centers, size_pdf)
         
-        duration_bin_centers, duration_pdf = math_functions.get_log_bin_pdf(self.get_avalanche_results['avalanche_duration'], n_bins=n_bins)
-        alpha, alpha_C = math_functions.fit_powerlaw_scatter(duration_bin_centers, duration_pdf)
+        duration_bin_centers, duration_pdf = math_functions.get_log_bin_pdf(self.avalanche_results['avalanche_duration'], n_bins=n_bins)
+        if doubly_truncate:
+            if use_injected_truncate:
+                duration_truncate_min, duration_truncate_max = self.log_shrink(min_val=np.min(duration_bin_centers), max_val=np.max(duration_bin_centers), left_prop=truncate_min_prop, right_prop=truncate_max_prop)
+                alpha, alpha_C = math_functions.fit_powerlaw_scatter(
+                    duration_bin_centers[(duration_bin_centers >= duration_truncate_min) & (duration_bin_centers <= duration_truncate_max)],
+                    duration_pdf[(duration_bin_centers >= duration_truncate_min) & (duration_bin_centers <= duration_truncate_max)]
+                )
+            else:
+                duration_truncate_result = math_functions.find_optimal_powerlaw_truncated_range(self.avalanche_results['avalanche_duration'], n_sims=100, mode='discrete', step=step)
+                duration_truncate_min = duration_truncate_result['xmin']
+                duration_truncate_max = duration_truncate_result['xmax']
+                alpha = duration_truncate_result['alpha']
+                alpha_C = duration_truncate_result['C']
+        else:
+            duration_truncate_min = np.min(self.avalanche_results['avalanche_duration'])
+            duration_truncate_max = np.max(self.avalanche_results['avalanche_duration'])
+            alpha, alpha_C = math_functions.fit_powerlaw_scatter(duration_bin_centers, duration_pdf)
         
-        duration_centers_for_size_duration_relation, size_centers_for_size_duration_relation = get_average_size_per_duration(self.get_avalanche_results['avalanche_size'], self.get_avalanche_results['avalanche_duration'], n_bins)
-        gamma, gamma_C = math_functions.fit_powerlaw_scatter(duration_centers_for_size_duration_relation, size_centers_for_size_duration_relation)
+        # for not doubly_truncate case, the truncate min and max are set above as the data min and max, thus we do not need to do if else here
+        if fit_scaling_law_by_weight:
+            gamma, gamma_C = fit_scaling_law_weighted(
+                self.avalanche_results['avalanche_size'],
+                self.avalanche_results['avalanche_duration'],
+                duration_truncate_min,
+                duration_truncate_max
+            )
+        else:
+            duration_centers_for_size_duration_relation, size_centers_for_size_duration_relation = get_average_size_per_duration(
+                self.avalanche_results['avalanche_size'],
+                self.avalanche_results['avalanche_duration'],
+                n_bins
+            )
+            mask = (duration_centers_for_size_duration_relation >= duration_truncate_min) & (duration_centers_for_size_duration_relation <= duration_truncate_max)
+            filtered_duration_centers = duration_centers_for_size_duration_relation[mask]
+            filtered_size_centers = size_centers_for_size_duration_relation[mask]
+            gamma, gamma_C = math_functions.fit_powerlaw_scatter(filtered_duration_centers, filtered_size_centers)
         gamma = -gamma
         
         predicted_gamma, difference, ratio = check_criticality(tau, alpha, gamma)
 
         self.collected_results = {
+            'size_truncate_min': size_truncate_min,
+            'size_truncate_max': size_truncate_max,
             'size_bin_centers': size_bin_centers,
             'size_pdf': size_pdf,
             'tau': tau,
             'tau_C': tau_C,
+            'duration_truncate_min': duration_truncate_min,
+            'duration_truncate_max': duration_truncate_max,
             'duration_bin_centers': duration_bin_centers,
             'duration_pdf': duration_pdf,
             'alpha': alpha,
@@ -453,14 +559,26 @@ class AvalancheToolbox:
             'ratio': ratio
         }
 
+    def log_shrink(self, min_val, max_val, left_prop, right_prop):
+        lmin = np.log(min_val)
+        lmax = np.log(max_val)
+        span = lmax - lmin
+        new_min = np.exp(lmin + left_prop * span)
+        new_max = np.exp(lmax - right_prop * span)
+        return new_min, new_max
+
     def visualize(self, fig=None, axes=None):
         if fig is None or axes is None:
             fig, axes = cf.gfa(ncols=3)
         
+        size_truncate_min = self.collected_results['size_truncate_min']
+        size_truncate_max = self.collected_results['size_truncate_max']
         size_bin_centers = self.collected_results['size_bin_centers']
         size_pdf = self.collected_results['size_pdf']
         tau = self.collected_results['tau']
         tau_C = self.collected_results['tau_C']
+        duration_truncate_min = self.collected_results['duration_truncate_min']
+        duration_truncate_max = self.collected_results['duration_truncate_max']
         duration_bin_centers = self.collected_results['duration_bin_centers']
         duration_pdf = self.collected_results['duration_pdf']
         alpha = self.collected_results['alpha']
@@ -473,12 +591,12 @@ class AvalancheToolbox:
 
         ax = axes[0]
         ax.plot(size_bin_centers, size_pdf)
-        math_functions.plot_powerlaw_pdf_line(ax, tau, size_bin_centers[0], size_bin_centers[-1], C=tau_C)
+        math_functions.plot_powerlaw_pdf_line(ax, tau, size_truncate_min, size_truncate_max, C=tau_C)
         cf.set_ax(ax, xlog=True, ylog=True, xlabel='Avalanche Size')
         
         ax = axes[1]
         ax.plot(duration_bin_centers, duration_pdf)
-        math_functions.plot_powerlaw_pdf_line(ax, alpha, duration_bin_centers[0], duration_bin_centers[-1], C=alpha_C)
+        math_functions.plot_powerlaw_pdf_line(ax, alpha, duration_truncate_min, duration_truncate_max, C=alpha_C)
         cf.set_ax(ax, xlog=True, ylog=True, xlabel='Avalanche Duration (ms)')
         
         ax = axes[2]
