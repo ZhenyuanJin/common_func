@@ -702,3 +702,81 @@ def inverse_laplace(F, t, sigma=1.0, max_omega=1000, n_points=10000):
     
     return result[0] if len(result) == 1 else result
 # endregion
+
+
+# region fit distribution (power-law)
+def fit_powerlaw_mle(data, xmin=None):
+    '''
+    return: alpha (positive), P(x) ~ x^(-alpha)
+    '''
+    if isinstance(data, list):
+        data = np.array(data)
+    if xmin is None:
+        xmin = np.min(data)
+    data_filtered = data[data >= xmin]
+    n = len(data_filtered)
+    if n == 0:
+        return np.nan
+    alpha = 1 + n / np.sum(np.log(data_filtered / xmin))
+    return alpha
+
+
+def fit_powerlaw_scatter(x, y):
+    '''
+    return: alpha (positive), C, where y = C * x^(-alpha)
+    '''
+    if isinstance(x, list):
+        x = np.array(x)
+    if isinstance(y, list):
+        y = np.array(y)
+
+    mask = (x > 0) & (y > 0)
+
+    x_fit = x[mask]
+    y_fit = y[mask]
+
+    if len(x_fit) < 2:
+        return np.nan, np.nan
+
+    logx = np.log10(x_fit)
+    logy = np.log10(y_fit)
+
+    slope, intercept = np.polyfit(logx, logy, 1)
+
+    alpha = -slope
+    C = 10**intercept
+
+    return alpha, C
+
+
+def plot_powerlaw_pdf_line(ax, alpha, xmin, xmax, C=None):
+    '''
+    alpha is positive
+    '''
+    x_range = np.array([xmin, xmax])
+    if C is None:
+        C = (alpha - 1) * xmin**(alpha - 1)
+    y_range = C * x_range**(-alpha)
+    ax.plot(x_range, y_range, 'k--', label=f'slope={-alpha:.2f}')
+
+
+def get_log_bin_pdf(data, n_bins):
+    if isinstance(data, list):
+        data = np.array(data)
+    data = data[data > 0]
+    if len(data) == 0:
+        return np.array([]), np.array([])
+    
+    min_val = np.min(data)
+    max_val = np.max(data)
+    bins = np.logspace(np.log10(min_val), np.log10(max_val), n_bins)
+    
+    counts, _ = np.histogram(data, bins=bins)
+    bin_widths = np.diff(bins)
+    pdf = counts / (np.sum(counts) * bin_widths)
+    
+    bin_centers = np.sqrt(bins[:-1] * bins[1:])
+    
+    mask = pdf > 0
+    return bin_centers[mask], pdf[mask]
+# endregion

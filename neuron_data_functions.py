@@ -64,6 +64,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 import sys
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 import common_functions as cf
+import math_functions
 # endregion
 
 
@@ -285,6 +286,20 @@ def get_ISI(spike, dt, neuron_idx=None, **kwargs):
     return ISI
 
 
+def get_ISI_mean(spike, dt, neuron_idx=None, **kwargs):
+    '''
+    计算spike的ISI均值
+    '''
+    partial_spike = neuron_idx_data(spike, neuron_idx, keep_size=True)
+    ISI_mean = []
+    for i in range(partial_spike.shape[1]):
+        spike_times = np.where(partial_spike[:, i])[0] * dt
+        if len(spike_times) < 2:
+            continue
+        ISI_mean.append(np.mean(np.diff(spike_times)))
+    return ISI_mean
+
+
 def get_ISI_CV(spike, dt, neuron_idx=None, **kwargs):
     '''
     计算spike的ISI CV
@@ -337,12 +352,144 @@ def get_avalanche(timeseries, dt, bin_size, neuron_idx=None, threshold=0, timese
             avalanche_duration.append((end - start + 1) * bin_size * dt)
 
         results = {}
-        results['avalanche_size'] = avalanche_size
-        results['avalanche_duration'] = avalanche_duration
+        results['avalanche_size'] = np.array(avalanche_size)
+        results['avalanche_duration'] = np.array(avalanche_duration)
         return results
     elif timeseries_mode == 'continuous':
         partial_timeseries = partial_timeseries[partial_timeseries > 0]
         raise NotImplementedError('continuous mode is not implemented yet.')
+
+
+def get_average_size_per_duration(sizes, durations, n_bins):
+    '''
+    calculate average avalanche size for each duration bin using logarithmic binning.
+    '''
+    if isinstance(durations, list):
+        durations = np.array(durations)
+    if isinstance(sizes, list):
+        sizes = np.array(sizes)
+    if len(durations) == 0:
+        return np.array([]), np.array([])
+    
+    min_val = np.min(durations)
+    max_val = np.max(durations)
+    bins = np.logspace(np.log10(min_val), np.log10(max_val), n_bins)
+    
+    bin_centers = np.sqrt(bins[:-1] * bins[1:])
+    digitized = np.digitize(durations, bins)
+    
+    avg_sizes = []
+    valid_centers = []
+    
+    for i in range(1, len(bins)):
+        mask = digitized == i
+        if np.any(mask):
+            avg_sizes.append(np.mean(sizes[mask]))
+            valid_centers.append(bin_centers[i-1])
+            
+    return np.array(valid_centers), np.array(avg_sizes)
+
+
+def check_criticality(tau, alpha, gamma):
+    '''
+    tau: avalanche size exponent (from P(S) ~ S^(-tau))
+    alpha: avalanche duration exponent (from P(T) ~ T^(-alpha))
+    gamma: scaling exponent relating size and duration (from <S> ~ T^gamma)
+    '''
+    if tau < 0:
+        raise ValueError('tau should be positive.')
+    if alpha < 0:
+        raise ValueError('alpha should be positive.')
+    if gamma < 0:
+        raise ValueError('gamma should be positive.')
+    predicted_gamma = (alpha - 1) / (tau - 1)
+    difference = abs(predicted_gamma - gamma)
+    ratio = gamma / predicted_gamma if predicted_gamma != 0 else np.nan
+    return predicted_gamma, difference, ratio
+
+
+class AvalancheToolbox:
+    def __init__(self, spikes, dt, n_bins, neuron_idx=None, get_avalanche_kwargs=None, use_ISI_bin_size=True):
+        if get_avalanche_kwargs is None:
+            local_get_avalanche_kwargs = {}
+        else:
+            local_get_avalanche_kwargs = get_avalanche_kwargs.copy()
+        
+        spikes_sum = np.sum(neuron_idx_data(spikes, neuron_idx, keep_size=True), axis=1, keepdims=True)
+        ISI_mean = get_ISI_mean(spikes_sum, dt, neuron_idx=neuron_idx)
+        if use_ISI_bin_size:
+            bin_size = int(ISI_mean[0] / dt)
+        else:
+            bin_size = local_get_avalanche_kwargs.pop('bin_size')
+        self.get_avalanche_results = get_avalanche(spikes, dt, bin_size=bin_size, neuron_idx=neuron_idx, **local_get_avalanche_kwargs)
+    
+        size_bin_centers, size_pdf = math_functions.get_log_bin_pdf(self.get_avalanche_results['avalanche_size'], n_bins=n_bins)
+        tau, tau_C = math_functions.fit_powerlaw_scatter(size_bin_centers, size_pdf)
+        
+        duration_bin_centers, duration_pdf = math_functions.get_log_bin_pdf(self.get_avalanche_results['avalanche_duration'], n_bins=n_bins)
+        alpha, alpha_C = math_functions.fit_powerlaw_scatter(duration_bin_centers, duration_pdf)
+        
+        duration_centers_for_size_duration_relation, size_centers_for_size_duration_relation = get_average_size_per_duration(self.get_avalanche_results['avalanche_size'], self.get_avalanche_results['avalanche_duration'], n_bins)
+        gamma, gamma_C = math_functions.fit_powerlaw_scatter(duration_centers_for_size_duration_relation, size_centers_for_size_duration_relation)
+        gamma = -gamma
+        
+        predicted_gamma, difference, ratio = check_criticality(tau, alpha, gamma)
+
+        self.collected_results = {
+            'size_bin_centers': size_bin_centers,
+            'size_pdf': size_pdf,
+            'tau': tau,
+            'tau_C': tau_C,
+            'duration_bin_centers': duration_bin_centers,
+            'duration_pdf': duration_pdf,
+            'alpha': alpha,
+            'alpha_C': alpha_C,
+            'duration_centers_for_size_duration_relation': duration_centers_for_size_duration_relation,
+            'size_centers_for_size_duration_relation': size_centers_for_size_duration_relation,
+            'gamma': gamma,
+            'gamma_C': gamma_C,
+            'predicted_gamma': predicted_gamma,
+            'difference': difference,
+            'ratio': ratio
+        }
+
+    def visualize(self, fig=None, axes=None):
+        if fig is None or axes is None:
+            fig, axes = cf.gfa(ncols=3)
+        
+        size_bin_centers = self.collected_results['size_bin_centers']
+        size_pdf = self.collected_results['size_pdf']
+        tau = self.collected_results['tau']
+        tau_C = self.collected_results['tau_C']
+        duration_bin_centers = self.collected_results['duration_bin_centers']
+        duration_pdf = self.collected_results['duration_pdf']
+        alpha = self.collected_results['alpha']
+        alpha_C = self.collected_results['alpha_C']
+        duration_centers_for_size_duration_relation = self.collected_results['duration_centers_for_size_duration_relation']
+        size_centers_for_size_duration_relation = self.collected_results['size_centers_for_size_duration_relation']
+        gamma = self.collected_results['gamma']
+        gamma_C = self.collected_results['gamma_C']
+        ratio = self.collected_results['ratio']
+
+        ax = axes[0]
+        ax.plot(size_bin_centers, size_pdf)
+        math_functions.plot_powerlaw_pdf_line(ax, tau, size_bin_centers[0], size_bin_centers[-1], C=tau_C)
+        cf.set_ax(ax, xlog=True, ylog=True, xlabel='Avalanche Size')
+        
+        ax = axes[1]
+        ax.plot(duration_bin_centers, duration_pdf)
+        math_functions.plot_powerlaw_pdf_line(ax, alpha, duration_bin_centers[0], duration_bin_centers[-1], C=alpha_C)
+        cf.set_ax(ax, xlog=True, ylog=True, xlabel='Avalanche Duration (ms)')
+        
+        ax = axes[2]
+        ax.scatter(duration_centers_for_size_duration_relation, size_centers_for_size_duration_relation, s=50)
+        if not np.isnan(gamma):
+            y_fit = gamma_C * (duration_centers_for_size_duration_relation ** gamma)
+            ax.plot(duration_centers_for_size_duration_relation, y_fit, 'k--', label=f'slope={gamma:.2f}')
+        cf.set_ax(ax, xlog=True, ylog=True, xlabel='Duration', ylabel='Avg Size')
+
+        cf.add_axes_title(axes, f"Scaling relation value = {ratio:.2f} (theory: 1)")
+        return fig, axes
 
 
 def single_exp(x, amp, tau):
