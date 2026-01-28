@@ -581,6 +581,22 @@ def poly_mul(p1_coef, p2_coef):
     return np.convolve(p1_coef, p2_coef)
 
 
+def poly_div(numerator_coef, denominator_coef):
+    '''
+    多项式除法辅助函数.
+    输入 numerator_coef, denominator_coef 为升序系数 (index 0 is s^0).
+    np.polydiv 需要降序系数,所以先反转.
+    返回 商 和 余数,均为升序系数.
+    即: numerator_coef = poly_mul(denominator_coef, q) + r
+    '''
+    num_rev = numerator_coef[::-1]
+    den_rev = denominator_coef[::-1]
+    q_rev, r_rev = np.polydiv(num_rev, den_rev)
+    q = q_rev[::-1]
+    r = r_rev[::-1]
+    return q, r
+
+
 def poly_linear_comb(coef1, coef2, a, b):
     '''
     多项式线性组合辅助函数.
@@ -595,6 +611,19 @@ def poly_linear_comb(coef1, coef2, a, b):
     return a * coef1 + b * coef2
 
 
+def rational_linear_comb(numerator1_coef, denominator1_coef, numerator2_coef, denominator2_coef, a, b):
+    '''
+    计算两个有理函数的线性组合: a*(numerator1_coef/denominator1_coef) + b*(numerator2_coef/denominator2_coef)
+    '''
+    term1 = poly_mul(numerator1_coef, denominator2_coef)
+    term2 = poly_mul(numerator2_coef, denominator1_coef)
+    numerator = poly_linear_comb(term1, term2, a, b)
+    
+    denominator = poly_mul(denominator1_coef, denominator2_coef)
+    
+    return numerator, denominator
+
+
 def poly_val(coef, s):
     '''
     多项式求值辅助函数.
@@ -603,6 +632,68 @@ def poly_val(coef, s):
     '''
     coef_rev = coef[::-1]
     return np.polyval(coef_rev, s)
+
+
+def rational_val(numerator_coef, denominator_coef, s, simplify_before_val=False, simplify_mode='gcd', simplify_tol=1e-8):
+    '''
+    Evaluate rational function numerator(s) / denominator(s) at point(s) s.
+    Although we enable simplification before evaluation, it's better to simplify the rational function once and reuse it for multiple evaluations.
+    '''
+    if simplify_before_val:
+        numerator_coef, denominator_coef = rational_simplify(numerator_coef, denominator_coef, tol=simplify_tol, mode=simplify_mode)
+    num_val = poly_val(numerator_coef, s)
+    den_val = poly_val(denominator_coef, s)
+    return num_val / den_val
+
+
+def poly_gcd(p1_coef, p2_coef, tol=1e-8):
+    '''
+    计算两个多项式的最大公约数 (GCD).
+    输入 p1_coef, p2_coef 为升序系数 (index 0 is s^0).
+    返回 GCD 的升序系数.
+    '''
+    a = p1_coef
+    b = p2_coef
+    
+    while np.any(np.abs(b) > tol):
+        q, r = poly_div(a, b)
+        r[np.abs(r) < tol] = 0.0
+        a, b = b, r
+    
+    leading_coeff = a[-1]
+    if abs(leading_coeff) > tol:
+        a = a / leading_coeff
+    
+    return a
+
+
+def rational_simplify(numerator_coef, denominator_coef, tol=1e-8, mode='gcd'):
+    '''
+    有理函数约分辅助函数.
+    输入 numerator_coef, denominator_coef 为升序系数 (index 0 is s^0).
+    mode: 'gcd' 使用多项式GCD约分, 'zeros' 使用根的比较约分.
+    '''
+    if mode == 'gcd':
+        gcd_coef = poly_gcd(numerator_coef, denominator_coef, tol)
+        q_num, _ = poly_div(numerator_coef, gcd_coef)
+        q_den, _ = poly_div(denominator_coef, gcd_coef)
+        return q_num, q_den
+    elif mode == 'zeros':
+        zeros = get_poly_root(numerator_coef)
+        poles = get_poly_root(denominator_coef)
+        zeros_simplified, poles_simplified = cancel_poles_zeros(zeros, poles, tol)
+        if len(zeros_simplified) == 0:
+            new_numerator_coef = np.array([1.0]) * numerator_coef[-1]
+        else:
+            new_numerator_coef = np.poly(zeros_simplified)[::-1] * numerator_coef[-1]
+        if len(poles_simplified) == 0:
+            new_denominator_coef = np.array([1.0]) * denominator_coef[-1]
+        else:
+            new_denominator_coef = np.poly(poles_simplified)[::-1] * denominator_coef[-1]
+        
+        return new_numerator_coef, new_denominator_coef
+    else:
+        raise ValueError(f"Unsupported mode: {mode}")
 
 
 def cancel_poles_zeros(zeros, poles, tol=1e-5):
