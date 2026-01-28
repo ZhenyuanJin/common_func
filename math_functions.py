@@ -722,6 +722,22 @@ def cancel_poles_zeros(zeros, poles, tol=1e-5):
     return np.array(final_zeros), np.array(final_poles)
 
 
+def rational_residue(numerator_coef, denominator_coef, simplify_before_val=False, simplify_mode='gcd', simplify_tol=1e-8):
+    '''
+    return: residues, poles, direct_term
+    residues: residues of the partial fraction expansion, as a numpy array
+    poles: poles of the partial fraction expansion, as a numpy array
+    direct_term: coefficients of the direct polynomial term, as a numpy array, from lowest degree to highest degree
+    '''
+    if simplify_before_val:
+        numerator_coef, denominator_coef = rational_simplify(numerator_coef, denominator_coef, tol=simplify_tol, mode=simplify_mode)
+    numerator_rev = numerator_coef[::-1]
+    denominator_rev = denominator_coef[::-1]
+    r, p, k = scipy.signal.residue(numerator_rev, denominator_rev)
+    k = k[::-1]
+    return r, p, k
+
+
 def visualize_rational_function_on_real_axis(ax, numerator_coef, denominator_coef, linthresh=1e-3, cancel_mode=True, cancel_tol=1e-5):
     zeros = get_poly_root(numerator_coef)
     poles = get_poly_root(denominator_coef)
