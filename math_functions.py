@@ -562,6 +562,80 @@ def get_refined_grid(start, end, coarse_num, keypoints, near_num, refine_factor)
     return all_points
 
 
+# region custom matrix
+def get_custom_matrix_shape(d):
+    '''
+    d: {(i,j): val}, i: row index, j: column index
+    返回矩阵维数 (row_dim, col_dim)
+    '''
+    row_dim = max(i for (i, j) in d.keys()) + 1
+    col_dim = max(j for (i, j) in d.keys()) + 1
+    return (row_dim, col_dim)
+
+
+def fill_custom_matrix(d, fill_val, row_dim, col_dim):
+    '''
+    d: {(i,j): val}, i: row index, j: column index
+    fill_val: 填充值
+    返回填充后的矩阵字典
+    '''
+    filled_dict = {}
+    # 先填充全量默认值
+    for i in range(row_dim):
+        for j in range(col_dim):
+            filled_dict[(i, j)] = fill_val
+    # 用原始数据覆盖
+    filled_dict.update(d)
+    return filled_dict
+
+
+def custom_matrix_mul(d1, d2, mul_func, add_func, zero_val=None, d1_row_dim=None, d1_col_dim=None, d2_row_dim=None, d2_col_dim=None, fill_zero=True):
+    '''
+    d: {(i,j): val}, i: row index, j: column index
+    mul_func: function to multiply two values
+    add_func: function to add two values
+    '''
+    # 计算维数
+    if d1_row_dim is None or d1_col_dim is None:
+        d1_row_dim, d1_col_dim = get_custom_matrix_shape(d1)
+    if d2_row_dim is None or d2_col_dim is None:
+        d2_row_dim, d2_col_dim = get_custom_matrix_shape(d2)
+    if d1_col_dim != d2_row_dim:
+        raise ValueError("矩阵维数不匹配,无法相乘")
+
+    # 预处理 d1: 按行组织 {i: {j: val}}
+    row_d1 = {}
+    for (i, j), val in d1.items():
+        if i not in row_d1:
+            row_d1[i] = {}
+        row_d1[i][j] = val
+    
+    # 预处理 d2: 按行组织 {j: {k: val}}(注意: d2 的行索引 j 对应乘法中的中间维度)
+    row_d2 = {}
+    for (j, k), val in d2.items():
+        if j not in row_d2:
+            row_d2[j] = {}
+        row_d2[j][k] = val
+    
+    # 计算结果字典
+    result = {}
+    for i, row1 in row_d1.items():
+        for j, val1 in row1.items():
+            # 仅当 d2 包含行 j 时继续(避免 KeyError 且提升效率)
+            if j in row_d2:
+                for k, val2 in row_d2[j].items():
+                    product = mul_func(val1, val2)
+                    key = (i, k)
+                    if key in result:
+                        result[key] = add_func(result[key], product)
+                    else:
+                        result[key] = product
+    if fill_zero:
+        result = fill_custom_matrix(result, zero_val, d1_row_dim, d2_col_dim)
+    return result
+# endregion
+
+
 # region poly
 def get_poly_root(coef):
     '''
@@ -611,17 +685,62 @@ def poly_linear_comb(coef1, coef2, a, b):
     return a * coef1 + b * coef2
 
 
-def rational_linear_comb(numerator1_coef, denominator1_coef, numerator2_coef, denominator2_coef, a, b):
+def poly_add(coef1, coef2):
+    '''
+    多项式加法辅助函数.
+    输入 coef1, coef2 为升序系数 (index 0 is s^0).
+    '''
+    return poly_linear_comb(coef1, coef2, 1.0, 1.0)
+
+
+def rational_mul(numerator1_coef, denominator1_coef, numerator2_coef, denominator2_coef, simplify_rational=False, simplify_mode='gcd', simplify_tol=1e-8):
+    '''
+    计算两个有理函数的乘积: (numerator1_coef/denominator1_coef) * (numerator2_coef/denominator2_coef)
+    '''
+    numerator = poly_mul(numerator1_coef, numerator2_coef)
+    denominator = poly_mul(denominator1_coef, denominator2_coef)
+    if simplify_rational:
+        numerator, denominator = rational_simplify(numerator, denominator, tol=simplify_tol, mode=simplify_mode)
+    return numerator, denominator
+
+
+def rational_mul_matrix(rational_coef_dict1, rational_coef_dict2, simplify_rational=False, simplify_mode='gcd', simplify_tol=1e-8):
+    '''
+    计算两个有理函数矩阵的乘积: {(i,j): (numerator_coef, denominator_coef)}, i: row index, j: column index
+    返回结果也是 {(i,j): (numerator_coef, denominator_coef)}
+    '''
+    def mul_func(val1, val2):
+        num1, den1 = val1
+        num2, den2 = val2
+        num_res, den_res = rational_mul(num1, den1, num2, den2, simplify_rational, simplify_mode, simplify_tol)
+        return (num_res, den_res)
+    def add_func(val1, val2):
+        num1, den1 = val1
+        num2, den2 = val2
+        num_res, den_res = rational_add(num1, den1, num2, den2, simplify_rational=simplify_rational, simplify_mode=simplify_mode, simplify_tol=simplify_tol)
+        return (num_res, den_res)
+    result_dict = custom_matrix_mul(rational_coef_dict1, rational_coef_dict2, mul_func, add_func, zero_val=(np.array([0.0]), np.array([1.0])), fill_zero=True)
+    return result_dict
+
+
+def rational_linear_comb(numerator1_coef, denominator1_coef, numerator2_coef, denominator2_coef, a, b, simplify_rational=False, simplify_mode='gcd', simplify_tol=1e-8):
     '''
     计算两个有理函数的线性组合: a*(numerator1_coef/denominator1_coef) + b*(numerator2_coef/denominator2_coef)
     '''
     term1 = poly_mul(numerator1_coef, denominator2_coef)
     term2 = poly_mul(numerator2_coef, denominator1_coef)
     numerator = poly_linear_comb(term1, term2, a, b)
-    
     denominator = poly_mul(denominator1_coef, denominator2_coef)
-    
+    if simplify_rational:
+        numerator, denominator = rational_simplify(numerator, denominator, tol=simplify_tol, mode=simplify_mode)
     return numerator, denominator
+
+
+def rational_add(numerator1_coef, denominator1_coef, numerator2_coef, denominator2_coef, **kwargs):
+    '''
+    计算两个有理函数的和: (numerator1_coef/denominator1_coef) + (numerator2_coef/denominator2_coef)
+    '''
+    return rational_linear_comb(numerator1_coef, denominator1_coef, numerator2_coef, denominator2_coef, 1.0, 1.0, **kwargs)
 
 
 def poly_val(coef, s):
@@ -634,12 +753,12 @@ def poly_val(coef, s):
     return np.polyval(coef_rev, s)
 
 
-def rational_val(numerator_coef, denominator_coef, s, simplify_before_val=False, simplify_mode='gcd', simplify_tol=1e-8):
+def rational_val(numerator_coef, denominator_coef, s, simplify_rational=False, simplify_mode='gcd', simplify_tol=1e-8):
     '''
     Evaluate rational function numerator(s) / denominator(s) at point(s) s.
     Although we enable simplification before evaluation, it's better to simplify the rational function once and reuse it for multiple evaluations.
     '''
-    if simplify_before_val:
+    if simplify_rational:
         numerator_coef, denominator_coef = rational_simplify(numerator_coef, denominator_coef, tol=simplify_tol, mode=simplify_mode)
     num_val = poly_val(numerator_coef, s)
     den_val = poly_val(denominator_coef, s)
@@ -722,14 +841,14 @@ def cancel_poles_zeros(zeros, poles, tol=1e-5):
     return np.array(final_zeros), np.array(final_poles)
 
 
-def rational_residue(numerator_coef, denominator_coef, simplify_before_val=False, simplify_mode='gcd', simplify_tol=1e-8):
+def rational_residue(numerator_coef, denominator_coef, simplify_rational=False, simplify_mode='gcd', simplify_tol=1e-8):
     '''
     return: residues, poles, direct_term
     residues: residues of the partial fraction expansion, as a numpy array
     poles: poles of the partial fraction expansion, as a numpy array
     direct_term: coefficients of the direct polynomial term, as a numpy array, from lowest degree to highest degree
     '''
-    if simplify_before_val:
+    if simplify_rational:
         numerator_coef, denominator_coef = rational_simplify(numerator_coef, denominator_coef, tol=simplify_tol, mode=simplify_mode)
     numerator_rev = numerator_coef[::-1]
     denominator_rev = denominator_coef[::-1]
