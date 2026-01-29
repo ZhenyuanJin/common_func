@@ -589,6 +589,20 @@ def fill_custom_matrix(d, fill_val, row_dim, col_dim):
     return filled_dict
 
 
+def np_to_custom_matrix(np_mat):
+    '''
+    np_mat: numpy 矩阵
+    返回矩阵字典 {(i,j): val}, i: row index, j: column index
+    '''
+    d = {}
+    assert len(np_mat.shape) == 2, "输入必须是二维矩阵"
+    rows, cols = np_mat.shape
+    for i in range(rows):
+        for j in range(cols):
+            d[(i, j)] = np_mat[i, j]
+    return d
+
+
 def custom_matrix_mul(d1, d2, mul_func, add_func, zero_val=None, d1_row_dim=None, d1_col_dim=None, d2_row_dim=None, d2_col_dim=None, fill_zero=True):
     '''
     d: {(i,j): val}, i: row index, j: column index
@@ -646,6 +660,19 @@ def get_poly_root(coef):
     return roots
 
 
+def get_slowest_root(roots):
+    '''
+    获取实部最接近零的负实部根,代表系统的慢动态.
+    '''
+    negative_roots = [r for r in roots if np.real(r) < 0]
+    if not negative_roots:
+        raise ValueError("没有负实部根")
+    if len(negative_roots) != len(roots):
+        print("警告: 存在非负实部根,已忽略这些根")
+    slowest_root = min(negative_roots, key=lambda r: abs(np.real(r)))
+    return slowest_root
+
+
 def poly_mul(p1_coef, p2_coef):
     '''
     多项式乘法辅助函数.
@@ -693,6 +720,31 @@ def poly_add(coef1, coef2):
     return poly_linear_comb(coef1, coef2, 1.0, 1.0)
 
 
+def constant_to_rational(constant):
+    '''
+    将常数转换为有理函数形式的系数表示.
+    返回 (numerator_coef, denominator_coef)
+    '''
+    numerator_coef = np.array([constant])
+    denominator_coef = np.array([1.0])
+    return numerator_coef, denominator_coef
+
+
+def constant_matrix_to_rational(constant_matrix):
+    '''
+    将常数矩阵转换为有理函数矩阵形式的系数表示.
+    constant_matrix: numpy 矩阵
+    返回 {(i,j): (numerator_coef, denominator_coef)}, i: row index, j: column index
+    '''
+    rational_coef_dict = {}
+    rows, cols = constant_matrix.shape
+    for i in range(rows):
+        for j in range(cols):
+            numerator_coef, denominator_coef = constant_to_rational(constant_matrix[i, j])
+            rational_coef_dict[(i, j)] = (numerator_coef, denominator_coef)
+    return rational_coef_dict
+
+
 def rational_mul(numerator1_coef, denominator1_coef, numerator2_coef, denominator2_coef, simplify_rational=False, simplify_mode='gcd', simplify_tol=1e-8):
     '''
     计算两个有理函数的乘积: (numerator1_coef/denominator1_coef) * (numerator2_coef/denominator2_coef)
@@ -736,6 +788,14 @@ def rational_linear_comb(numerator1_coef, denominator1_coef, numerator2_coef, de
     return numerator, denominator
 
 
+def rational_linear_comb_matrix(rational_coef_dict1, rational_coef_dict2, a, b, simplify_rational=False, simplify_mode='gcd', simplify_tol=1e-8):
+    rational_coef_dict = {}
+    for (i, j) in rational_coef_dict1.keys():
+        numerator, denominator = rational_linear_comb(rational_coef_dict1[(i, j)][0], rational_coef_dict1[(i, j)][1], rational_coef_dict2[(i, j)][0], rational_coef_dict2[(i, j)][1], a, b, simplify_rational, simplify_mode, simplify_tol)
+        rational_coef_dict[(i, j)] = (numerator, denominator)
+    return rational_coef_dict
+
+
 def rational_add(numerator1_coef, denominator1_coef, numerator2_coef, denominator2_coef, **kwargs):
     '''
     计算两个有理函数的和: (numerator1_coef/denominator1_coef) + (numerator2_coef/denominator2_coef)
@@ -763,6 +823,22 @@ def rational_val(numerator_coef, denominator_coef, s, simplify_rational=False, s
     num_val = poly_val(numerator_coef, s)
     den_val = poly_val(denominator_coef, s)
     return num_val / den_val
+
+
+def rational_val_matrix(rational_coef_dict, s, simplify_rational=False, simplify_mode='gcd', simplify_tol=1e-8):
+    '''
+    Evaluate rational function matrix at point(s) s.
+    rational_coef_dict: {(i,j): (numerator_coef, denominator_coef)}, i: row index, j: column index
+    Returns a matrix of evaluated values.
+    '''
+    row_dim, col_dim = get_custom_matrix_shape(rational_coef_dict)
+    result_matrix = np.zeros((row_dim, col_dim), dtype=np.complex128)
+    
+    for (i, j), (numerator_coef, denominator_coef) in rational_coef_dict.items():
+        val = rational_val(numerator_coef, denominator_coef, s, simplify_rational, simplify_mode, simplify_tol)
+        result_matrix[i, j] = val
+    
+    return result_matrix
 
 
 def poly_gcd(p1_coef, p2_coef, tol=1e-8):
