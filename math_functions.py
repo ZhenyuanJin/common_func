@@ -1023,7 +1023,7 @@ def get_OU_process(tau, mu, sigma, dt, n_steps, x0=None, seed=12345):
     '''
     if x0 is None:
         x0 = mu
-    t = np.linspace(0, n_steps * dt, n_steps)
+    t = np.arange(n_steps) * dt
     x = np.zeros(n_steps)
     x[0] = x0
     rng = cf.get_local_rng(seed)
@@ -1046,7 +1046,7 @@ def get_multi_independent_OU_process(tau_vec, mu_vec, sigma_vec, dt, n_steps, x0
     n_dim = len(tau_vec)
     if x0_vec is None:
         x0_vec = mu_vec
-    t = np.linspace(0, n_steps * dt, n_steps)
+    t = np.arange(n_steps) * dt
     x = np.zeros((n_dim, n_steps))
     x[:, 0] = x0_vec
     rng = cf.get_local_rng(seed)
