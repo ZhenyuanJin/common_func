@@ -645,6 +645,12 @@ def double_exp(x, tau1, tau2, amp1, amp2):
 
 
 def double_exp_fit(lag_times, acf):
+    '''
+    tau1: shorter timescale
+    tau2: longer timescale
+    amp1: amplitude for shorter timescale
+    amp2: amplitude for longer timescale
+    '''
     with cf.FlexibleTry() as ft:
         f = double_exp
         
@@ -667,6 +673,10 @@ def double_exp_fit(lag_times, acf):
         results['tau2'] = params_list[1]
         results['amp1'] = params_list[2]
         results['amp2'] = params_list[3]
+
+        results['tau1'], results['tau2'] = min(results['tau1'], results['tau2']), max(results['tau1'], results['tau2'])
+        results['amp1'], results['amp2'] = (results['amp1'], results['amp2']) if results['tau1'] == double_popt[0] else (results['amp2'], results['amp1'])
+
         results['tau'] = (results['amp1'] * results['tau1'] + results['amp2'] * results['tau2']) / (results['amp1'] + results['amp2'])
         results['error'] = double_error
         results['cov'] = double_pcov
