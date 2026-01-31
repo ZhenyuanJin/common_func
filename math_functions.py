@@ -1015,6 +1015,61 @@ def inverse_laplace(F, t, sigma=1.0, max_omega=1000, n_points=10000):
 # endregion
 
 
+# region stochastic process
+def get_OU_process(tau, mu, sigma, dt, n_steps, x0=None, seed=12345):
+    '''
+    生成 Ornstein-Uhlenbeck 过程样本路径.
+    
+    参数:
+    tau: 漂移时间常数
+    mu: 漂移均值
+    sigma: 扩散系数
+    dt: 时间步长
+    n_steps: 步数
+    x0: 初始值
+    
+    返回:
+    t: 时间数组
+    x: OU 过程样本路径数组, 形状为 (n_steps,)
+    '''
+    if x0 is None:
+        x0 = mu
+    t = np.linspace(0, n_steps * dt, n_steps)
+    x = np.zeros(n_steps)
+    x[0] = x0
+    rng = cf.get_local_rng(seed)
+    for i in range(1, n_steps):
+        dx_drift = - (x[i - 1] - mu) / tau * dt
+        dx_diffusion = sigma * np.sqrt(dt) * rng.normal()
+        x[i] = x[i - 1] + dx_drift + dx_diffusion
+    
+    return t, x
+
+
+def get_multi_independent_OU_process(tau_vec, mu_vec, sigma_vec, dt, n_steps, x0_vec=None, seed=12345):
+    '''
+    生成多维 Ornstein-Uhlenbeck 过程样本路径（假设各维度独立）.
+    '''
+    tau_vec = np.array(tau_vec)
+    mu_vec = np.array(mu_vec)
+    sigma_vec = np.array(sigma_vec)
+    n_dim = len(tau_vec)
+    if x0_vec is None:
+        x0_vec = mu_vec
+    t = np.linspace(0, n_steps * dt, n_steps)
+    x = np.zeros((n_dim, n_steps))
+    x[:, 0] = x0_vec
+    rng = np.random.default_rng(seed)
+    
+    for i in range(1, n_steps):
+        dx_drift = - (x[:, i - 1] - mu_vec) / tau_vec * dt
+        dx_diffusion = sigma_vec * np.sqrt(dt) * rng.normal(size=n_dim)
+        x[:, i] = x[:, i - 1] + dx_drift + dx_diffusion
+    
+    return t, x
+# endregion
+
+
 # region fit distribution (power-law)
 def fit_powerlaw_mle(data, xmin=None, mode='continuous'):
     if isinstance(data, list):
