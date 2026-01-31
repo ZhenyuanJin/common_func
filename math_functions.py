@@ -730,18 +730,23 @@ def constant_to_rational(constant):
     return numerator_coef, denominator_coef
 
 
-def constant_matrix_to_rational(constant_matrix):
+def constant_matrix_to_rational(constant_matrix, fill_zero=True, tol=1e-12):
     '''
     将常数矩阵转换为有理函数矩阵形式的系数表示.
     constant_matrix: numpy 矩阵
+    fill_zero: 是否填充零元素
+    tol: 零元素的阈值
     返回 {(i,j): (numerator_coef, denominator_coef)}, i: row index, j: column index
     '''
     rational_coef_dict = {}
     rows, cols = constant_matrix.shape
     for i in range(rows):
         for j in range(cols):
-            numerator_coef, denominator_coef = constant_to_rational(constant_matrix[i, j])
-            rational_coef_dict[(i, j)] = (numerator_coef, denominator_coef)
+            if fill_zero or abs(constant_matrix[i, j]) > tol:
+                numerator_coef, denominator_coef = constant_to_rational(constant_matrix[i, j])
+                rational_coef_dict[(i, j)] = (numerator_coef, denominator_coef)
+            else:
+                pass
     return rational_coef_dict
 
 
@@ -751,12 +756,15 @@ def rational_mul(numerator1_coef, denominator1_coef, numerator2_coef, denominato
     '''
     numerator = poly_mul(numerator1_coef, numerator2_coef)
     denominator = poly_mul(denominator1_coef, denominator2_coef)
+    if np.array_equal(numerator1_coef, np.array([0.0])) or np.array_equal(numerator2_coef, np.array([0.0])):
+        numerator = np.array([0.0])
+        denominator = np.array([1.0])
     if simplify_rational:
         numerator, denominator = rational_simplify(numerator, denominator, tol=simplify_tol, mode=simplify_mode)
     return numerator, denominator
 
 
-def rational_mul_matrix(rational_coef_dict1, rational_coef_dict2, simplify_rational=False, simplify_mode='gcd', simplify_tol=1e-8):
+def rational_mul_matrix(rational_coef_dict1, rational_coef_dict2, simplify_rational=False, simplify_mode='gcd', simplify_tol=1e-8, fill_zero=True):
     '''
     计算两个有理函数矩阵的乘积: {(i,j): (numerator_coef, denominator_coef)}, i: row index, j: column index
     返回结果也是 {(i,j): (numerator_coef, denominator_coef)}
@@ -771,7 +779,7 @@ def rational_mul_matrix(rational_coef_dict1, rational_coef_dict2, simplify_ratio
         num2, den2 = val2
         num_res, den_res = rational_add(num1, den1, num2, den2, simplify_rational=simplify_rational, simplify_mode=simplify_mode, simplify_tol=simplify_tol)
         return (num_res, den_res)
-    result_dict = custom_matrix_mul(rational_coef_dict1, rational_coef_dict2, mul_func, add_func, zero_val=(np.array([0.0]), np.array([1.0])), fill_zero=True)
+    result_dict = custom_matrix_mul(rational_coef_dict1, rational_coef_dict2, mul_func, add_func, zero_val=(np.array([0.0]), np.array([1.0])), fill_zero=fill_zero)
     return result_dict
 
 
