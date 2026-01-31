@@ -1017,6 +1017,10 @@ def inverse_laplace(F, t, sigma=1.0, max_omega=1000, n_points=10000):
 
 # region stochastic process
 def get_OU_process(tau, mu, sigma, dt, n_steps, x0=None, seed=12345):
+    '''
+    t: shape (n_steps,)
+    x: shape (n_steps,)
+    '''
     if x0 is None:
         x0 = mu
     t = np.linspace(0, n_steps * dt, n_steps)
@@ -1032,6 +1036,10 @@ def get_OU_process(tau, mu, sigma, dt, n_steps, x0=None, seed=12345):
 
 
 def get_multi_independent_OU_process(tau_vec, mu_vec, sigma_vec, dt, n_steps, x0_vec=None, seed=12345):
+    '''
+    t: shape (n_steps,)
+    x: shape (n_dim, n_steps)
+    '''
     tau_vec = np.array(tau_vec)
     mu_vec = np.array(mu_vec)
     sigma_vec = np.array(sigma_vec)
