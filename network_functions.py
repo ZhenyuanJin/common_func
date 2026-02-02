@@ -818,6 +818,26 @@ def get_small_world_index(G, seed=0):
     return results
 
 
+def get_adjacency_matrix_power(adj_mat, power):
+    '''
+    计算邻接矩阵的幂
+    adj_mat: 邻接矩阵,可以是numpy数组或scipy稀疏矩阵
+    power: 幂次
+    mask的作用: 保证一定为0的位置在结果中仍为0
+    '''
+    mask = (adj_mat != 0).astype(int)
+    if sps.issparse(adj_mat):
+        result = adj_mat ** power
+        mask = mask ** power
+        mask = mask.astype(bool)
+        result = result.multiply(mask)
+    else:
+        result = np.linalg.matrix_power(adj_mat, power)
+        mask = np.linalg.matrix_power(mask, power)
+        result = result * (mask > 0)
+    return result
+
+
 class TestNetworkIndex(cf.RunAllMixin):
     def test_get_connection_num(self):
         """测试连接数计算"""
