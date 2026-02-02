@@ -636,7 +636,7 @@ def single_exp_fit(lag_times, acf, fix_amp_value=None):
         results['tau'] = np.nan
         results['error'] = np.nan
         results['cov'] = np.nan
-        results['fitted_curve'] = np.nan
+        results['fitted_curve'] = np.nan * lag_times
     return results
 
 
@@ -691,7 +691,7 @@ def double_exp_fit(lag_times, acf):
         results['tau'] = np.nan
         results['error'] = np.nan
         results['cov'] = np.nan
-        results['fitted_curve'] = np.nan
+        results['fitted_curve'] = np.nan * lag_times
     
     return results
 
