@@ -2,7 +2,7 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 import common_functions as cf
-
+import tqdm
 
 def test_experiment():
     '''
@@ -104,11 +104,13 @@ def test_experiment():
         def _set_name(self):
             self.name = 'fit_ode_new'
 
-        def run_detail(self):
+        def run_detail(self, **kwargs):
             assert self.fit_ode_data_keeper_dict['trainer'].get_value('0') == 1
             assert self.fit_ode_data_keeper_dict['simulator'].get_value('0') == 2
             assert self.fit_ode_data_keeper_dict['analyzer'].get_value('0') == 3
-            super().run_detail()
+            for i in tqdm.tqdm([0, 1, 2]):
+                pass
+            super().run_detail(**kwargs)
 
 
     class ComposeFITODE(cf.ComposedExperiment):

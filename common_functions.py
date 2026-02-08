@@ -10183,6 +10183,7 @@ class AbstractTool(abc.ABC):
         self.enable_delete_after_pipeline = False # 是否在pipeline结束后删除结果,默认是False,子类可以修改
         self.process_num = 1 # datakeeper读取和保存的process数量
         self.threshold_gb = None # 用于检查内存的阈值,单位gb
+        self.logger = Logger()
 
     @abc.abstractmethod
     def _set_name(self):
@@ -10331,6 +10332,8 @@ class AbstractTool(abc.ABC):
             check_memory_and_stop(threshold_gb=self.threshold_gb)
 
     def run(self, print_info=True):
+        cm = CaptureManager(loggers=[self.logger])
+        self.logger.log.extend([get_time(), '\n'])
         if self.already_done:
             if print_info:
                 print_title(f'{self.name}: already done, skip')
@@ -10344,6 +10347,9 @@ class AbstractTool(abc.ABC):
             self.after_run()
 
             timer.end()
+        cm.end()
+        self.logger.save(self.logs_dir, mode='a')
+        self.logger.log = []
     
     def force_run(self):
         original_already_done = self.already_done
