@@ -5853,7 +5853,7 @@ class InstanceContainer:
         param_property_dict = get_group_values_by_keys(param_list, property_list)
         mean_param_property_dict = {k: np.mean(v) for k, v in param_property_dict.items()}
         std_param_property_dict = {k: np.std(v) for k, v in param_property_dict.items()}
-        sorted_param_list, mean_property_list, std_property_list = get_sorted_keys_and_mean_variance_arrays_from_dict_of_list(param_property_dict)
+        sorted_param_list, mean_property_list, std_property_list = get_sorted_keys_and_mean_std_arrays_from_dict_of_list(param_property_dict)
         results = {
             'param_name': param_name,
             'property_name': property_name,
@@ -5956,7 +5956,7 @@ class InstanceContainer:
         param_property_dict = get_multigroup_values_by_keys(param_0_list, param_1_list, property_list)
         mean_param_property_dict = {k: np.mean(v) for k, v in param_property_dict.items()}
         std_param_property_dict = {k: np.std(v) for k, v in param_property_dict.items()}
-        mean_property_df, std_property_df = get_2d_mean_variance_df(param_property_dict)
+        mean_property_df, std_property_df = get_2d_mean_std_df(param_property_dict)
         results = {
             'param_name_0': param_name_0,
             'param_name_1': param_name_1,
@@ -6158,19 +6158,17 @@ def get_multigroup_values_by_keys(*args):
     return group_values_by_multikeys(*args)
 
 
-def get_sorted_keys_and_mean_variance_arrays_from_dict_of_list(data_dict):
+def get_sorted_keys_and_mean_std_arrays_from_dict_of_list(data_dict):
     '''
-    输入一个字典,value是list,返回排序后的key数组,均值数组,方差数组
-    例如:
     data_dict = {
         0.1: [1, 2, 3],
         0.2: [2, 3, 4],
         0.3: [3, 4, 5]
     }
-    x, y_mean, y_var = get_sorted_keys_and_mean_variance_arrays_from_dict_of_list(data_dict)
+    x, y_mean, y_std = get_sorted_keys_and_mean_std_arrays_from_dict_of_list(data_dict)
     print(x)
     print(y_mean)
-    print(y_var)
+    print(y_std)
     '''
     # 提取并排序x轴数据（参数值）
     sorted_keys = sorted(data_dict.keys(), key=float)
@@ -6178,24 +6176,24 @@ def get_sorted_keys_and_mean_variance_arrays_from_dict_of_list(data_dict):
     
     # 计算每个参数对应的均值和方差
     means = []
-    variances = []
+    stds = []
     for key in sorted_keys:
         values = data_dict[key]
         mean = np.mean(values)
-        variance = np.var(values)
+        std = np.std(values)
         means.append(mean)
-        variances.append(variance)
+        stds.append(std)
     
     # 转换为NumPy数组
     y_mean = np.array(means)
-    y_var = np.array(variances)
+    y_std = np.array(stds)
     
-    return x, y_mean, y_var
+    return x, y_mean, y_std
 
 
-def get_2d_mean_variance_df(grouped_dict):
+def get_2d_mean_std_df(grouped_dict):
     """
-    将二维分组字典转换为均值和方差的DataFrame
+    将二维分组字典转换为均值和标准差的DataFrame
     
     注意:
     当用于热力图时,DataFrame的行表示第一个维度,列表示第二个维度,这可能和一般的习惯相反,可以转置DataFrame以适应需求
@@ -6204,7 +6202,7 @@ def get_2d_mean_variance_df(grouped_dict):
     grouped_dict -- 字典,键为二维元组(dim1, dim2),值为数值列表
     
     返回:
-    包含两个DataFrame的元组:(均值DataFrame, 方差DataFrame)
+    包含两个DataFrame的元组:(均值DataFrame, 标准差DataFrame)
     
     示例:
     grouped_data = {
@@ -6213,11 +6211,11 @@ def get_2d_mean_variance_df(grouped_dict):
          (0.1, 32): [0.87, 0.88],
          (0.1, 64): [0.79, 0.80]
     }
-    mean_df, var_df = get_2d_mean_variance_df(grouped_data)
+    mean_df, std_df = get_2d_mean_std_df(grouped_data)
     print("均值DataFrame:")
     print(mean_df)
-    print("\n方差DataFrame:")
-    print(var_df)
+    print("标准差DataFrame:")
+    print(std_df)
     """
     # 提取所有唯一的维度值
     dim1_values = sorted({key[0] for key in grouped_dict.keys()})
@@ -6225,18 +6223,18 @@ def get_2d_mean_variance_df(grouped_dict):
     
     # 创建空DataFrame
     mean_df = pd.DataFrame(index=dim1_values, columns=dim2_values, dtype=float)
-    var_df = pd.DataFrame(index=dim1_values, columns=dim2_values, dtype=float)
+    std_df = pd.DataFrame(index=dim1_values, columns=dim2_values, dtype=float)
     
     # 填充DataFrame
     for (d1, d2), values in grouped_dict.items():
         if d1 in dim1_values and d2 in dim2_values:  # 确保键在索引中
             mean_val = np.mean(values)
-            var_val = np.var(values)
+            std_val = np.std(values)
             
             mean_df.loc[d1, d2] = mean_val
-            var_df.loc[d1, d2] = var_val
+            std_df.loc[d1, d2] = std_val
     
-    return mean_df, var_df
+    return mean_df, std_df
 # endregion
 
 
