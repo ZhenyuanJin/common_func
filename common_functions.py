@@ -6239,17 +6239,21 @@ def get_2d_mean_std_df(grouped_dict):
 
 
 # region 整理结果相关函数
-def get_grouped_dict_from_list_of_dict(data, *args):
+def get_grouped_dict_from_list_of_dict(data, *args, avoid_single_tuple=True):
     """
     从嵌套字典列表中提取数据,创建字典
     
     参数:
     data: 包含字典的列表(支持嵌套字典)
     *args: 键参数,最后一个键作为值键,前面的键作为元组键的组成部分
+    avoid_single_tuple: 如果为True且只有一个元组键,则直接使用该键的值作为字典的键而不是单元素元组
     嵌套的键可以使用点号分隔的字符串或元组表示路径
 
     返回:
     defaultdict(list): 以(args[:-1]的值)元组为键,args[-1]的值列表为值的字典
+
+    常见错误:
+    应该避免输入以tuple作为key的data
 
     示例:
     data = [
@@ -6311,8 +6315,11 @@ def get_grouped_dict_from_list_of_dict(data, *args):
         if all_valid:
             value_val = get_nested_value(item, args[-1])
             if value_val is not None:
-                result_dict[tuple(tuple_vals)].append(value_val)
-    
+                if avoid_single_tuple:
+                    tuple_vals = tuple_vals[0] if len(tuple_vals) == 1 else tuple(tuple_vals)
+                else:
+                    tuple_vals = tuple(tuple_vals)
+                result_dict[tuple_vals].append(value_val)
     return result_dict
 # endregion
 
