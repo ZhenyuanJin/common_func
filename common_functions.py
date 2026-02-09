@@ -5372,8 +5372,11 @@ class DataKeeper:
         
         # 如果内存中没有则从磁盘加载
         if key not in self.data:
-            self.load_func(self.data, self._get_data_path(), 
-                          key_to_load=[key], ensure_config=False)
+            try:
+                self.load_func(self.data, self._get_data_path(), 
+                            key_to_load=[key], ensure_config=False)
+            except:
+                raise KeyError(f"Key '{key}' not found in DataKeeper and failed to load from disk")
         return self.data[key]
 
     def get_subcontainer(self, remove_matched_params=True, **kwargs):
