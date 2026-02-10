@@ -136,6 +136,15 @@ def test_experiment():
     }
 
     tool_config_dict = {
+        'trainer': {
+            'enable_delete_after_composed_experiment': True
+        },
+        'simulator': {
+            'enable_delete_after_composed_experiment': True
+        },
+        'analyzer': {
+            'enable_delete_after_composed_experiment': True
+        }
     }
 
     fitODE = FitODE()
@@ -166,6 +175,8 @@ def test_experiment():
     fitODE = ComposeFITODE()
     fitODE.set_experiment_params_dict({'fit_ode': tool_params_dict, 
                                     'fit_ode_new': tool_params_dict})
+    fitODE.set_experiment_config_dict({'fit_ode': tool_config_dict, 
+                                    'fit_ode_new': tool_config_dict})
     fitODE.set_basedir('./test_ode_compose')
     fitODE.set_code_file_list([])
     fitODE.run()

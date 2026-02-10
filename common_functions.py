@@ -10189,6 +10189,7 @@ class AbstractTool(abc.ABC):
         self._set_required_key_list() # 子类必须实现_set_required_key_list方法,用于设置required_key_list属性
         self._set_optional_key_value_dict() # 子类必须实现_set_optional_key_value_dict方法,用于设置optional_key_value_dict属性
         self.enable_delete_after_pipeline = False # 是否在pipeline结束后删除结果,默认是False,子类可以修改
+        self.enable_delete_after_composed_experiment = False # 是否在composed_experiment结束后删除结果,默认是False,子类可以修改
         self.process_num = 1 # datakeeper读取和保存的process数量
         self.threshold_gb = None # 用于检查内存的阈值,单位gb
         self.logger = Logger()
@@ -10376,7 +10377,9 @@ class AbstractTool(abc.ABC):
                 self.data_keeper.mark_all_saved()  # 确保运行完成的标志仍然存在
                 self.data_keeper.mark_deleted()  # 标记data_keeper被删除
             else:
-                raise ValueError(f'{self.name}: Cannot delete results, only after all results are saved can you delete them')
+                # 如果本来没有all saved标志,则删除后也无需添加
+                self.data_keeper.delete()
+                self.data_keeper.mark_deleted()  # 标记data_keeper被删除
 
     def load_params(self):
         self.params = self.dir_manager.load_params(prefix=self.name, set_to_self=False)
@@ -11117,6 +11120,13 @@ class ComposedExperiment(abc.ABC):
                 for tool in experiment.tools:
                     tool.data_keeper.release_memory()
             gc.collect()
+        for experiment in self.experiments:
+            for tool in experiment.tools:
+                if tool.enable_delete_after_composed_experiment:
+                    original = tool.enable_delete_after_pipeline
+                    tool.enable_delete_after_pipeline = True
+                    tool.delete_after_pipeline_if_enabled()
+                    tool.enable_delete_after_pipeline = original
 
     def run(self, print_info=True):
         self.before_run()
