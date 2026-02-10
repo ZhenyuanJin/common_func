@@ -117,6 +117,79 @@ def get_time_point_from_data(data):
 
 
 # region 神经元数据预处理
+def spike_times_to_array(spike_times, start_time, end_time, dt, mode='binary'):
+    '''
+    Convert spike times to 2D spike train array.
+    
+    Args:
+        spike_times: list of lists, spike times for each neuron
+        start_time: start time of the recording window
+        end_time: end time of the recording window
+        dt: time bin width
+        mode: 'binary' (0/1) or 'num' (count multiple spikes)
+    
+    Returns:
+        np.ndarray: shape (n_bins, n_neurons) spike train array
+    '''
+    n_bins = int(np.floor((end_time - start_time) / dt))
+    n_neurons = len(spike_times)
+    spike_array = np.zeros((n_bins, n_neurons), dtype=int)
+    
+    for neuron_idx, times in enumerate(spike_times):
+        if not times:
+            continue
+        
+        indices = ((np.array(times) - start_time) / dt).astype(int)
+        valid_indices = indices[(indices >= 0) & (indices < n_bins)]
+        
+        if mode == 'binary':
+            spike_array[valid_indices, neuron_idx] = 1
+        elif mode == 'num':
+            unique_indices, counts = np.unique(valid_indices, return_counts=True)
+            spike_array[unique_indices, neuron_idx] = counts
+        else:
+            raise ValueError(f"Unsupported mode: {mode}. Must be 'binary' or 'num'")
+    
+    return spike_array
+
+
+def get_start_end_time_and_dt(spike_times, interval_ratio=0.9):
+    '''
+    Args:
+        spike_times: list of lists, spike times for each neuron
+        interval_ratio: dt is set to the minimum inter-spike interval multiplied by this ratio
+    
+    Returns:
+        tuple: (start_time, end_time, dt)
+    '''
+    all_intervals = []
+    all_spikes = []
+    
+    for neuron_spikes in spike_times:
+        if neuron_spikes:
+            all_spikes.extend(neuron_spikes)
+            if len(neuron_spikes) > 1:
+                neuron_spikes_sorted = sorted(neuron_spikes)
+                intervals = np.diff(neuron_spikes_sorted)
+                all_intervals.extend(intervals)
+    
+    if not all_intervals:
+        raise ValueError("No inter-spike intervals found. Cannot determine dt.")
+    else:
+        all_intervals = np.array(all_intervals)
+        min_interval = np.min(all_intervals)
+        dt = min_interval * interval_ratio
+    
+    if not all_spikes:
+        raise ValueError("No spike times found. Cannot determine start and end time.")
+    else:
+        all_spikes_array = np.array(all_spikes)
+        start_time = np.min(all_spikes_array)
+        end_time = np.max(all_spikes_array)
+    
+    return start_time, end_time, dt
+
+
 def sort_neuron_data(neuron_data, sort_measure, ascending=True):
     '''
     对神经元数据进行排序
