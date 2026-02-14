@@ -815,6 +815,50 @@ def get_timescale_by_area_under_curve(lag_times, acf):
 # endregion
 
 
+# region 神经元放电性质计算(基于spike_times)
+def get_combined_spike_times(spike_times, keep_size=False):
+    """
+    合并所有神经元的放电时间并排序
+    
+    参数:
+    spike_times: 列表的列表,每个内层列表包含一个神经元的放电时间
+    keep_size: 如果为True,则返回的形式类似于一个整合后的有效神经元
+    """
+    # 合并所有神经元的放电时间
+    combined = []
+    for neuron_times in spike_times:
+        combined.extend(neuron_times)
+    
+    # 排序合并后的时间
+    combined.sort()
+    
+    if  keep_size:
+        return [combined] 
+    else:
+        return combined
+
+
+def get_ISI_from_spike_times(spike_times):
+    """
+    计算每个神经元的放电间隔
+    
+    参数:
+    spike_times: 列表的列表,每个内层列表包含一个神经元的放电时间
+    
+    返回:
+    ISI_list: 列表的列表,每个内层列表包含对应神经元的ISI序列
+    """
+    ISI_list = []
+    for neuron_spikes in spike_times:
+        if len(neuron_spikes) > 1:
+            ISI = np.diff(neuron_spikes).tolist()
+            ISI_list.append(ISI)
+        else:
+            ISI_list.append([])
+    return ISI_list
+# endregion
+
+
 # region 作图函数
 def visualize_one_second(ax, x_start, y=None, fontsize=cf.LEGEND_SIZE, color=cf.BLACK):
     if y is None:
