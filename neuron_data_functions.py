@@ -153,6 +153,46 @@ def spike_times_to_array(spike_times, start_time, end_time, dt, mode='binary'):
     return spike_array
 
 
+def spike_array_to_times(spike_array, start_time, dt, position='left'):
+    '''
+    Convert spike train array to spike times.
+    
+    Args:
+        spike_array: np.ndarray, shape (n_bins, n_neurons) spike train array
+        start_time: start time of the recording window
+        dt: time bin width
+        position: 'left', 'center', or 'right' - where within the bin to place the spike time
+    
+    Returns:
+        list of lists: spike times for each neuron
+    '''
+    n_bins, n_neurons = spike_array.shape
+    spike_times = [[] for _ in range(n_neurons)]
+    
+    if np.any(spike_array > 1):
+        raise ValueError("Multiple spikes found in a bin. This function only supports binary spike arrays.")
+    
+    # 计算偏移量
+    if position == 'left':
+        offset = 0.0
+    elif position == 'center':
+        offset = dt / 2.0
+    elif position == 'right':
+        offset = dt
+    else:
+        raise ValueError("position must be 'left', 'center', or 'right'")
+    
+    for neuron_idx in range(n_neurons):
+        neuron_spikes = spike_array[:, neuron_idx]
+        spike_indices = np.where(neuron_spikes == 1)[0]
+        
+        # 向量化计算所有时间点
+        times = start_time + (spike_indices * dt) + offset
+        spike_times[neuron_idx].extend(times.tolist())
+    
+    return spike_times
+
+
 def get_start_end_time_and_dt(spike_times, interval_ratio=0.9):
     '''
     Args:
