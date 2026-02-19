@@ -8271,6 +8271,73 @@ def get_envelope(signal):
     envelope = np.abs(analytic_signal)
     envelope = envelope + dc_offset
     return envelope
+
+
+def get_instantaneous_phase(signal):
+    """
+    计算信号的瞬时相位
+
+    使用希尔伯特变换将实信号转换为解析信号,然后计算其相位角
+
+    参数
+    ----------
+    signal : array_like
+        输入的一维实信号
+
+    返回
+    -------
+    phase : ndarray
+        信号的瞬时相位,单位为弧度,范围在[-π, π]
+    """
+    analytic = hilbert(signal)
+    return np.angle(analytic)
+
+
+def get_kuramoto_order_parameter(phase_array):
+    """
+    计算一组振荡器的Kuramoto序参数
+
+    序参数R衡量了振荡器群的同步程度,R在0到1之间,
+    其中0表示完全异步,1表示完全同步
+
+    参数
+    ----------
+    phase_array : array_like
+        二维数组,形状为(n_oscillators, n_timepoints),
+        每一行是一个振荡器的相位时间序列
+
+    返回
+    -------
+    order_param : ndarray
+        一维数组,长度为n_timepoints,每个时间点的序参数值
+    """
+    phase_array = np.atleast_2d(phase_array)
+    n_osc = phase_array.shape[0]
+    complex_sum = np.sum(np.exp(1j * phase_array), axis=0)
+    order_param = np.abs(complex_sum) / n_osc
+    return order_param
+
+
+def get_kuramoto_from_signals(signals):
+    """
+    从一组信号直接计算Kuramoto序参数
+
+    首先通过希尔伯特变换提取每个信号的瞬时相位,
+    然后计算这些相位的序参数
+
+    参数
+    ----------
+    signals : list of array_like
+        信号列表,每个元素是一个一维实信号
+        所有信号必须具有相同的长度
+
+    返回
+    -------
+    order_param : ndarray
+        一维数组,每个时间点的序参数值
+    """
+    phases = np.array([get_instantaneous_phase(s) for s in signals])
+    return get_kuramoto_order_parameter(phases)
 # endregion
 
 
