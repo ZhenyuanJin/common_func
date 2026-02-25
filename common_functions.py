@@ -8289,7 +8289,7 @@ def get_instantaneous_phase(signal):
     phase : ndarray
         信号的瞬时相位,单位为弧度,范围在[-π, π]
     """
-    analytic = hilbert(signal)
+    analytic = scipy.signal.hilbert(signal)
     return np.angle(analytic)
 
 
