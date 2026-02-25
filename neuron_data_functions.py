@@ -680,7 +680,7 @@ class AvalancheToolbox:
         new_max = np.exp(lmax - right_prop * span)
         return new_min, new_max
 
-    def visualize(self, fig=None, axes=None):
+    def visualize(self, fig=None, axes=None, unit='ms'):
         if fig is None or axes is None:
             fig, axes = cf.gfa(ncols=3)
         
@@ -710,7 +710,7 @@ class AvalancheToolbox:
         ax = axes[1]
         ax.plot(duration_bin_centers, duration_pdf)
         math_functions.plot_powerlaw_pdf_line(ax, alpha, duration_truncate_min, duration_truncate_max, C=alpha_C)
-        cf.set_ax(ax, xlog=True, ylog=True, xlabel='Avalanche Duration (ms)')
+        cf.set_ax(ax, xlog=True, ylog=True, xlabel=f'Avalanche Duration ({unit})')
         
         ax = axes[2]
         ax.scatter(duration_centers_for_size_duration_relation, size_centers_for_size_duration_relation, s=50)
