@@ -460,13 +460,16 @@ def get_avalanche(timeseries, dt, bin_size, neuron_idx=None, threshold=0, timese
 
         avalanche_size = []
         avalanche_duration = []
+        avalanche_duration_bin = []
         for start, end in zip(non_zero_starts, non_zero_ends):
             avalanche_size.append(np.sum(bin_timeseries[start:end+1]))
             avalanche_duration.append((end - start + 1) * bin_size * dt)
+            avalanche_duration_bin.append(end - start + 1)
 
         results = {}
         results['avalanche_size'] = np.array(avalanche_size)
         results['avalanche_duration'] = np.array(avalanche_duration)
+        results['avalanche_duration_bin'] = np.array(avalanche_duration_bin) # 以bin为单位的持续时间
         return results
     elif timeseries_mode == 'continuous':
         partial_timeseries = partial_timeseries[partial_timeseries > 0]
@@ -577,6 +580,9 @@ def check_criticality(tau, alpha, gamma):
 
 class AvalancheToolbox:
     def __init__(self, spikes, dt, n_bins, neuron_idx=None, get_avalanche_kwargs=None, use_ISI_bin_size=True, doubly_truncate=True, step=1, fit_scaling_law_by_weight=False, truncate_min_prop=None, truncate_max_prop=None, use_injected_truncate=False):
+        '''
+        use_ISI_bin_size: if float, use int(ISI_mean * use_ISI_bin_size) as bin size; if True, use ISI_mean as bin size; if False, use get_avalanche_kwargs['bin_size'] as bin size
+        '''
         if get_avalanche_kwargs is None:
             local_get_avalanche_kwargs = {}
         else:
@@ -584,10 +590,16 @@ class AvalancheToolbox:
         
         spikes_sum = np.sum(neuron_idx_data(spikes, neuron_idx, keep_size=True), axis=1, keepdims=True)
         ISI_mean = get_ISI_mean(spikes_sum, dt, neuron_idx=neuron_idx)
-        if use_ISI_bin_size:
-            bin_size = int(ISI_mean[0] / dt)
-        else:
+        if use_ISI_bin_size is False:
             bin_size = local_get_avalanche_kwargs.pop('bin_size')
+        else:
+            bin_size = int(ISI_mean[0] / dt)
+            if isinstance(use_ISI_bin_size, bool):
+                pass
+            elif isinstance(use_ISI_bin_size, (int, float)):
+                bin_size = int(bin_size * use_ISI_bin_size)
+            else:
+                raise ValueError('use_ISI_bin_size should be bool or float.')
         self.avalanche_results = get_avalanche(spikes, dt, bin_size=bin_size, neuron_idx=neuron_idx, **local_get_avalanche_kwargs)
     
         size_bin_centers, size_pdf = math_functions.get_log_bin_pdf(self.avalanche_results['avalanche_size'], n_bins=n_bins)
@@ -618,7 +630,7 @@ class AvalancheToolbox:
                     duration_pdf[(duration_bin_centers >= duration_truncate_min) & (duration_bin_centers <= duration_truncate_max)]
                 )
             else:
-                duration_truncate_result = math_functions.find_optimal_powerlaw_truncated_range(self.avalanche_results['avalanche_duration'], n_sims=100, mode='discrete', step=step)
+                duration_truncate_result = math_functions.find_optimal_powerlaw_truncated_range(self.avalanche_results['avalanche_duration'], n_sims=100, mode='continuous', step=step)
                 duration_truncate_min = duration_truncate_result['xmin']
                 duration_truncate_max = duration_truncate_result['xmax']
                 alpha = duration_truncate_result['alpha']
@@ -669,7 +681,8 @@ class AvalancheToolbox:
             'gamma_C': gamma_C,
             'predicted_gamma': predicted_gamma,
             'difference': difference,
-            'ratio': ratio
+            'ratio': ratio,
+            'bin_size': bin_size
         }
 
     def log_shrink(self, min_val, max_val, left_prop, right_prop):

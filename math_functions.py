@@ -1325,7 +1325,8 @@ def find_optimal_powerlaw_truncated_range(data, n_sims=100, mode='continuous', s
 
     best_result = {'p_value': -np.inf}
 
-    for i in range(0, n_unique, step):
+    # for i in range(0, n_unique, step):
+    for i in tqdm.tqdm(range(0, n_unique, step), desc="Searching for optimal power-law range", total=(n_unique + step - 1) // step):
         xmin = unique_vals[i]
         
         remaining_log_width = global_log_max - np.log10(xmin)
