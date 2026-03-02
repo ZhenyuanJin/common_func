@@ -593,6 +593,7 @@ class AvalancheToolbox:
         if use_ISI_bin_size is False:
             bin_size = local_get_avalanche_kwargs.pop('bin_size')
         else:
+            local_get_avalanche_kwargs.pop('bin_size', None) # remove bin_size if exists, to avoid confusion
             bin_size = int(ISI_mean[0] / dt)
             if isinstance(use_ISI_bin_size, bool):
                 pass
