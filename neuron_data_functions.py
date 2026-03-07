@@ -79,10 +79,10 @@ NEURON_AXIS = 1
 # region 利用idx提取数据
 def neuron_idx_data(data, indices=None, keep_size=False):
     '''
-    从spike或者V中提取指定索引的神经元数据。indices可以是slice对象或单个值。
-    data: 二维矩阵，其中行表示时间点，列表示神经元。(与brainpy的输出一致)
-    indices: 要提取的神经元索引列表或单个值。
-    keep_size: 是否保持返回数据的二维形状。
+    从spike或者V中提取指定索引的神经元数据.indices可以是slice对象或单个值.
+    data: 二维矩阵,其中行表示时间点,列表示神经元.(与brainpy的输出一致)
+    indices: 要提取的神经元索引列表或单个值.
+    keep_size: 是否保持返回数据的二维形状.
     '''
     if indices is None:
         return data
@@ -98,10 +98,10 @@ def get_neuron_num_from_data(data):
 
 def time_idx_data(data, indices=None, keep_size=False):
     '''
-    从spike或者V中提取指定时间点的数据。indices可以是slice对象或单个值。
-    data: 二维矩阵，其中行表示时间点，列表示神经元。(与brainpy的输出一致)
-    indices: 要提取的时间点索引列表或单个值。
-    keep_size: 是否保持返回数据的二维形状。
+    从spike或者V中提取指定时间点的数据.indices可以是slice对象或单个值.
+    data: 二维矩阵,其中行表示时间点,列表示神经元.(与brainpy的输出一致)
+    indices: 要提取的时间点索引列表或单个值.
+    keep_size: 是否保持返回数据的二维形状.
     '''
     if indices is None:
         return data
@@ -357,7 +357,7 @@ def get_neuron_data_ccovf_auto_and_cross(neuron_data, dt, nlags, neuron_idx=None
 
 def spike_to_fr_acf(spike, width, dt, nlags, neuron_idx=None, spike_to_fr_kwargs=None, **kwargs):
     '''
-    计算spike的firing rate的自相关函数,注意,计算fr的过程自动平均了neuron_idx中的神经元。
+    计算spike的firing rate的自相关函数,注意,计算fr的过程自动平均了neuron_idx中的神经元.
     '''
     if spike_to_fr_kwargs is None:
         spike_to_fr_kwargs = {}
@@ -474,6 +474,102 @@ def get_avalanche(timeseries, dt, bin_size, neuron_idx=None, threshold=0, timese
     elif timeseries_mode == 'continuous':
         partial_timeseries = partial_timeseries[partial_timeseries > 0]
         raise NotImplementedError('continuous mode is not implemented yet.')
+
+
+def get_branching_ratio(timeseries, bin_size, neuron_idx=None, timeseries_mode='discrete', **kwargs):
+    """
+    从时间序列数据计算分支比估计
+    
+    Args:
+        timeseries: 时间序列数据,形状为(n_bins, n_neurons)或(n_bins,)
+        bin_size: 时间bin大小,必须是正整数
+        neuron_idx: 神经元索引,选择特定神经元进行分析
+        timeseries_mode: 时间序列模式,'discrete'或'continuous'
+        
+    Returns:
+        br: 分支比估计值
+        slopevals: 各延迟的回归斜率值
+        brsimple: 假设无子采样的简单分支比估计
+    """
+    # 验证bin_size参数
+    if not isinstance(bin_size, int) or bin_size < 1:
+        raise ValueError("bin_size必须是正整数")
+    
+    # 1. 选择神经元子集
+    partial_timeseries = neuron_idx_data(timeseries, neuron_idx, keep_size=True)
+    
+    # 2. 根据模式计算总活动向量
+    if timeseries_mode == 'discrete':
+        if partial_timeseries.ndim > 1:
+            # 对所有选择的神经元求和
+            timeseries_sum = np.sum(partial_timeseries, axis=1)
+        else:
+            timeseries_sum = partial_timeseries
+        
+        # 按bin_size重新分箱
+        n_bins = len(timeseries_sum)
+        new_n_bins = n_bins // bin_size
+        if new_n_bins < 2:
+            raise ValueError(f"bin_size={bin_size}太大,重新分箱后时间序列长度({new_n_bins})太小")
+        
+        reshaped = timeseries_sum[:new_n_bins * bin_size].reshape(new_n_bins, bin_size)
+        Act = np.sum(reshaped, axis=1)
+    elif timeseries_mode == 'continuous':
+        raise NotImplementedError('continuous mode is not implemented yet')
+    else:
+        raise ValueError(f"Unknown timeseries_mode: {timeseries_mode}")
+    
+    # 3. 计算无子采样假设下的分支比
+    n_bins = len(Act)
+    At = Act[:-1]
+    At1 = Act[1:]
+    
+    if len(At) > 0:
+        Coeffs = np.polyfit(At, At1, 1)
+        brsimple = Coeffs[0]
+    else:
+        brsimple = np.nan
+    
+    # 4. 计算各延迟的回归斜率
+    # 设置延迟范围为1到min(100, n_bins-1)
+    max_delay = min(100, n_bins - 1)
+    delayrange = np.arange(1, max_delay + 1)
+    slopevals = np.zeros(len(delayrange))
+    
+    for idx, k in enumerate(delayrange):
+        if k < n_bins:
+            At = Act[:-k]
+            Atk = Act[k:]
+            
+            if len(At) > 1:
+                Coeffs = np.polyfit(At, Atk, 1)
+                slopevals[idx] = Coeffs[0]
+            else:
+                slopevals[idx] = np.nan
+        else:
+            slopevals[idx] = np.nan
+    
+    # 5. 对斜率进行指数拟合
+    def exp_func(x, a, b):
+        return b * (a ** x)
+    
+    valid_mask = ~np.isnan(slopevals)
+    if np.sum(valid_mask) >= 2:
+        try:
+            popt, _ = scipy.optimize.curve_fit(
+                exp_func, 
+                delayrange[valid_mask], 
+                slopevals[valid_mask], 
+                p0=[1, 1],
+                maxfev=5000
+            )
+            br = popt[0]
+        except RuntimeError:
+            br = np.nan
+    else:
+        br = np.nan
+    
+    return br, slopevals, brsimple
 
 
 def get_average_size_per_duration(sizes, durations, n_bins):
@@ -612,11 +708,18 @@ class AvalancheToolbox:
                     size_pdf[(size_bin_centers >= size_truncate_min) & (size_bin_centers <= size_truncate_max)]
                 )
             else:
-                size_truncate_result = math_functions.find_optimal_powerlaw_truncated_range(self.avalanche_results['avalanche_size'], n_sims=100, mode='discrete', step=step)
-                size_truncate_min = size_truncate_result['xmin']
-                size_truncate_max = size_truncate_result['xmax']
-                tau = size_truncate_result['alpha']
-                tau_C = size_truncate_result['C']
+                # size_truncate_result = math_functions.find_optimal_powerlaw_truncated_range(self.avalanche_results['avalanche_size'], n_sims=100, mode='discrete', step=step)
+                # size_truncate_min = size_truncate_result['xmin']
+                # size_truncate_max = size_truncate_result['xmax']
+                # tau = size_truncate_result['alpha']
+                # tau_C = size_truncate_result['C']
+                r = math_functions.plparams(self.avalanche_results['avalanche_size'])
+                size_truncate_min = r['xmin']
+                size_truncate_max = r['xmax']
+                tau, tau_C = math_functions.fit_powerlaw_scatter(
+                    size_bin_centers[(size_bin_centers >= size_truncate_min) & (size_bin_centers <= size_truncate_max)],
+                    size_pdf[(size_bin_centers >= size_truncate_min) & (size_bin_centers <= size_truncate_max)]
+                )
         else:
             size_truncate_min = np.min(self.avalanche_results['avalanche_size'])
             size_truncate_max = np.max(self.avalanche_results['avalanche_size'])
@@ -631,11 +734,18 @@ class AvalancheToolbox:
                     duration_pdf[(duration_bin_centers >= duration_truncate_min) & (duration_bin_centers <= duration_truncate_max)]
                 )
             else:
-                duration_truncate_result = math_functions.find_optimal_powerlaw_truncated_range(self.avalanche_results['avalanche_duration'], n_sims=100, mode='continuous', step=step)
-                duration_truncate_min = duration_truncate_result['xmin']
-                duration_truncate_max = duration_truncate_result['xmax']
-                alpha = duration_truncate_result['alpha']
-                alpha_C = duration_truncate_result['C']
+                # duration_truncate_result = math_functions.find_optimal_powerlaw_truncated_range(self.avalanche_results['avalanche_duration'], n_sims=100, mode='continuous', step=step)
+                # duration_truncate_min = duration_truncate_result['xmin']
+                # duration_truncate_max = duration_truncate_result['xmax']
+                # alpha = duration_truncate_result['alpha']
+                # alpha_C = duration_truncate_result['C']
+                r = math_functions.plparams(self.avalanche_results['avalanche_duration'])
+                duration_truncate_min = r['xmin']
+                duration_truncate_max = r['xmax']
+                alpha, alpha_C = math_functions.fit_powerlaw_scatter(
+                    duration_bin_centers[(duration_bin_centers >= duration_truncate_min) & (duration_bin_centers <= duration_truncate_max)],
+                    duration_pdf[(duration_bin_centers >= duration_truncate_min) & (duration_bin_centers <= duration_truncate_max)]
+                )
         else:
             duration_truncate_min = np.min(self.avalanche_results['avalanche_duration'])
             duration_truncate_max = np.max(self.avalanche_results['avalanche_duration'])
