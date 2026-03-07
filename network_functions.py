@@ -41,7 +41,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 # 网络分析库
 import networkx as nx
-
+import igraph as ig
 
 # 自定义库
 import sys
@@ -139,6 +139,127 @@ class TestGraphConversion(cf.RunAllMixin):
         assert G.has_edge(0, 1)
         assert G.has_edge(1, 2)
         assert not G.has_edge(1, 0)  # 有向图,反向边不存在
+# endregion
+
+
+# region 各种格式的igraph的转换
+def get_graph_by_mode_igraph(mode):
+    if mode == 'directed':
+        g = ig.Graph(directed=True)
+    else:
+        g = ig.Graph(directed=False)
+    return g
+
+
+def binary_adj_mat_to_igraph_graph(matrix, mode='directed'):
+    g = get_graph_by_mode_igraph(mode)
+    n = matrix.shape[0]
+    is_sparse = sps.issparse(matrix)
+    g.add_vertices(n)
+    
+    if is_sparse:
+        coo_matrix = matrix.tocoo()
+        edges = list(zip(coo_matrix.row, coo_matrix.col))
+    else:
+        rows, cols = np.where(matrix)
+        edges = list(zip(rows, cols))
+    
+    if edges:
+        g.add_edges(edges)
+    
+    return g
+
+
+def weighted_adj_mat_to_igraph_graph(matrix, mode='directed'):
+    g = get_graph_by_mode_igraph(mode)
+    n = matrix.shape[0]
+    is_sparse = sps.issparse(matrix)
+    g.add_vertices(n)
+    
+    if is_sparse:
+        coo_matrix = matrix.tocoo()
+        rows, cols, weights = coo_matrix.row, coo_matrix.col, coo_matrix.data
+    else:
+        rows, cols = np.where(matrix != 0)
+        weights = matrix[rows, cols]
+    
+    if len(rows) > 0:
+        edges = list(zip(rows, cols))
+        g.add_edges(edges)
+        g.es["weight"] = list(weights)
+    
+    return g
+# endregion
+
+
+# region networkx和igraph的转换
+def convert_nx_to_ig(nx_graph):
+    """Convert networkx graph to igraph graph"""
+    if not nx_graph:
+        return ig.Graph(directed=False)
+    
+    nodes = list(nx_graph.nodes())
+    edges = list(nx_graph.edges())
+    
+    # Create igraph with correct directionality
+    ig_graph = ig.Graph(directed=nx_graph.is_directed())
+    
+    # Add vertices
+    ig_graph.add_vertices(len(nodes))
+    
+    # Set vertex names
+    for i, node in enumerate(nodes):
+        ig_graph.vs[i]["name"] = str(node)
+    
+    # Add edges
+    if edges:
+        edge_list = []
+        for u, v in edges:
+            u_idx = nodes.index(u) if u in nodes else -1
+            v_idx = nodes.index(v) if v in nodes else -1
+            if u_idx != -1 and v_idx != -1:
+                edge_list.append((u_idx, v_idx))
+        
+        if edge_list:
+            ig_graph.add_edges(edge_list)
+    
+    return ig_graph
+
+
+def convert_ig_to_nx(ig_graph):
+    """Convert igraph graph to networkx graph"""
+    if ig_graph is None or ig_graph.vcount() == 0:
+        is_directed = getattr(ig_graph, "is_directed", lambda: False)()
+        return nx.DiGraph() if is_directed else nx.Graph()
+    
+    # Determine graph type
+    is_directed = ig_graph.is_directed()
+    
+    # Create appropriate networkx graph
+    if is_directed:
+        nx_graph = nx.DiGraph()
+    else:
+        nx_graph = nx.Graph()
+    
+    # Get or create node names
+    node_names = []
+    for v in ig_graph.vs:
+        if "name" in v.attribute_names():
+            node_name = v["name"]
+        else:
+            node_name = str(v.index)
+        node_names.append(node_name)
+    
+    # Add nodes
+    nx_graph.add_nodes_from(node_names)
+    
+    # Add edges
+    edges = ig_graph.get_edgelist()
+    for src_idx, tgt_idx in edges:
+        if 0 <= src_idx < len(node_names) and 0 <= tgt_idx < len(node_names):
+            nx_graph.add_edge(node_names[src_idx], node_names[tgt_idx])
+    
+    return nx_graph
 # endregion
 
 
@@ -672,6 +793,11 @@ def generate_Erdos_Renyi_graph(n, p, seed=None, mode='undirected'):
         return G
 
 
+def generate_Erdos_Renyi_graph_igraph(n, p, seed=None, mode='undirected'):
+    G = generate_Erdos_Renyi_graph(n=n, p=p, seed=seed, mode=mode)
+    return convert_nx_to_ig(G)
+
+
 def generate_lattice_graph(n, k, mode='undirected'):
     '''
     n: 节点数
@@ -684,6 +810,11 @@ def generate_lattice_graph(n, k, mode='undirected'):
         raise ValueError("Lattice graph only supports 'undirected' mode now.")
     G = generate_newman_watts_strogatz_graph(n=n, k=k, p=0.0, seed=None, mode=mode)
     return G
+
+
+def generate_lattice_graph_igraph(n, k, mode='undirected'):
+    G = generate_lattice_graph(n=n, k=k, mode=mode)
+    return convert_nx_to_ig(G)
 
 
 def generate_newman_watts_strogatz_graph(n, k, p, seed=None, mode='undirected'):
@@ -709,6 +840,11 @@ def generate_newman_watts_strogatz_graph(n, k, p, seed=None, mode='undirected'):
     except:
         G = nx.newman_watts_strogatz_graph(n=n, k=2*k, p=p, seed=seed)
         return G
+
+
+def generate_newman_watts_strogatz_graph_igraph(n, k, p, seed=None, mode='undirected'):
+    G = generate_newman_watts_strogatz_graph(n=n, k=k, p=p, seed=seed, mode=mode)
+    return convert_nx_to_ig(G)
 
 
 class TestCommonGraphs(cf.RunAllMixin):
@@ -773,8 +909,34 @@ def get_average_shortest_path_length(G, **kwargs):
     return nx.average_shortest_path_length(G, **kwargs)
 
 
+def get_average_shortest_path_length_igraph(G, **kwargs):
+    if not G.is_connected():
+        return float('inf')
+    
+    shortest_paths = G.shortest_paths(**kwargs)
+    total_length = 0
+    count = 0
+    
+    for i in range(len(shortest_paths)):
+        for j in range(i+1, len(shortest_paths[i])):
+            if np.isfinite(shortest_paths[i][j]):
+                total_length += shortest_paths[i][j]
+                count += 1
+    
+    if count > 0:
+        return total_length / count
+    else:
+        return float('inf')
+
+
 def get_average_clustering_coefficient(G, **kwargs):
     return nx.average_clustering(G, **kwargs)
+
+
+def get_average_clustering_coefficient_igraph(G, mode=None, **kwargs):
+    if mode is None:
+        mode = "undirected" if not G.is_directed() else "directed"
+    return G.transitivity_avglocal(mode=mode, **kwargs)
 
 
 def get_degree_dict(G):
@@ -815,6 +977,48 @@ def get_small_world_index(G, seed=0):
     results['clustering_coefficient_ratio'] = C_ratio
     results['average_shortest_path_length_ratio'] = ASPL_ratio
     results['small_world_index'] = sigma
+    return results
+
+
+def get_small_world_index_igraph(G, seed=0):
+    ASPL_sw = get_average_shortest_path_length_igraph(G)
+    C_sw = get_average_clustering_coefficient_igraph(G)
+    
+    n = G.vcount()
+    m = G.ecount()
+    p = (2 * m) / (n * (n - 1))
+    
+    G_rand = generate_Erdos_Renyi_graph_igraph(n=n, p=p, seed=seed, mode='undirected')
+    ASPL_rand = get_average_shortest_path_length_igraph(G_rand)
+    C_rand = get_average_clustering_coefficient_igraph(G_rand)
+    
+    if np.allclose(C_rand, 0):
+        C_ratio = np.nan
+        print("Warning: C_rand is zero, cannot compute C_ratio.")
+    else:
+        C_ratio = C_sw / C_rand
+        
+    if np.allclose(ASPL_rand, 0):
+        ASPL_ratio = np.nan
+        print("Warning: ASPL_rand is zero, cannot compute ASPL_ratio.")
+    else:
+        ASPL_ratio = ASPL_sw / ASPL_rand
+    
+    if np.allclose(ASPL_ratio, 0):
+        sigma = np.nan
+        print("Warning: ASPL_ratio is zero, cannot compute small-world index sigma.")
+    else:
+        sigma = C_ratio / ASPL_ratio
+    
+    results = {
+        'clustering_coefficient': C_sw,
+        'average_shortest_path_length': ASPL_sw,
+        'clustering_coefficient_random': C_rand,
+        'average_shortest_path_length_random': ASPL_rand,
+        'clustering_coefficient_ratio': C_ratio,
+        'average_shortest_path_length_ratio': ASPL_ratio,
+        'small_world_index': sigma
+    }
     return results
 
 
