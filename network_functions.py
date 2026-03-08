@@ -81,6 +81,30 @@ def weighted_adj_mat_to_networkx_graph(matrix, mode='directed'):
     return G
 
 
+def get_sparse_adj_from_networkx_graph(G, weight='weight'):
+    """
+    获取图的稀疏邻接矩阵
+    
+    Parameters
+    ----------
+    G : networkx.Graph
+        输入图
+    weight : str or None, default='weight'
+        边权重属性名,None表示无权图
+    
+    Returns
+    -------
+    scipy.sparse.spmatrix
+        稀疏邻接矩阵
+    """
+    try:
+        # 尝试使用推荐的to_scipy_sparse_array
+        return nx.to_scipy_sparse_array(G, weight=weight, format='csr')
+    except AttributeError:
+        # 兼容旧版本的to_scipy_sparse_matrix
+        return nx.to_scipy_sparse_matrix(G, weight=weight, format='csr')
+
+
 class TestGraphConversion(cf.RunAllMixin):
     def test_binary_adj_mat_to_networkx_graph(self):
         '''测试二进制邻接矩阵转换'''
@@ -189,6 +213,44 @@ def weighted_adj_mat_to_igraph_graph(matrix, mode='directed'):
         g.es["weight"] = list(weights)
     
     return g
+
+
+def get_sparse_adj_from_igraph_graph(g, weight='weight'):
+    """
+    从igraph图中获取稀疏邻接矩阵
+    
+    Parameters
+    ----------
+    G : igraph.Graph
+        输入图
+    weight : str or None, default='weight'
+        边权重属性名,None表示无权图
+    
+    Returns
+    -------
+    scipy.sparse.spmatrix
+        稀疏邻接矩阵
+    """
+    n = G.vcount()
+    edges = G.get_edgelist()
+    rows, cols, data = [], [], []
+    
+    for i, (src, dst) in enumerate(edges):
+        if weight is None or weight not in G.es.attribute_names():
+            w = 1.0
+        else:
+            w = G.es[i][weight]
+        
+        rows.append(src)
+        cols.append(dst)
+        data.append(w)
+        
+        if not G.is_directed() and src != dst:
+            rows.append(dst)
+            cols.append(src)
+            data.append(w)
+    
+    return sp.csr_matrix((data, (rows, cols)), shape=(n, n), dtype=np.float64)
 # endregion
 
 
@@ -912,21 +974,7 @@ def get_average_shortest_path_length(G, **kwargs):
 def get_average_shortest_path_length_igraph(G, **kwargs):
     if not G.is_connected():
         return float('inf')
-    
-    shortest_paths = G.shortest_paths(**kwargs)
-    total_length = 0
-    count = 0
-    
-    for i in range(len(shortest_paths)):
-        for j in range(i+1, len(shortest_paths[i])):
-            if np.isfinite(shortest_paths[i][j]):
-                total_length += shortest_paths[i][j]
-                count += 1
-    
-    if count > 0:
-        return total_length / count
-    else:
-        return float('inf')
+    return G.average_path_length()
 
 
 def get_average_clustering_coefficient(G, **kwargs):
@@ -935,8 +983,8 @@ def get_average_clustering_coefficient(G, **kwargs):
 
 def get_average_clustering_coefficient_igraph(G, mode=None, **kwargs):
     if mode is None:
-        mode = "undirected" if not G.is_directed() else "directed"
-    return G.transitivity_avglocal(mode=mode, **kwargs)
+        mode = 'undirected' if not G.is_directed() else 'directed'
+    return G.transitivity_avglocal_undirected() if mode == 'undirected' else G.transitivity_avglocal_directed()
 
 
 def get_degree_dict(G):
