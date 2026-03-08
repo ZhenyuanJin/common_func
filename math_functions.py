@@ -562,6 +562,25 @@ def get_refined_grid(start, end, coarse_num, keypoints, near_num, refine_factor)
     
     return all_points
 
+# region eigen
+def sort_eigenvalues_eigenvectors(eigenvalues, eigenvectors):
+    '''
+    sort eigenvalues and eigenvectors by real part and imaginary part, both in ascending order
+    '''
+    sort_key = np.lexsort((eigenvalues.imag, eigenvalues.real))
+    
+    sorted_eigenvalues = eigenvalues[sort_key]
+    sorted_eigenvectors = eigenvectors[:, sort_key]
+    
+    return sorted_eigenvalues, sorted_eigenvectors
+
+
+def get_sorted_eigenvalues_eigenvectors(A):
+    eigenvalues, eigenvectors = np.linalg.eig(A)
+    sorted_eigenvalues, sorted_eigenvectors = sort_eigenvalues_eigenvectors(eigenvalues, eigenvectors)
+    return sorted_eigenvalues, sorted_eigenvectors
+# endregion
+
 
 # region custom matrix
 def get_custom_matrix_shape(d):
