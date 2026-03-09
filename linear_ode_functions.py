@@ -100,6 +100,16 @@ def ccovf_multiple_lags_from_eigendecomposition(V, eigenvalues, D, taus):
     return processed_results
 
 
+def get_acovf_from_A_D(A, D, dt, nlags):
+    lag_times = np.arange(nlags+1) * dt
+    ccovf_dict = ccovf_multiple_lags_from_A(A, D, lag_times)
+    acovf_dict = {}
+    n = A.shape[0]
+    for i in range(n):
+        acovf_dict[i] = np.array(ccovf_dict[(i, i)])
+    return lag_times, acovf_dict
+
+
 def get_acovf_and_fit_from_A_D(A, D, dt, nlags, fit_method='auto', **kwargs):
     lag_times = np.arange(nlags+1) * dt
     ccovf_dict = ccovf_multiple_lags_from_A(A, D, lag_times)
