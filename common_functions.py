@@ -739,7 +739,7 @@ def get_local_rng_by_time():
 # region 随机数
 def rand_unit_vec(num, dim, rng=None):
     '''
-    生成随机单位向量,使其在单位球上均匀分布。(注意,三维的时候,单位球上均匀不代表azim和elev均匀)
+    生成随机单位向量,使其在单位球上均匀分布.(注意,三维的时候,单位球上均匀不代表azim和elev均匀)
 
     参数:
     num -- 要生成的随机单位向量的数量
@@ -2164,13 +2164,13 @@ def get_parent_dir(basedir):
 
 def get_script_name(extension=True):
     '''
-    获取当前脚本的文件名。如果在 Jupyter Notebook 中运行,则返回 None 并显示警告。
+    获取当前脚本的文件名.如果在 Jupyter Notebook 中运行,则返回 None 并显示警告.
 
     参数:
-    extension (bool): 是否包括文件扩展名,默认为 True。
+    extension (bool): 是否包括文件扩展名,默认为 True.
 
     返回:
-    str or None: 当前脚本的文件名或 None。
+    str or None: 当前脚本的文件名或 None.
     '''
     try:
         # 尝试检测是否在 Jupyter Notebook 环境中运行
@@ -2422,11 +2422,11 @@ def delete_file(file_path):
     try:
         # 尝试删除文件
         os.remove(file_path)
-        print(f"文件 '{file_path}' 已成功删除。")
+        print(f"文件 '{file_path}' 已成功删除.")
     except FileNotFoundError:
-        print(f"错误: 文件 '{file_path}' 不存在。")
+        print(f"错误: 文件 '{file_path}' 不存在.")
     except PermissionError:
-        print(f"错误: 无权限删除文件 '{file_path}'。")
+        print(f"错误: 无权限删除文件 '{file_path}'.")
     except Exception as e:
         print(f"删除文件时发生意外错误: {e}")
 
@@ -2590,14 +2590,14 @@ def get_first_subdir(full_dir, part_dir):
 @not_recommend
 def get_common_subdir(basedir, subdir_names=None):
     '''
-    生成子目录的路径列表。
+    生成子目录的路径列表.
 
     Args:
         basedir (str): 目录的路径
-        subdir_names (list, optional): 子目录名称列表。默认为 ['outcomes', 'models', 'figs', 'logs', 'params']
+        subdir_names (list, optional): 子目录名称列表.默认为 ['outcomes', 'models', 'figs', 'logs', 'params']
 
     Returns:
-        list: 子目录的完整路径列表。
+        list: 子目录的完整路径列表.
     '''
     if subdir_names is None:
         subdir_names = ['outcomes', 'models', 'figs', 'logs', 'params']
@@ -2611,10 +2611,10 @@ def get_common_subdir_dict(basedir, subdir_names=None):
     
     Args:
         basedir (str): 目录的路径
-        subdir_names (list, optional): 子目录名称列表。默认为 ['outcomes', 'models', 'figs', 'logs', 'params']
+        subdir_names (list, optional): 子目录名称列表.默认为 ['outcomes', 'models', 'figs', 'logs', 'params']
 
     Returns:
-        dict: 子目录的完整路径字典。
+        dict: 子目录的完整路径字典.
     '''
     if subdir_names is None:
         subdir_names = ['outcomes', 'models', 'figs', 'logs', 'params']
@@ -3044,10 +3044,10 @@ def _compatible_data_container(obj):
 @_compatible_data_container
 def load_dict_separate(load_dir, key_to_load=None, filter_str=None, filter_mode='include', filter_logic='or', filter_func=None, process_num=1, ensure_config=True):
     """
-    从指定目录中加载字典,并还原原始的键和值类型。
+    从指定目录中加载字典,并还原原始的键和值类型.
 
     参数:
-    load_dir (str): 包含文件及键映射的目录。
+    load_dir (str): 包含文件及键映射的目录.
     key_to_load (list): 指定要加载的键的列表,默认为 None,加载所有键
     filter_str (str): 指定要加载的键的字符串,默认为 None,不过滤(如果希望过滤多个str,可以输入list或者tuple)
     filter_mode (str): 指定过滤模式,默认为 'include',可选 'include' 或 'exclude';'include'表示只加载包含指定字符串的键,'exclude'表示不加载包含指定字符串的键
@@ -3320,7 +3320,7 @@ def save_joblib(obj, filename, compress=0, protocol=None, add_ext='auto'):
     - obj: 需要保存的对象
     - filename: 保存的文件名（如果没有以 .joblib 结尾,会自动添加）
     - compress: 压缩级别,默认为 0(范围为 0 到 9),0 表示不压缩,9 表示最大压缩
-    - protocol: 序列化协议版本（默认使用 joblib 的默认协议）。可以传递一个整数(如 3、4 或 5)
+    - protocol: 序列化协议版本（默认使用 joblib 的默认协议）.可以传递一个整数(如 3、4 或 5)
       表示 Python 的 Pickle 序列化协议版本
     - add_ext:是否自动添加后缀,默认为 'auto',会自动添加后缀;如果不需要自动添加后缀,可以将此参数设置为 False
     """
@@ -3600,16 +3600,16 @@ def load_df(filename, index_col=0, index_dtype=str, col_dtype=str):
 
 def save_array(arr, filename):
     '''
-    将数组保存到文件中。
+    将数组保存到文件中.
 
     参数:
     arr: array
-        要保存的数组对象。
+        要保存的数组对象.
     filename: str
-        要保存的文件名,可以带有后缀或不带有后缀。
+        要保存的文件名,可以带有后缀或不带有后缀.
 
     返回:
-    无返回值。
+    无返回值.
     '''
     # 创建文件夹
     mkdir(os.path.dirname(filename))
@@ -3624,16 +3624,16 @@ def save_array(arr, filename):
 
 def save_sps_array(arr, filename):
     '''
-    将稀疏矩阵保存到文件中。
+    将稀疏矩阵保存到文件中.
 
     参数:
     arr: sps.spmatrix
-        要保存的稀疏矩阵对象。
+        要保存的稀疏矩阵对象.
     filename: str
-        要保存的文件名,可以带有后缀或不带有后缀。
+        要保存的文件名,可以带有后缀或不带有后缀.
 
     返回:
-    无返回值。
+    无返回值.
     '''
     # 创建文件夹
     mkdir(os.path.dirname(filename))
@@ -3648,15 +3648,15 @@ def save_sps_array(arr, filename):
 
 def load_array(filename):
     '''
-    从文件中加载数组。
+    从文件中加载数组.
 
     参数:
     filename: str
-        要加载的文件名,可以带有后缀或不带有后缀。
+        要加载的文件名,可以带有后缀或不带有后缀.
 
     返回:
     array: array
-        加载的数组对象。
+        加载的数组对象.
     '''
 
     # 添加后缀
@@ -3669,15 +3669,15 @@ def load_array(filename):
 
 def load_sps_array(filename):
     '''
-    从文件中加载稀疏矩阵。
+    从文件中加载稀疏矩阵.
 
     参数:
     filename: str
-        要加载的文件名,可以带有后缀或不带有后缀。
+        要加载的文件名,可以带有后缀或不带有后缀.
 
     返回:
     arr: sps.spmatrix
-        加载的稀疏矩阵对象。
+        加载的稀疏矩阵对象.
     '''
     # 添加后缀
     if not filename.endswith('.npz'):
@@ -3984,16 +3984,16 @@ def check_if_multiprocessing():
 
 def split_list(lst, n):
     '''
-    将列表尽量均等地分割为n个子列表。
+    将列表尽量均等地分割为n个子列表.
 
     参数:
     - lst: list
-        要分割的列表。
+        要分割的列表.
     - n: int
-        子列表的数量。
+        子列表的数量.
 
     返回:
-    list: 包含n个子列表的列表。
+    list: 包含n个子列表的列表.
     '''
     # 计算每个子列表的长度
     length = len(lst)
@@ -4015,7 +4015,7 @@ def split_list(lst, n):
 
 def split_array(arr, axis, n):
     '''
-    将数组沿指定轴均等地分割为n个子数组。
+    将数组沿指定轴均等地分割为n个子数组.
     '''
     # Calculate sizes of chunks
     total_length = arr.shape[axis]
@@ -4634,14 +4634,14 @@ def get_filename_and_extension(filename, remove_ext_dot=True):
 
 def align_decimal(number, reference_value):
     '''
-    将数字的小数点位数调整为与参考值相匹配。
+    将数字的小数点位数调整为与参考值相匹配.
 
     参数:
-    - number (float): 要对齐的数字。
-    - reference_value (float): 用于确定所需小数位数的参考值。
+    - number (float): 要对齐的数字.
+    - reference_value (float): 用于确定所需小数位数的参考值.
 
     返回:
-    - aligned_number (float): 小数点位数与参考值相匹配的数字列表。
+    - aligned_number (float): 小数点位数与参考值相匹配的数字列表.
     '''
     decimal_place = len(str(reference_value).split('.')[1]) if '.' in str(reference_value) else 0
 
@@ -4707,7 +4707,7 @@ def cat(*args, sep='_', rm_double_sep=True, ignore_none=True, ignore_empty=True,
 
 
 def hash_or_str(key, sep='_', replace_dot=REPLACE_DOT):
-    """将键转换为字符串,如果复杂则生成哈希值。"""
+    """将键转换为字符串,如果复杂则生成哈希值."""
     if isinstance(key, (str, int, float, bool)):
         if replace_dot:
             return str(key).replace('.', replace_dot)
@@ -5537,13 +5537,13 @@ def union_list(*lists, rm_repeat=True):
 
 def intersect_list(*lists):
     '''
-    获取多个列表的交集。
+    获取多个列表的交集.
     
     参数:
-    - lists: 一个或多个列表的可变参数。
+    - lists: 一个或多个列表的可变参数.
     
     返回:
-    - 一个列表,包含所有输入列表的交集。
+    - 一个列表,包含所有输入列表的交集.
     '''
     intersection_set = set(lists[0])
     for lst in lists[1:]:
@@ -5553,7 +5553,7 @@ def intersect_list(*lists):
 
 def remove_list_element(original_list, elements_to_remove, mode='skip'):
     """
-    从列表中移除指定元素,可控制元素不存在时的处理模式。
+    从列表中移除指定元素,可控制元素不存在时的处理模式.
     
     Args:
         original_list: 原始列表
@@ -5584,7 +5584,7 @@ def get_element_index_in_list(element, lst):
 
 def rebuild_list_with_index(flattened, original, index=0):
     '''
-    以original为模板,根据flattened中的元素重新构建一个列表。其括号结构与original相同,但元素顺序与flattened相同。这个函数必须要输出index才能不断调用自己,一般而言建议使用rebuild_list作为外部的接口。
+    以original为模板,根据flattened中的元素重新构建一个列表.其括号结构与original相同,但元素顺序与flattened相同.这个函数必须要输出index才能不断调用自己,一般而言建议使用rebuild_list作为外部的接口.
     '''
     result = []
     for item in original:
@@ -5598,12 +5598,12 @@ def rebuild_list_with_index(flattened, original, index=0):
 
 
 def rebuild_list(flattened, original):
-    '''以original为模板,根据flattened中的元素重新构建一个列表。其括号结构与original相同,但元素顺序与flattened相同。'''
+    '''以original为模板,根据flattened中的元素重新构建一个列表.其括号结构与original相同,但元素顺序与flattened相同.'''
     return rebuild_list_with_index(flattened, original)[0]
 
 
 def pure_list(l):
-    '''遍历嵌套列表,将所有数组转换为列表,但保持嵌套结构不变。'''
+    '''遍历嵌套列表,将所有数组转换为列表,但保持嵌套结构不变.'''
     if isinstance(l, list):
         # 如果是列表,递归地对每个元素调用 pure_list
         return [pure_list(item) for item in l]
@@ -5624,7 +5624,7 @@ def pure_list(l):
 
 def list_shape(lst):
     '''
-    假定list是和numpy的array类似的嵌套列表,返回list的形状。(不能处理不规则的嵌套列表)
+    假定list是和numpy的array类似的嵌套列表,返回list的形状.(不能处理不规则的嵌套列表)
     '''
     if not isinstance(lst, list):
         return ()
@@ -6353,13 +6353,13 @@ def flatten_tuple(tpl, level=None):
 
 def union_tuple(*tuples):
     '''
-    获取多个元组的并集。
+    获取多个元组的并集.
     
     参数:
-    - tuples: 一个或多个元组的可变参数。
+    - tuples: 一个或多个元组的可变参数.
     
     返回:
-    - 一个元组,包含所有输入元组的并集。
+    - 一个元组,包含所有输入元组的并集.
     '''
     union_set = set()
     for tpl in tuples:
@@ -6369,13 +6369,13 @@ def union_tuple(*tuples):
 
 def intersect_tuple(*tuples):
     '''
-    获取多个元组的交集。
+    获取多个元组的交集.
     
     参数:
-    - tuples: 一个或多个元组的可变参数。
+    - tuples: 一个或多个元组的可变参数.
     
     返回:
-    - 一个元组,包含所有输入元组的交集。
+    - 一个元组,包含所有输入元组的交集.
     '''
     intersection_set = set(tuples[0])
     for tpl in tuples[1:]:
@@ -6385,7 +6385,7 @@ def intersect_tuple(*tuples):
 
 def rebuild_tuple_with_index(flattened, original, index=0):
     '''
-    以original为模板,根据flattened中的元素重新构建一个元组。其括号结构与original相同,但元素顺序与flattened相同。这个函数必须要输出index才能不断调用自己,一般而言建议使用rebuild_tuple作为外部的接口。
+    以original为模板,根据flattened中的元素重新构建一个元组.其括号结构与original相同,但元素顺序与flattened相同.这个函数必须要输出index才能不断调用自己,一般而言建议使用rebuild_tuple作为外部的接口.
     '''
     result = []
     for item in original:
@@ -6399,12 +6399,12 @@ def rebuild_tuple_with_index(flattened, original, index=0):
 
 
 def rebuild_tuple(flattened, original):
-    '''以original为模板,根据flattened中的元素重新构建一个元组。其括号结构与original相同,但元素顺序与flattened相同。'''
+    '''以original为模板,根据flattened中的元素重新构建一个元组.其括号结构与original相同,但元素顺序与flattened相同.'''
     return rebuild_tuple_with_index(flattened, original)[0]
 
 
 def pure_tuple(tpl):
-    '''遍历嵌套元组,将所有数组转换为元组,但保持嵌套结构不变。'''
+    '''遍历嵌套元组,将所有数组转换为元组,但保持嵌套结构不变.'''
     if isinstance(tpl, tuple):
         # 如果是元组,递归地对每个元素调用 pure_tuple
         return tuple([pure_tuple(item) for item in tpl])
@@ -6425,7 +6425,7 @@ def pure_tuple(tpl):
 
 def tuple_shape(tpl):
     '''
-    假定tuple是和numpy的array类似的嵌套元组,返回tuple的形状。(不能处理不规则的嵌套元组)
+    假定tuple是和numpy的array类似的嵌套元组,返回tuple的形状.(不能处理不规则的嵌套元组)
     '''
     if not isinstance(tpl, tuple):
         return ()
@@ -6669,7 +6669,7 @@ def get_connection_idx_and_weight(weight_matrix):
 
 def get_nearby_idx(arr, index, nearby_index):
     """
-    获取给定多维数组 arr 中某个索引 index 前后 nearby_index 范围内的所有索引。
+    获取给定多维数组 arr 中某个索引 index 前后 nearby_index 范围内的所有索引.
 
     参数:
     arr (numpy.ndarray): 需要操作的多维数组
@@ -6690,7 +6690,7 @@ def get_nearby_idx(arr, index, nearby_index):
 
 def assign_nearby_value(arr, index, value, nearby_index):
     """
-    将给定多维数组 arr 中某个索引 index 处的值,以及距离 index 在 nearby_index 范围内的所有值都赋为 value。
+    将给定多维数组 arr 中某个索引 index 处的值,以及距离 index 在 nearby_index 范围内的所有值都赋为 value.
     
     参数:
     arr (numpy.ndarray): 需要操作的多维数组
@@ -6733,23 +6733,23 @@ def step_linspace(start, stop, step, endpoint=True):
 
 def gradient_step_linspace(start, end, num, endpoint=True, gradient='center'):
     """
-    生成一个密度梯度的线性空间。
+    生成一个密度梯度的线性空间.
 
     参数:
     start : float
-        线性空间的起始点。
+        线性空间的起始点.
     end : float
-        线性空间的结束点。
+        线性空间的结束点.
     num : int
-        生成的点的总数。
+        生成的点的总数.
     endpoint : bool, 默认True
-        是否包含结束点。
+        是否包含结束点.
     gradient : str, 默认'center', 可选'center','edge','left','right'
-        线性空间的密度梯度,'center'表示中心密度高两边低,'edge'表示两边密度高中心低, 'left'表示左边密度高右边低, 'right'表示右边密度高左边低。
+        线性空间的密度梯度,'center'表示中心密度高两边低,'edge'表示两边密度高中心低, 'left'表示左边密度高右边低, 'right'表示右边密度高左边低.
 
     返回:
     numpy.ndarray
-        生成的点组成的数组。
+        生成的点组成的数组.
     """
     if gradient == 'center':
         gradient_func = lambda x: np.arcsin(x) / (np.pi / 2)
@@ -6787,9 +6787,9 @@ def get_index(*slices):
     支持 slice, ':', ..., None 和整型索引.
     
     参数:
-        *slices: 可变参数,可以是 slice 对象, int, ':'(代表整个维度), None(代表整个维度) 或 ...(代表剩余维度)。
+        *slices: 可变参数,可以是 slice 对象, int, ':'(代表整个维度), None(代表整个维度) 或 ...(代表剩余维度).
     返回:
-        索引元组,可以直接用于 numpy 数组的索引。
+        索引元组,可以直接用于 numpy 数组的索引.
     """
     # 将 ':' 和 None 处理为 slice(None) 以表示整个维度
     indices = tuple(slice(None) if s == ':' or s is None else s for s in slices)
@@ -6816,15 +6816,15 @@ def slice_to_array(s):
 
 def get_slice(start=None, stop=None, step=None):
     '''
-    创建一个 slice 对象。
+    创建一个 slice 对象.
     
     参数:
-    start (int, 可选): 切片的起始索引。如果不提供,默认为 None。
-    stop (int, 可选): 切片的结束索引(不包含)。如果不提供,默认为 None。
-    step (int, 可选): 切片的步长。如果不提供,默认为 None。
+    start (int, 可选): 切片的起始索引.如果不提供,默认为 None.
+    stop (int, 可选): 切片的结束索引(不包含).如果不提供,默认为 None.
+    step (int, 可选): 切片的步长.如果不提供,默认为 None.
     
     返回:
-    slice: 根据输入参数创建的 slice 对象。
+    slice: 根据输入参数创建的 slice 对象.
     '''
     return slice(start, stop, step)
 
@@ -6838,20 +6838,20 @@ def get_slice_length(s):
 
 def out_ensure_dim(arr, target_dim):
     '''
-    通过在最外侧增加或者删除维数的方式确保输入数组具有指定的维度。
+    通过在最外侧增加或者删除维数的方式确保输入数组具有指定的维度.
     
     参数:
-    arr (list/numpy.ndarray): 输入数组。
-    target_dims (int): 目标维度。
+    arr (list/numpy.ndarray): 输入数组.
+    target_dims (int): 目标维度.
     
     返回值:
-    numpy.ndarray: 具有目标维度的输入数组。
+    numpy.ndarray: 具有目标维度的输入数组.
     
     说明:
-    1. 如果输入数组的维度小于目标维度,则在外部添加新的维度,直到达到目标维度。
-    2. 如果输入数组的维度已经等于或大于目标维度,则不进行任何操作。
-    3. 该函数支持列表和NumPy数组作为输入。
-    4. 返回值始终是NumPy数组。
+    1. 如果输入数组的维度小于目标维度,则在外部添加新的维度,直到达到目标维度.
+    2. 如果输入数组的维度已经等于或大于目标维度,则不进行任何操作.
+    3. 该函数支持列表和NumPy数组作为输入.
+    4. 返回值始终是NumPy数组.
     '''
     # 将输入转换为NumPy数组
     arr = np.array(arr)
@@ -6866,7 +6866,7 @@ def out_ensure_dim(arr, target_dim):
     
     # 如果输入数组的维度大于目标维度
     elif curr_dims > target_dim:
-        print('Warning: 输入数组的维度大于目标维度。将移除最外层维度以匹配目标维度。')
+        print('Warning: 输入数组的维度大于目标维度.将移除最外层维度以匹配目标维度.')
         # 如果最外层维度的长度为1,则将其移除
         while curr_dims > target_dim and arr.shape[0] == 1:
             arr = np.squeeze(arr, axis=0)
@@ -6874,24 +6874,24 @@ def out_ensure_dim(arr, target_dim):
         
         # 如果维度仍然大于目标维度,则引发异常
         if curr_dims > target_dim:
-            raise ValueError("输入数组的维度大于目标维度,且无法通过移除最外层维度来解决。")
+            raise ValueError("输入数组的维度大于目标维度,且无法通过移除最外层维度来解决.")
     return arr
 
 
 def rm_out_dim(arr):
     '''
-    移除输入数组中所有多余的外层括号(维度)。
+    移除输入数组中所有多余的外层括号(维度).
     
     参数:
-    arr (list/numpy.ndarray): 输入数组。
+    arr (list/numpy.ndarray): 输入数组.
     
     返回值:
-    numpy.ndarray: 移除了多余外层括号的输入数组。
+    numpy.ndarray: 移除了多余外层括号的输入数组.
     
     说明:
-    1. 该函数会循环移除输入数组的最外层维度,直到该维度的长度不为1。
-    2. 该函数支持列表和NumPy数组作为输入。
-    3. 返回值始终是NumPy数组。
+    1. 该函数会循环移除输入数组的最外层维度,直到该维度的长度不为1.
+    2. 该函数支持列表和NumPy数组作为输入.
+    3. 返回值始终是NumPy数组.
     '''
     # 将输入转换为NumPy数组
     arr = np.array(arr)
@@ -6905,18 +6905,18 @@ def rm_out_dim(arr):
 
 def rm_extra_dim(arr):
     '''
-    移除输入数组中所有多余的括号(维度)。
+    移除输入数组中所有多余的括号(维度).
     
     参数:
-    arr (list/numpy.ndarray): 输入数组。
+    arr (list/numpy.ndarray): 输入数组.
     
     返回值:
-    numpy.ndarray: 移除了所有多余括号的输入数组。
+    numpy.ndarray: 移除了所有多余括号的输入数组.
     
     说明:
-    1. 该函数会移除输入数组中所有长度为1的维度。
-    2. 该函数支持列表和NumPy数组作为输入。
-    3. 返回值始终是NumPy数组。
+    1. 该函数会移除输入数组中所有长度为1的维度.
+    2. 该函数支持列表和NumPy数组作为输入.
+    3. 返回值始终是NumPy数组.
     '''
     # 将输入转换为NumPy数组
     arr = np.array(arr)
@@ -7102,7 +7102,7 @@ def identical_func(x):
 @direct_use
 def fix_param(func, **kwargs):
     '''
-    固定函数的部分参数,返回一个新的函数。
+    固定函数的部分参数,返回一个新的函数.
     '''
     return partial(func, **kwargs)
 
@@ -7124,7 +7124,7 @@ def get_default_param(func):
 
 def get_param_value(func, args, kwargs, param_name):
     """
-    获取函数指定参数的值,包括考虑默认值的情况。(适合在decorator内使用,因为需要获取某个变量的值并根据这个变量做一些操作)
+    获取函数指定参数的值,包括考虑默认值的情况.(适合在decorator内使用,因为需要获取某个变量的值并根据这个变量做一些操作)
     
     :param func: 被装饰的函数
     :param args: 位置参数
@@ -7142,15 +7142,15 @@ def get_param_value(func, args, kwargs, param_name):
 
 def get_all_func(module, only_module=True):
     '''
-    获取指定模块中的所有函数名。
+    获取指定模块中的所有函数名.
 
     参数:
-    module: Python模块对象,你想要获取函数名的模块。
+    module: Python模块对象,你想要获取函数名的模块.
     only_module: 布尔值,如果为True,只返回模块中自己定义的函数；
-                 如果为False,返回模块中的所有函数,包括导入的函数。
+                 如果为False,返回模块中的所有函数,包括导入的函数.
 
     返回值:
-    一个列表,包含了指定模块中的所有函数名。函数名按照在源文件中的位置排序。
+    一个列表,包含了指定模块中的所有函数名.函数名按照在源文件中的位置排序.
     '''
     if only_module:
         functions = [(name, obj) for name, obj in inspect.getmembers(module) 
@@ -7164,11 +7164,11 @@ def get_all_func(module, only_module=True):
 
 def print_func_source(module, function_name):
     '''
-    打印指定模块中指定函数的源代码。
+    打印指定模块中指定函数的源代码.
 
     参数:
-    module: Python模块对象,你想要获取函数源代码的模块。
-    function_name: 字符串,你想要获取源代码的函数的名字。
+    module: Python模块对象,你想要获取函数源代码的模块.
+    function_name: 字符串,你想要获取源代码的函数的名字.
 
     返回值:
     无
@@ -7202,22 +7202,22 @@ def is_func(function):
 
 def run_func(func, *args, **kwargs):
     '''
-    运行函数并返回结果。
+    运行函数并返回结果.
 
     参数:
-    - func: 要运行的函数。
-    - args: 函数的位置参数。
-    - kwargs: 函数的关键字参数。
+    - func: 要运行的函数.
+    - args: 函数的位置参数.
+    - kwargs: 函数的关键字参数.
 
     返回值:
-    函数的返回值。
+    函数的返回值.
     '''
     return func(*args, **kwargs)
 
 
 def call_func(func_name, *args, **kwargs):
     '''
-    使用函数名调用函数。
+    使用函数名调用函数.
     '''
     # 获取当前全局命名空间
     func = globals().get(func_name)
@@ -7279,7 +7279,7 @@ def is_class(obj):
 
 def add_method_to_instance(instance, method_func, method_name):
     """
-    将方法动态添加到一个实例中。
+    将方法动态添加到一个实例中.
     
     参数:
         instance: 目标实例
@@ -7294,7 +7294,7 @@ def add_method_to_instance(instance, method_func, method_name):
 # region 排序
 def sort_array(arr, ascending=True, nan_policy='warn'):
     """
-    对数组或列表进行排序,如果包含 NaN 则发出警告。
+    对数组或列表进行排序,如果包含 NaN 则发出警告.
     
     参数:
         arr (list or array-like):要排序的输入数据
@@ -7302,7 +7302,7 @@ def sort_array(arr, ascending=True, nan_policy='warn'):
         nan_policy (str): 可选'warn', 'raise', 'propagate'之一,默认为'warn'; 'warn'表示在数据中存在NaN时发出警告,'raise'表示在数据中存在NaN时引发异常,'propagate'表示不处理NaN
     
     返回:
-        sorted_array (list or ndarray): 排序后的结果,保持输入类型。
+        sorted_array (list or ndarray): 排序后的结果,保持输入类型.
     """
     is_list = isinstance(arr, list)
     arr = np.asarray(arr)
@@ -7547,7 +7547,7 @@ def npnan_in_list(lst):
 # region 数据处理相关函数(缩放、标准化、裁剪、按比例分配、划分、分bin、卷积、平滑化)
 def scale_range(min_val, max_val, prop):
     '''
-    根据最小值和最大值计算扩展后的范围。
+    根据最小值和最大值计算扩展后的范围.
 
     :param min_val: 一个数值,代表最小值
     :param max_val: 一个数值,代表最大值
@@ -7559,21 +7559,21 @@ def scale_range(min_val, max_val, prop):
 
 def scale_to_new_range(data, old_min, old_max, new_min, new_max):
     '''
-    将数据缩放到新的范围。
+    将数据缩放到新的范围.
     
     参数:
     - data: 输入数据
-    - old_min: 原始数据的最小值。
-    - old_max: 原始数据的最大值。
-    - new_min: 新的最小值。
-    - new_max: 新的最大值。
+    - old_min: 原始数据的最小值.
+    - old_max: 原始数据的最大值.
+    - new_min: 新的最小值.
+    - new_max: 新的最大值.
     '''
     return (data - old_min) / (old_max - old_min) * (new_max - new_min) + new_min
 
 
 def get_z_score(data):
     '''
-    计算并返回数据集的Z分数。
+    计算并返回数据集的Z分数.
     '''
     if isinstance(data, list):
         return get_z_score_list(data)
@@ -7591,7 +7591,7 @@ def get_z_score(data):
 
 def get_z_score_arr(data):
     '''
-    计算并返回np.array中所有数据的Z分数。
+    计算并返回np.array中所有数据的Z分数.
     '''
     mean = np.nanmean(data)
     std = np.nanstd(data)
@@ -7600,7 +7600,7 @@ def get_z_score_arr(data):
 
 def get_z_score_list(data):
     '''
-    计算并返回列表中所有数据的Z分数。
+    计算并返回列表中所有数据的Z分数.
     '''
     data = np.array(data)
     mean = np.nanmean(data)
@@ -7610,28 +7610,28 @@ def get_z_score_list(data):
 
 def get_z_score_dict(data):
     '''
-    计算并返回字典中所有数据集的Z分数。
+    计算并返回字典中所有数据集的Z分数.
     '''
     return create_dict(data.keys(), get_z_score_list(list(data.values())))
 
 
 def get_z_score_df(data):
     '''
-    计算并返回DataFrame中所有数据的Z分数。
+    计算并返回DataFrame中所有数据的Z分数.
     '''
     return pd.DataFrame(get_z_score_arr(data.values), columns=data.columns, index=data.index)
 
 
 def get_z_score_series(data):
     '''
-    计算并返回Series中所有数据的Z分数。
+    计算并返回Series中所有数据的Z分数.
     '''
     return pd.Series(get_z_score_arr(data.values), index=data.index)
 
 
 def get_z_score_on_column(data, column_name):
     '''
-    使用Z分数对数据集的df的指定列进行缩放。
+    使用Z分数对数据集的df的指定列进行缩放.
     '''
     new_data = data.copy()
     new_data[column_name] = get_z_score_arr(data[column_name].values)
@@ -7640,7 +7640,7 @@ def get_z_score_on_column(data, column_name):
 
 def get_z_score_on_column(df, column_name):
     '''
-    使用Z分数对数据集的指定列进行缩放。
+    使用Z分数对数据集的指定列进行缩放.
     '''
     new_df = df.copy()
     new_df[column_name] = get_z_score_arr(df[column_name].values)
@@ -7649,15 +7649,15 @@ def get_z_score_on_column(df, column_name):
 
 def get_min_max_scaling(data, min_val=0, max_val=1):
     '''
-    使用最小-最大缩放对数据集进行缩放。
+    使用最小-最大缩放对数据集进行缩放.
     
     参数:
-    - data: 输入数据,可以是列表,字典,np.array,Pandas DataFrame或Series。
-    - min_val: 缩放后的最小值。
-    - max_val: 缩放后的最大值。
+    - data: 输入数据,可以是列表,字典,np.array,Pandas DataFrame或Series.
+    - min_val: 缩放后的最小值.
+    - max_val: 缩放后的最大值.
 
     注意:
-    - 这个函数是普适的,可以处理多种数据类型。但是如果已知数据类型,最好使用专门的函数, 可以提高效率。
+    - 这个函数是普适的,可以处理多种数据类型.但是如果已知数据类型,最好使用专门的函数, 可以提高效率.
     '''
     if isinstance(data, list):
         return get_min_max_scaling_list(data, min_val, max_val)
@@ -7675,7 +7675,7 @@ def get_min_max_scaling(data, min_val=0, max_val=1):
 
 def get_min_max_scaling_arr(data, min_val=0, max_val=1):
     '''
-    将np.array中的所有数据进行最小-最大缩放。
+    将np.array中的所有数据进行最小-最大缩放.
     '''
     min_data = np.nanmin(data)
     max_data = np.nanmax(data)
@@ -7684,7 +7684,7 @@ def get_min_max_scaling_arr(data, min_val=0, max_val=1):
 
 def get_min_max_scaling_list(data, min_val=0, max_val=1):
     '''
-    将list中的所有数据进行最小-最大缩放。
+    将list中的所有数据进行最小-最大缩放.
     '''
     data = np.array(data)
     min_data = np.nanmin(data)
@@ -7694,7 +7694,7 @@ def get_min_max_scaling_list(data, min_val=0, max_val=1):
 
 def get_min_max_scaling_df(data, min_val=0, max_val=1):
     '''
-    将df中的所有数据进行最小-最大缩放。
+    将df中的所有数据进行最小-最大缩放.
     '''
     return pd.DataFrame(get_min_max_scaling_arr(data.values, min_val, max_val), columns=data.columns, index=data.index)
 
@@ -7705,14 +7705,14 @@ def get_min_max_scaling_series(data, min_val=0, max_val=1):
 
 def get_min_max_scaling_dict(data, min_val=0, max_val=1):
     '''
-    将字典中的所有数据进行最小-最大缩放。
+    将字典中的所有数据进行最小-最大缩放.
     '''
     return create_dict(data.keys(), get_min_max_scaling_list(list(data.values()), min_val, max_val))
 
 
 def get_min_max_scaling_on_column(data, column_name, min_val=0, max_val=1):
     '''
-    使用最小-最大缩放对数据集的df的指定列进行缩放。
+    使用最小-最大缩放对数据集的df的指定列进行缩放.
     '''
     new_data = data.copy()
     new_data[column_name] = get_min_max_scaling_arr(data[column_name].values, min_val, max_val)
@@ -7721,18 +7721,18 @@ def get_min_max_scaling_on_column(data, column_name, min_val=0, max_val=1):
 
 def normalize(data, vmin, vmax):
     '''
-    将输入数据标准化到[0, 1]范围内。
+    将输入数据标准化到[0, 1]范围内.
 
     参数:
-    - data: 输入数据,可以是列表,字典,np.array,Pandas DataFrame或Series。
-    - vmin: 标准化参考的最小值。等于vmin的数据会被标准化为0。
-    - vmax: 标准化参考的最大值。等于vmax的数据会被标准化为1。
+    - data: 输入数据,可以是列表,字典,np.array,Pandas DataFrame或Series.
+    - vmin: 标准化参考的最小值.等于vmin的数据会被标准化为0.
+    - vmax: 标准化参考的最大值.等于vmax的数据会被标准化为1.
 
     返回:
-    - 修改后的数据,类型与输入数据相同。
+    - 修改后的数据,类型与输入数据相同.
 
     注意:
-    - 区别于get_min_max_scaling的标准化(在函数内部会考虑数据的最大值和最小值,所以对单点不适用),这个函数是直接按照vmin, vmax计算出的范围进行标准化。
+    - 区别于get_min_max_scaling的标准化(在函数内部会考虑数据的最大值和最小值,所以对单点不适用),这个函数是直接按照vmin, vmax计算出的范围进行标准化.
     '''
     if isinstance(data, (int, float)):
         return normalize_simple(data, vmin, vmax)
@@ -7752,49 +7752,49 @@ def normalize(data, vmin, vmax):
 
 def normalize_simple(data, vmin, vmax):
     '''
-    将输入数据标准化到[0, 1]范围内。
+    将输入数据标准化到[0, 1]范围内.
     '''
     return (data - vmin) / (vmax - vmin)
 
 
 def normalize_arr(data, vmin, vmax):
     '''
-    将np.array中的所有数据标准化到[0, 1]范围内。
+    将np.array中的所有数据标准化到[0, 1]范围内.
     '''
     return (data - vmin) / (vmax - vmin)
 
 
 def normalize_list(data, vmin, vmax):
     '''
-    将list中的所有数据标准化到[0, 1]范围内。
+    将list中的所有数据标准化到[0, 1]范围内.
     '''
     return [(val - vmin) / (vmax - vmin) for val in data]
 
 
 def normalize_dict(data, vmin, vmax):
     '''
-    将字典中的所有数据标准化到[0, 1]范围内。
+    将字典中的所有数据标准化到[0, 1]范围内.
     '''
     return {k: (v - vmin) / (vmax - vmin) for k, v in data.items()}
 
 
 def normalize_df(data, vmin, vmax):
     '''
-    将Pandas DataFrame中的所有数据标准化到[0, 1]范围内。
+    将Pandas DataFrame中的所有数据标准化到[0, 1]范围内.
     '''
     return (data - vmin) / (vmax - vmin)
 
 
 def normalize_series(data, vmin, vmax):
     '''
-    将Pandas Series中的所有数据标准化到[0, 1]范围内。
+    将Pandas Series中的所有数据标准化到[0, 1]范围内.
     '''
     return (data - vmin) / (vmax - vmin)
 
 
 def normalize_on_column(data, column_name, vmin, vmax):
     '''
-    使用normalize对数据集data的指定列进行标准化。
+    使用normalize对数据集data的指定列进行标准化.
     '''
     new_data = data.copy()
     new_data[column_name] = normalize(data[column_name].values, vmin, vmax)
@@ -7803,15 +7803,15 @@ def normalize_on_column(data, column_name, vmin, vmax):
 
 def clip(data, vmin, vmax):
     '''
-    将输入数据中的值限制在vmin和vmax之间。支持列表、字典、Pandas DataFrame和Series。
+    将输入数据中的值限制在vmin和vmax之间.支持列表、字典、Pandas DataFrame和Series.
 
     参数:
-    - data: 输入数据,可以是列表,字典,np.array,Pandas DataFrame或Series。
-    - vmin: 最小值阈值,数据中小于此值的将被设置为此值。
-    - vmax: 最大值阈值,数据中大于此值的将被设置为此值。
+    - data: 输入数据,可以是列表,字典,np.array,Pandas DataFrame或Series.
+    - vmin: 最小值阈值,数据中小于此值的将被设置为此值.
+    - vmax: 最大值阈值,数据中大于此值的将被设置为此值.
 
     返回:
-    - 修改后的数据,类型与输入数据相同。
+    - 修改后的数据,类型与输入数据相同.
     '''
     if isinstance(data, (int, float)):
         return clip_simple(data, vmin, vmax)
@@ -7873,7 +7873,7 @@ def clip_series(data, vmin, vmax):
 
 def clip_on_column(data, column_name, vmin, vmax):
     '''
-    使用clip对数据集data的指定列进行裁剪。
+    使用clip对数据集data的指定列进行裁剪.
     '''
     new_data = data.copy()
     new_data[column_name] = clip(data[column_name].values, vmin, vmax)
@@ -7882,18 +7882,18 @@ def clip_on_column(data, column_name, vmin, vmax):
 
 def clip_normalize(data, vmin, vmax):
     '''
-    将输入数据中的值限制在vmin和vmax之间,并将其标准化到[0, 1]范围内。
+    将输入数据中的值限制在vmin和vmax之间,并将其标准化到[0, 1]范围内.
 
     参数:
     - data: 输入数据
-    - vmin: 最小值阈值,数据中小于此值的将被设置为此值。
-    - vmax: 最大值阈值,数据中大于此值的将被设置为此值。
+    - vmin: 最小值阈值,数据中小于此值的将被设置为此值.
+    - vmax: 最大值阈值,数据中大于此值的将被设置为此值.
 
     返回:
-    - 修改后的数据,类型与输入数据相同。
+    - 修改后的数据,类型与输入数据相同.
 
     注意:
-    - 区别于get_min_max_scaling的标准化(在函数内部会考虑数据的最大值和最小值,所以对单点不适用),这个函数是直接按照vmin, vmax进行标准化。
+    - 区别于get_min_max_scaling的标准化(在函数内部会考虑数据的最大值和最小值,所以对单点不适用),这个函数是直接按照vmin, vmax进行标准化.
     '''
     clipped_data = clip(data, vmin, vmax)
     normalized_data = normalize(clipped_data, vmin, vmax)
@@ -7902,13 +7902,13 @@ def clip_normalize(data, vmin, vmax):
 
 def cluster_matrix(data, metric='cosine', method='average', square=True):
     '''
-    将数据矩阵进行层次聚类,并返回根据聚类结果重新排列的矩阵。
+    将数据矩阵进行层次聚类,并返回根据聚类结果重新排列的矩阵.
 
     参数:
-    - data: 一个numpy数组或Pandas DataFrame,包含要聚类的数据。
-    - metric: 用于计算距离的度量标准。
-    - method: 用于聚类的方法。
-    - square: 是否将聚类后的矩阵排序使得前面的行和列名相同。
+    - data: 一个numpy数组或Pandas DataFrame,包含要聚类的数据.
+    - metric: 用于计算距离的度量标准.
+    - method: 用于聚类的方法.
+    - square: 是否将聚类后的矩阵排序使得前面的行和列名相同.
     '''
     if isinstance(data, pd.DataFrame):
         data_df = data.copy()
@@ -7950,17 +7950,17 @@ def cluster_matrix(data, metric='cosine', method='average', square=True):
 
 def split_num_proportionally(total_num, proportion_dict, mode):
     '''
-    根据给定的比例分配总数。
+    根据给定的比例分配总数.
 
     参数:
-    total_num (int): 待分配的总数。
-    proportion_dict (dict): 一个字典,值是比例。
-    mode (str): 分配模式。支持的模式包括：
-                - 'optimal': 尽可能均匀地分配数字,同时尊重比例。
-                - 'positive_prop_positive': 为每个有正比例的区域保证最小值为1,如果可能的话。
+    total_num (int): 待分配的总数.
+    proportion_dict (dict): 一个字典,值是比例.
+    mode (str): 分配模式.支持的模式包括：
+                - 'optimal': 尽可能均匀地分配数字,同时尊重比例.
+                - 'positive_prop_positive': 为每个有正比例的区域保证最小值为1,如果可能的话.
     
     返回:
-    num_dict (dict): 一个字典,值是分配的数字。
+    num_dict (dict): 一个字典,值是分配的数字.
     '''
     if not np.allclose(sum(proportion_dict.values()), 1):
         raise ValueError("比例的总和必须为1")
@@ -8021,20 +8021,20 @@ def split_num_proportionally(total_num, proportion_dict, mode):
 
 def get_bin_idx(data, bins, right=False, left_most=True, right_most=True):
     '''
-    获取数据在指定区间的索引。
+    获取数据在指定区间的索引.
 
     参数:
-    - data: 输入数据,可以是单个数值、列表、numpy数组。
-    - bin: 区间列表,例如[0, 10, 20, 30]。
-    - right: 是否包含右边界。(只管内部的区间,不管最左和最右的区间)
-    - left_most: 是否包含最左边界, 当数据为最左边界时,返回0。
-    - right_most: 是否包含最右边界, 当数据为最右边界时,返回len(bins) - 2。
+    - data: 输入数据,可以是单个数值、列表、numpy数组.
+    - bin: 区间列表,例如[0, 10, 20, 30].
+    - right: 是否包含右边界.(只管内部的区间,不管最左和最右的区间)
+    - left_most: 是否包含最左边界, 当数据为最左边界时,返回0.
+    - right_most: 是否包含最右边界, 当数据为最右边界时,返回len(bins) - 2.
 
     返回:
-    - idx: 数据在区间的索引,如果数据不在区间内则返回np.nan。
+    - idx: 数据在区间的索引,如果数据不在区间内则返回np.nan.
 
     注意:
-    - 此函数不同于np.digitize,它返回的一定是从最开始的区间开始的索引, 而不是从无穷开始的索引。
+    - 此函数不同于np.digitize,它返回的一定是从最开始的区间开始的索引, 而不是从无穷开始的索引.
     '''
     if isinstance(data, (np.ndarray, list)):
         # 处理多个输入
@@ -8234,16 +8234,16 @@ def convolve_multi_timeseries_with_rectangular_kernal(multi_timeseries, width, d
 
 def lowess_smooth(x, y, frac=0.2):
     """
-    对给定的 x 和 y 数据使用 LOWESS 进行平滑处理。函数内部会确保 x 是有序的。
+    对给定的 x 和 y 数据使用 LOWESS 进行平滑处理.函数内部会确保 x 是有序的.
     
     参数:
-    x (array-like): 自变量（输入）的数据。
-    y (array-like): 因变量（输出）的数据。
-    frac (float): 控制局部回归时使用的窗口大小,值越大,曲线越平滑。默认值为 0.2。
+    x (array-like): 自变量（输入）的数据.
+    y (array-like): 因变量（输出）的数据.
+    frac (float): 控制局部回归时使用的窗口大小,值越大,曲线越平滑.默认值为 0.2.
     
     返回:
-    x_smooth (numpy array): 平滑后的 x 数据。
-    y_smooth (numpy array): 平滑后的 y 数据。
+    x_smooth (numpy array): 平滑后的 x 数据.
+    y_smooth (numpy array): 平滑后的 y 数据.
     """
     # 确保是array
     x = np.array(x)
@@ -8404,13 +8404,13 @@ def get_diffusion_map(data, n_components=2, n_neighbors=10, alpha=0.5, affinity=
 # region 数据分析相关函数
 def get_linear_score(points):
     '''
-    计算一系列点的共线性得分。
+    计算一系列点的共线性得分.
     
     参数:
-    points: 点坐标,shape=(n, d),n为点的数量,d为点的维度。
+    points: 点坐标,shape=(n, d),n为点的数量,d为点的维度.
     
     返回:
-    float: 共线性得分。值越接近1表示越共线,值越接近0表示越不共线。
+    float: 共线性得分.值越接近1表示越共线,值越接近0表示越不共线.
     '''
     if len(points) < 3:
         return 0.0
@@ -9179,7 +9179,7 @@ def get_midpoint(x):
 
 def get_mode_kde(data, bandwidth='scott', grid_size=1000):
     """
-    使用核密度估计 (KDE) 找到数据的模态。
+    使用核密度估计 (KDE) 找到数据的模态.
 
     参数:
     - data: 输入数据数组 (list, numpy array)
@@ -9210,7 +9210,7 @@ def get_mode_kde(data, bandwidth='scott', grid_size=1000):
 
 def repeat_data(data, repeat_times):
     '''
-    重复列表中的每个元素指定的次数。
+    重复列表中的每个元素指定的次数.
 
     参数:
     - data: 要重复的数据,可以是列表,numpy数组,字典,Pandas Series或DataFrame
@@ -11423,7 +11423,7 @@ def get_csr_idx(csr):
     获取CSR矩阵的行索引和列索引
 
     注意:
-        这个函数只会返回非零元素的行列索引, 比较符合直观。
+        这个函数只会返回非零元素的行列索引, 比较符合直观.
     '''
     row_indices, col_indices = csr.nonzero()
     return row_indices, col_indices
@@ -11431,25 +11431,25 @@ def get_csr_idx(csr):
 
 def get_csr_indices_indprt(csr):
     """
-    获取CSR矩阵的indices和indptr数组。
+    获取CSR矩阵的indices和indptr数组.
 
     参数:
-        csr_matrix: 输入的CSR矩阵。
+        csr_matrix: 输入的CSR矩阵.
 
     返回值:
-        indices和indptr数组的元组。
+        indices和indptr数组的元组.
 
     注意:
-        对于某些矩阵中看起来是零的元素, 他也有可能在indices和indptr中出现。
+        对于某些矩阵中看起来是零的元素, 他也有可能在indices和indptr中出现.
     """
     return csr.indices, csr.indptr
 
 
 def binary_csr(row_indices, col_indices, shape):
     '''
-    基于row_indices和col_indices创建一个CSR矩阵,每个连接将在零的基础上加1。
+    基于row_indices和col_indices创建一个CSR矩阵,每个连接将在零的基础上加1.
 
-    注意:如果row_indices和col_indices中有重复的元素,则这些元素将被累加。
+    注意:如果row_indices和col_indices中有重复的元素,则这些元素将被累加.
     '''
     return csr_matrix((np.ones_like(row_indices), (row_indices, col_indices)), shape=shape)
 
@@ -11538,7 +11538,7 @@ def get_iterable_ax_for_decorator(ax):
 
 def iterate_over_obj(func, obj_name):
     """
-    装饰器：将 obj_name 参数转换为可迭代对象,并对每个元素调用原始函数。
+    装饰器：将 obj_name 参数转换为可迭代对象,并对每个元素调用原始函数.
     """
     @wraps(func)
     def wrapper(*args, **kwargs):
@@ -11582,7 +11582,7 @@ def iterate_over_subfigs(func):
 
 def rebuild_ax(flatten_ax, original_ax):
     '''
-    根据 original_ax 的结构,还原扁平化的 flatten_ax。
+    根据 original_ax 的结构,还原扁平化的 flatten_ax.
     '''
     if isinstance(original_ax, np.ndarray):
         # 将扁平化的 ax 重塑为原有 ndarray 的形状
@@ -11745,7 +11745,7 @@ def plt_line(ax, x, y, label=None, color=BLUE, vert=True, xlim=None, ylim=None, 
 
 def plt_bar(ax, x, y, label=None, color=BLUE, vert=True, equal_space=False, err=None, capsize=PLT_CAP_SIZE, ecolor=BLACK, elabel=None, width=BAR_WIDTH, **kwargs):
     '''
-    使用x和y绘制柱状图,可以接受plt.bar的其他参数,此函数的特性是会根据x的值作为bar的位置,当x包含字符串或者equal_space=True时,会自动变成等距离排列。
+    使用x和y绘制柱状图,可以接受plt.bar的其他参数,此函数的特性是会根据x的值作为bar的位置,当x包含字符串或者equal_space=True时,会自动变成等距离排列.
     :param ax: matplotlib的轴对象,用于绘制图形
     :param x: x轴的数据
     :param y: y轴的数据
@@ -11807,20 +11807,20 @@ def plt_stack(ax, x, y, labels=None, colors=None, **kwargs):
 
 def plt_violin(ax, data, positions=None, labels=None, body_colors=None, line_colors=None, line_width=LINE_WIDTH, vert=True, text_process=None, **kwargs):
     '''
-    使用 data 绘制 violin plot。
+    使用 data 绘制 violin plot.
 
     Parameters:
-    ax (matplotlib.axes.Axes): 用于绘制图形的轴对象。
-    data (array-like): 用于绘制 violin plot 的数据,可以是一个列表或 numpy 数组。
-    positions (array-like, optional): 每个 violin plot 在 x 轴上的位置,默认为 range(len(data))。
-    labels (list, optional): 每个 violin plot 的标签,默认为 None。
-    body_colors (list, optional): 每个 violin plot 的颜色,默认为 None。
-    line_colors (list, optional): 每个 violin plot 的线条颜色,默认为 None。
-    vert (bool, optional): 如果为 True,则 violin plot 垂直绘制,否则水平绘制。默认为 True。
-    **kwargs: 其他参数传递给 ax.violinplot。
+    ax (matplotlib.axes.Axes): 用于绘制图形的轴对象.
+    data (array-like): 用于绘制 violin plot 的数据,可以是一个列表或 numpy 数组.
+    positions (array-like, optional): 每个 violin plot 在 x 轴上的位置,默认为 range(len(data)).
+    labels (list, optional): 每个 violin plot 的标签,默认为 None.
+    body_colors (list, optional): 每个 violin plot 的颜色,默认为 None.
+    line_colors (list, optional): 每个 violin plot 的线条颜色,默认为 None.
+    vert (bool, optional): 如果为 True,则 violin plot 垂直绘制,否则水平绘制.默认为 True.
+    **kwargs: 其他参数传递给 ax.violinplot.
 
     Returns:
-    dict: 包含 violin plot 的各个元素的字典。
+    dict: 包含 violin plot 的各个元素的字典.
     '''
     if isinstance(data, list):
         data = np.array(data)
@@ -12069,20 +12069,20 @@ def plt_hexbin(ax, x, y, gridsize=BIN_NUM, cmap=DENSITY_CMAP, **kwargs):
 
 def plt_contour(ax, x, y, z, levels=None, color=BLUE, cmap=None, norm_mode='linear', vmin=None, vmax=None, norm_kwargs=None, label=None, label_cmap_float=1.0, clabel=True, clabel_kwargs=None, cbar=None, cbar_kwargs=None, **kwargs):
     '''
-    使用x, y坐标网格和对应的z值绘制等高线图。
-    :param ax: matplotlib的轴对象,用于绘制图形。
-    :param x, Y: 定义等高线图网格的二维坐标数组。
-    :param z: 在每个(x, y)坐标点上的z值。
-    :param levels: 等高线的数量或具体的等高线级别列表,默认为自动确定。
-    :param color: 等高线的颜色,默认为BLUE。
-    :param cmap: 等高线的颜色映射表,默认为None。如果指定了cmap,则不使用color,并默认添加颜色条。
-    :param label: 如果不为None,添加一个颜色条并使用该标签。
-    :param label_cmap_float: 默认为1.0,用于指定标签的颜色。
-    :param clabel: 是否添加等高线标签,默认为True。
-    :param clabel_kwargs: 用于自定义等高线标签的参数,例如字体大小和颜色。
-    :param cbar: 是否添加颜色条,默认为True。
-    :param cbar_kwargs: 用于自定义颜色条的参数,例如位置和标签。
-    :param kwargs: 其他plt.contour支持的参数。
+    使用x, y坐标网格和对应的z值绘制等高线图.
+    :param ax: matplotlib的轴对象,用于绘制图形.
+    :param x, Y: 定义等高线图网格的二维坐标数组.
+    :param z: 在每个(x, y)坐标点上的z值.
+    :param levels: 等高线的数量或具体的等高线级别列表,默认为自动确定.
+    :param color: 等高线的颜色,默认为BLUE.
+    :param cmap: 等高线的颜色映射表,默认为None.如果指定了cmap,则不使用color,并默认添加颜色条.
+    :param label: 如果不为None,添加一个颜色条并使用该标签.
+    :param label_cmap_float: 默认为1.0,用于指定标签的颜色.
+    :param clabel: 是否添加等高线标签,默认为True.
+    :param clabel_kwargs: 用于自定义等高线标签的参数,例如字体大小和颜色.
+    :param cbar: 是否添加颜色条,默认为True.
+    :param cbar_kwargs: 用于自定义颜色条的参数,例如位置和标签.
+    :param kwargs: 其他plt.contour支持的参数.
     '''
     clabel_kwargs = update_dict(CLABEL_KWARGS, clabel_kwargs)
     cbar_kwargs = update_dict({}, cbar_kwargs)
@@ -12117,19 +12117,19 @@ def plt_contour(ax, x, y, z, levels=None, color=BLUE, cmap=None, norm_mode='line
 
 def plt_contourf(ax, x, y, z, levels=None, cmap=DENSITY_CMAP, contour=True, contour_color=BLACK, clabel=True, clabel_kwargs=None, cbar=True, cbar_kwargs=None, **kwargs):
     '''
-    使用X, Y坐标网格和对应的Z值绘制填充等高线图。
-    :param ax: matplotlib的轴对象,用于绘制图形。
-    :param x, y: 定义等高线图网格的二维坐标数组。
-    :param z: 在每个(x, y)坐标点上的z值。
-    :param levels: 等高线的数量或具体的等高线级别列表,默认为自动确定。
-    :param cmap: 等高线的颜色映射表,默认为None。
-    :param contour: 是否绘制等高线,默认为True。
-    :param contour_color: 等高线的颜色,默认为BLACK。
-    :param clabel: 是否添加等高线标签,默认为True。
-    :param clabel_kwargs: 用于自定义等高线标签的参数,例如字体大小和颜色。
-    :param cbar: 是否添加颜色条,默认为True。
-    :param cbar_kwargs: 用于自定义颜色条的参数,例如位置和标签。
-    :param kwargs: 其他plt.contourf支持的参数。
+    使用X, Y坐标网格和对应的Z值绘制填充等高线图.
+    :param ax: matplotlib的轴对象,用于绘制图形.
+    :param x, y: 定义等高线图网格的二维坐标数组.
+    :param z: 在每个(x, y)坐标点上的z值.
+    :param levels: 等高线的数量或具体的等高线级别列表,默认为自动确定.
+    :param cmap: 等高线的颜色映射表,默认为None.
+    :param contour: 是否绘制等高线,默认为True.
+    :param contour_color: 等高线的颜色,默认为BLACK.
+    :param clabel: 是否添加等高线标签,默认为True.
+    :param clabel_kwargs: 用于自定义等高线标签的参数,例如字体大小和颜色.
+    :param cbar: 是否添加颜色条,默认为True.
+    :param cbar_kwargs: 用于自定义颜色条的参数,例如位置和标签.
+    :param kwargs: 其他plt.contourf支持的参数.
     '''
     cbar_kwargs = update_dict({}, cbar_kwargs)
     clabel_kwargs = update_dict(CLABEL_KWARGS, clabel_kwargs)
@@ -12143,63 +12143,63 @@ def plt_contourf(ax, x, y, z, levels=None, cmap=DENSITY_CMAP, contour=True, cont
 
 def plt_pie(ax, data, labels, colors=CMAP, explode=None, autopct='%1.1f%%', startangle=90, shadow=False, textprops=None, **kwargs):
     '''
-    在指定的轴上绘制饼图。
-    :param ax: matplotlib的轴对象,用于绘制图形。
-    :param data: 数据列表,每个元素对应饼图的一个部分。示例:pie_data = [30, 15, 45, 10]
-    :param labels: 标签列表,与数据一一对应。示例:pie_labels = ['Category A', 'Category B', 'Category C', 'Category D']
+    在指定的轴上绘制饼图.
+    :param ax: matplotlib的轴对象,用于绘制图形.
+    :param data: 数据列表,每个元素对应饼图的一个部分.示例:pie_data = [30, 15, 45, 10]
+    :param labels: 标签列表,与数据一一对应.示例:pie_labels = ['Category A', 'Category B', 'Category C', 'Category D']
     :param colors: 每个饼块的颜色列表,示例:pie_colors = ['blue', 'green', 'red', 'purple'];也可以指定cmap,默认为CMAP,然后自动生成颜色序列
-    :param explode: 用于强调饼块的偏移量列表,可选。示例:pie_explode = (0, 0.1, 0, 0)
-    :param autopct: 自动百分比显示格式。
-    :param startangle: 饼图的起始角度。
-    :param shadow: 是否显示阴影。
-    :param textprops: 用于自定义文本样式的字典,例如字体大小和颜色。
-    :param kwargs: 其他matplotlib.pie支持的参数。
-    ax.pie()方法绘制饼图,支持通过textprops自定义文本样式。
+    :param explode: 用于强调饼块的偏移量列表,可选.示例:pie_explode = (0, 0.1, 0, 0)
+    :param autopct: 自动百分比显示格式.
+    :param startangle: 饼图的起始角度.
+    :param shadow: 是否显示阴影.
+    :param textprops: 用于自定义文本样式的字典,例如字体大小和颜色.
+    :param kwargs: 其他matplotlib.pie支持的参数.
+    ax.pie()方法绘制饼图,支持通过textprops自定义文本样式.
     '''
     if textprops is None:
         textprops = {'fontsize': LABEL_SIZE, 'color': BLACK}
     if not isinstance(colors, list):
         colors = colors(np.linspace(0, 1, len(data)))
 
-    ax.axis('equal')  # 保持圆形,确保饼图是正圆形。
+    ax.axis('equal')  # 保持圆形,确保饼图是正圆形.
     return ax.pie(data, labels=labels, colors=colors, explode=explode, autopct=autopct, startangle=startangle, shadow=shadow, textprops=textprops, **kwargs)
 
 
 def plt_donut(ax, data, labels, colors=CMAP, explode=None, autopct='%1.1f%%', startangle=90, shadow=False, wedgeprops=None, textprops=None, **kwargs):
     '''
-    在指定的轴上绘制环形图。
-    :param ax: matplotlib的轴对象,用于绘制图形。
-    :param data: 数据列表,每个元素对应环形图的一个部分。
-    :param labels: 标签列表,与数据一一对应。
+    在指定的轴上绘制环形图.
+    :param ax: matplotlib的轴对象,用于绘制图形.
+    :param data: 数据列表,每个元素对应环形图的一个部分.
+    :param labels: 标签列表,与数据一一对应.
     :param colors: 每个环块的颜色列表;也可以指定cmap,默认为CMAP,然后自动生成颜色序列
-    :param explode: 用于强调环块的偏移量列表,可选。
-    :param autopct: 自动百分比显示格式。
-    :param startangle: 环形图的起始角度。
-    :param shadow: 是否显示阴影。
-    :param wedgeprops: 环形图中心空白部分的属性,如宽度和边缘颜色。
-    :param textprops: 用于自定义文本样式的字典,例如字体大小和颜色。
-    :param kwargs: 其他matplotlib.pie支持的参数。
-    ax.pie()方法绘制环形图,wedgeprops定义环的宽度和边缘颜色,支持通过textprops自定义文本样式。
+    :param explode: 用于强调环块的偏移量列表,可选.
+    :param autopct: 自动百分比显示格式.
+    :param startangle: 环形图的起始角度.
+    :param shadow: 是否显示阴影.
+    :param wedgeprops: 环形图中心空白部分的属性,如宽度和边缘颜色.
+    :param textprops: 用于自定义文本样式的字典,例如字体大小和颜色.
+    :param kwargs: 其他matplotlib.pie支持的参数.
+    ax.pie()方法绘制环形图,wedgeprops定义环的宽度和边缘颜色,支持通过textprops自定义文本样式.
     '''
     if wedgeprops is None:
         wedgeprops = {'width': 0.3, 'edgecolor': 'w'}
     if textprops is None:
         textprops = {'fontsize': LABEL_SIZE, 'color': BLACK}
-    ax.axis('equal')  # 保持圆形,确保环形图是正圆形。
+    ax.axis('equal')  # 保持圆形,确保环形图是正圆形.
     return plt_pie(ax, data, labels=labels, colors=colors, explode=explode, autopct=autopct, startangle=startangle, shadow=shadow, wedgeprops=wedgeprops, textprops=textprops, **kwargs)
 
 
 def plt_circle(ax, center, radius, color=BLUE, fill=True, adjust_lim=True, **kwargs):
     '''
-    在指定的轴上绘制圆形。
-    :param ax: matplotlib的轴对象,用于绘制图形。
-    :param center: 圆心的坐标。
-    :param radius: 圆的半径。
-    :param color: 圆的颜色。
-    :param fill: 是否填充圆。(如果为False,则为圆的边框,这时可以通过linewidth参数控制边框宽度)
-    :param adjust_lim: 是否根据圆的位置和半径调整轴的限制。
-    :param kwargs: 其他matplotlib.Circle支持的参数。
-    ax.add_patch()方法绘制圆形,支持通过fill参数控制是否填充。
+    在指定的轴上绘制圆形.
+    :param ax: matplotlib的轴对象,用于绘制图形.
+    :param center: 圆心的坐标.
+    :param radius: 圆的半径.
+    :param color: 圆的颜色.
+    :param fill: 是否填充圆.(如果为False,则为圆的边框,这时可以通过linewidth参数控制边框宽度)
+    :param adjust_lim: 是否根据圆的位置和半径调整轴的限制.
+    :param kwargs: 其他matplotlib.Circle支持的参数.
+    ax.add_patch()方法绘制圆形,支持通过fill参数控制是否填充.
     '''
     if adjust_lim:
         ax.scatter(center[0], center[1], s=0, zorder=-1)
@@ -12209,16 +12209,16 @@ def plt_circle(ax, center, radius, color=BLUE, fill=True, adjust_lim=True, **kwa
 
 def plt_rectangle(ax, xy, width, height, color=BLUE, fill=True, adjust_lim=True, **kwargs):
     '''
-    在指定的轴上绘制矩形。
-    :param ax: matplotlib的轴对象,用于绘制图形。
-    :param xy: 矩形左下角的坐标。
-    :param width: 矩形的宽度。
-    :param height: 矩形的高度。
-    :param color: 矩形的颜色。
-    :param fill: 是否填充矩形。(如果为False,则为矩形的边框,这时可以通过linewidth参数控制边框宽度)
-    :param adjust_lim: 是否根据矩形的位置和大小调整轴的限制。
-    :param kwargs: 其他matplotlib.Rectangle支持的参数。
-    ax.add_patch()方法绘制矩形,支持通过fill参数控制是否填充。
+    在指定的轴上绘制矩形.
+    :param ax: matplotlib的轴对象,用于绘制图形.
+    :param xy: 矩形左下角的坐标.
+    :param width: 矩形的宽度.
+    :param height: 矩形的高度.
+    :param color: 矩形的颜色.
+    :param fill: 是否填充矩形.(如果为False,则为矩形的边框,这时可以通过linewidth参数控制边框宽度)
+    :param adjust_lim: 是否根据矩形的位置和大小调整轴的限制.
+    :param kwargs: 其他matplotlib.Rectangle支持的参数.
+    ax.add_patch()方法绘制矩形,支持通过fill参数控制是否填充.
     '''
     rectangle = plt.Rectangle(xy, width, height, color=color, fill=fill, **kwargs)
     if adjust_lim:
@@ -12228,14 +12228,14 @@ def plt_rectangle(ax, xy, width, height, color=BLUE, fill=True, adjust_lim=True,
 
 def plt_polygon(ax, xy, color=BLUE, fill=True, adjust_lim=True, **kwargs):
     '''
-    在指定的轴上绘制多边形。
-    :param ax: matplotlib的轴对象,用于绘制图形。
-    :param xy: 多边形的顶点坐标。例子:xy = [(0, 0), (1, 1), (1, 0)]
-    :param color: 多边形的颜色。
-    :param fill: 是否填充多边形。(如果为False,则为多边形的边框,这时可以通过linewidth参数控制边框宽度)
-    :param adjust_lim: 是否根据多边形的位置和大小调整轴的限制。
-    :param kwargs: 其他matplotlib.Polygon支持的参数。
-    ax.add_patch()方法绘制多边形,支持通过fill参数控制是否填充。
+    在指定的轴上绘制多边形.
+    :param ax: matplotlib的轴对象,用于绘制图形.
+    :param xy: 多边形的顶点坐标.例子:xy = [(0, 0), (1, 1), (1, 0)]
+    :param color: 多边形的颜色.
+    :param fill: 是否填充多边形.(如果为False,则为多边形的边框,这时可以通过linewidth参数控制边框宽度)
+    :param adjust_lim: 是否根据多边形的位置和大小调整轴的限制.
+    :param kwargs: 其他matplotlib.Polygon支持的参数.
+    ax.add_patch()方法绘制多边形,支持通过fill参数控制是否填充.
     '''
     polygon = plt.Polygon(xy, color=color, fill=fill, **kwargs)
     if adjust_lim:
@@ -12473,8 +12473,8 @@ def sns_box(ax, x, y, label=None, color=BLUE, **kwargs):
     '''
     使用x和y绘制箱形图,可以接受sns.boxplot的其他参数(和plt_box的输入方式完全不同,请注意并参考示例)
     :param ax: matplotlib的轴对象,用于绘制图形
-    :param x: x轴的数据,应为一个列表或数组,其长度与y中的数据集合数量相匹配。示例:x = ['A', 'A', 'B', 'B', 'C', 'C', 'C']
-    :param y: y轴的数据,每个位置的数据应该是一个列表或数组。示例:y = [1, 2, 1, 2, 1, 2, 3]
+    :param x: x轴的数据,应为一个列表或数组,其长度与y中的数据集合数量相匹配.示例:x = ['A', 'A', 'B', 'B', 'C', 'C', 'C']
+    :param y: y轴的数据,每个位置的数据应该是一个列表或数组.示例:y = [1, 2, 1, 2, 1, 2, 3]
     :param label: 图例标签,默认为None
     :param color: 箱形图的颜色,默认为BLUE
     :param kwargs: 其他sns.boxplot支持的参数
@@ -12513,7 +12513,7 @@ def sns_hist(ax, data, bins=BIN_NUM, label=None, color=BLUE, log_scale=False, st
 # region 初级作图函数(sns系列,输入pd dataframe或series使用)
 def sns_scatter_pd(ax, data, x=None, y=None, label=None, color=BLUE, **kwargs):
     '''
-    使用data的x和y列绘制散点图,可以接受sns.scatterplot的其他参数;当x为'index'时,使用DataFrame的索引作为x轴;对于Series,使用索引作为x轴,值作为y轴；当x列有重复,则会自动合并重复的x列并在对应位置绘制多个散点图。
+    使用data的x和y列绘制散点图,可以接受sns.scatterplot的其他参数;当x为'index'时,使用DataFrame的索引作为x轴;对于Series,使用索引作为x轴,值作为y轴；当x列有重复,则会自动合并重复的x列并在对应位置绘制多个散点图.
     :param ax: matplotlib的轴对象,用于绘制图形
     :param data: 用于绘制散点图的数据集
     :param x: x轴的列名
@@ -12542,14 +12542,14 @@ def sns_scatter_pd(ax, data, x=None, y=None, label=None, color=BLUE, **kwargs):
 
 def sns_line_pd(ax, data, x=None, y=None, label=None, color=BLUE, **kwargs):
     '''
-    使用data的x和y列绘制折线图,可以接受sns.lineplot的其他参数;当x为'index'时,使用DataFrame的索引作为x轴;对于Series,使用索引作为x轴,值作为y轴；当x列有重复,则会自动合并重复的x列并计算y的均值和标准误差,作为折线图的值和误差线。
-    :param ax: matplotlib的轴对象,用于绘制图形。
-    :param data: 用于绘制折线图的数据集,可以是pd.Series或pd.DataFrame。
-    :param x: x轴的列名或'index',对于pd.DataFrame有效。
-    :param y: y轴的列名,对于pd.DataFrame有效。
-    :param label: 图例标签,默认为None。
-    :param color: 折线图的颜色,默认为BLUE。
-    :param kwargs: 其他sns.lineplot支持的参数。
+    使用data的x和y列绘制折线图,可以接受sns.lineplot的其他参数;当x为'index'时,使用DataFrame的索引作为x轴;对于Series,使用索引作为x轴,值作为y轴；当x列有重复,则会自动合并重复的x列并计算y的均值和标准误差,作为折线图的值和误差线.
+    :param ax: matplotlib的轴对象,用于绘制图形.
+    :param data: 用于绘制折线图的数据集,可以是pd.Series或pd.DataFrame.
+    :param x: x轴的列名或'index',对于pd.DataFrame有效.
+    :param y: y轴的列名,对于pd.DataFrame有效.
+    :param label: 图例标签,默认为None.
+    :param color: 折线图的颜色,默认为BLUE.
+    :param kwargs: 其他sns.lineplot支持的参数.
     '''
     if isinstance(data, pd.Series):
         # 对于Series,使用索引作为x轴,值作为y轴
@@ -12570,7 +12570,7 @@ def sns_line_pd(ax, data, x=None, y=None, label=None, color=BLUE, **kwargs):
 
 def sns_bar_pd(ax, data, x=None, y=None, label=None, bar_width=BAR_WIDTH, color=BLUE, capsize=SNS_CAP_SIZE, err_kws=None, orient='v', **kwargs):
     '''
-    使用data的x和y列或索引和值绘制柱状图,可以接受sns.barplot的其他参数,现支持DataFrame和Series。对于dataframe,假如x列都不重复,则会自动变成等距离排列,假设x列有重复,则会自动合并重复的x列并计算y的均值和标准误差,作为柱状图的值和误差线。假如x为index,则会使用DataFrame的索引作为x轴,由于index是不重复的,所以会自动变成等距离排列。对于Series,自动使用series的index和值作图
+    使用data的x和y列或索引和值绘制柱状图,可以接受sns.barplot的其他参数,现支持DataFrame和Series.对于dataframe,假如x列都不重复,则会自动变成等距离排列,假设x列有重复,则会自动合并重复的x列并计算y的均值和标准误差,作为柱状图的值和误差线.假如x为index,则会使用DataFrame的索引作为x轴,由于index是不重复的,所以会自动变成等距离排列.对于Series,自动使用series的index和值作图
     :param ax: matplotlib的轴对象,用于绘制图形
     :param data: 用于绘制柱状图的DataFrame或Series
     :param x: x轴的列名或为'index'时使用DataFrame的索引；对于Series,保持为None
@@ -12666,7 +12666,7 @@ def sns_heatmap(ax, data, cmap=HEATMAP_CMAP, square=True, cbar=True, cbar_positi
     使用数据绘制热图,可以接受sns.heatmap的其他参数;注意,如果要让heatmap按照ax的框架显示,需要将square设置为False(如果想要mask是透明的,需要将mask_color设置为None)
     :param ax: matplotlib的轴对象,用于绘制图形
     :param data: 用于绘制热图的数据矩阵
-    :param cmap: 热图的颜色映射,默认为CMAP。可以是离散的或连续的,须与discrete参数相符合。
+    :param cmap: 热图的颜色映射,默认为CMAP.可以是离散的或连续的,须与discrete参数相符合.
     :param square: 是否以正方形显示每个cell,默认为True
     :param cbar: 是否显示颜色条,默认为True
     :param cbar_position: 颜色条的位置,默认为None,即使用默认位置;position参数可选'left', 'right', 'top', 'bottom'
@@ -12786,18 +12786,18 @@ def sns_heatmap(ax, data, cmap=HEATMAP_CMAP, square=True, cbar=True, cbar_positi
 # region 初级作图函数(添加errorbar)
 def add_errorbar(ax, x, y, err, label=None, color=BLACK, linestyle='None', capsize=PLT_CAP_SIZE, vert=True, equal_space=False, **kwargs):
     '''
-    在指定位置添加误差线。当x包含字符串或者equal_space=True时,会自动变成等距离排列。
-    :param ax: matplotlib的轴对象,用于绘制图形。
-    :param x: 误差线的x坐标。也支持字符串,此时会自动转换为等距的。
-    :param y: 误差线的y坐标。
-    :param err: 误差线的数据。
-    :param label: 误差线的标签,默认为None。
-    :param color: 误差线的颜色,默认为BLACK。
-    :param linestyle: 误差线的线型,默认为'None'。
-    :param capsize: 误差线的线帽大小,默认为PLT_CAP_SIZE。capsize是相对于图的大小的,不会受到xlim和ylim的影响
-    :param vert: 是否为垂直误差线,默认为True。
+    在指定位置添加误差线.当x包含字符串或者equal_space=True时,会自动变成等距离排列.
+    :param ax: matplotlib的轴对象,用于绘制图形.
+    :param x: 误差线的x坐标.也支持字符串,此时会自动转换为等距的.
+    :param y: 误差线的y坐标.
+    :param err: 误差线的数据.
+    :param label: 误差线的标签,默认为None.
+    :param color: 误差线的颜色,默认为BLACK.
+    :param linestyle: 误差线的线型,默认为'None'.
+    :param capsize: 误差线的线帽大小,默认为PLT_CAP_SIZE.capsize是相对于图的大小的,不会受到xlim和ylim的影响
+    :param vert: 是否为垂直误差线,默认为True.
     :param equal_space: 是否将x的值作为字符串处理,这将使得柱子等距排列,默认为False
-    :param kwargs: 传递给`ax.errorbar`的额外关键字参数。
+    :param kwargs: 传递给`ax.errorbar`的额外关键字参数.
     '''
     # 检查x中元素是否包含字符串
     if isinstance(x, (list, np.ndarray)):
@@ -12824,11 +12824,11 @@ def add_subfig(fig, left, right, bottom, top):
     '''
     在指定位置添加一个新的subfig
 
-    :param fig: matplotlib的图形对象,用于绘制图形。
-    :param left: 新subfig的左边界位置。
-    :param right: 新subfig的右边界位置。
-    :param bottom: 新subfig的下边界位置。
-    :param top: 新subfig的上边界位置。
+    :param fig: matplotlib的图形对象,用于绘制图形.
+    :param left: 新subfig的左边界位置.
+    :param right: 新subfig的右边界位置.
+    :param bottom: 新subfig的下边界位置.
+    :param top: 新subfig的上边界位置.
     '''
     gs = GridSpec(nrows=1, ncols=1, figure=fig, left=left, right=right, bottom=bottom, top=top)
     return get_subfig_from_gs(gs=gs)
@@ -12941,26 +12941,26 @@ def reparent_ax(ax, parent_ax, label='inset', **kwargs):
 
 def add_ax(fig, left, right, bottom, top, label='add', **kwargs):
     '''
-    在指定位置添加一个新的ax。
-    :param fig: matplotlib的图形对象,用于绘制图形。
-    :param left: 新ax的左边界位置。
-    :param right: 新ax的右边界位置。
-    :param bottom: 新ax的下边界位置。
-    :param top: 新ax的上边界位置。
-    :param kwargs: 传递给`fig.add_axes`的其他参数。比如sharex=some_ax, sharey=some_ax
+    在指定位置添加一个新的ax.
+    :param fig: matplotlib的图形对象,用于绘制图形.
+    :param left: 新ax的左边界位置.
+    :param right: 新ax的右边界位置.
+    :param bottom: 新ax的下边界位置.
+    :param top: 新ax的上边界位置.
+    :param kwargs: 传递给`fig.add_axes`的其他参数.比如sharex=some_ax, sharey=some_ax
     '''
     return fig.add_axes([left, bottom, right-left, top-bottom], label=label, **kwargs)
 
 
 def add_ax_3d(fig, left, right, bottom, top, label='add', **kwargs):
     '''
-    在指定位置添加一个新的3D ax。
-    :param fig: matplotlib的图形对象,用于绘制图形。
-    :param left: 新ax的左边界位置。
-    :param right: 新ax的右边界位置。
-    :param bottom: 新ax的下边界位置。
-    :param top: 新ax的上边界位置。
-    :param kwargs: 传递给`fig.add_axes`的其他参数。
+    在指定位置添加一个新的3D ax.
+    :param fig: matplotlib的图形对象,用于绘制图形.
+    :param left: 新ax的左边界位置.
+    :param right: 新ax的右边界位置.
+    :param bottom: 新ax的下边界位置.
+    :param top: 新ax的上边界位置.
+    :param kwargs: 传递给`fig.add_axes`的其他参数.
     '''
     # 确保传递给add_axes的参数中包含projection='3d'
     kwargs.update({'projection': '3d'})
@@ -12969,15 +12969,15 @@ def add_ax_3d(fig, left, right, bottom, top, label='add', **kwargs):
 @iterate_over_axs
 def add_side_ax(ax, position='right', relative_size=SIDE_PAD*2, pad=SIDE_PAD, sharex=None, sharey=None, hide_repeat_xaxis=False, hide_repeat_yaxis=False, label='side', inset_mode='fig', spine_mode='same', **kwargs):
     '''
-    在指定位置添加一个新的ax,并可以选择共享x轴或y轴。
-    :param ax: matplotlib的轴对象,用于绘制图形。
-    :param position: 新ax的位置,可以是'right', 'left', 'top', 'bottom'。
-    :param relative_size: 新ax的宽度或高度,相对于原ax的对应大小。
-    :param pad: 新ax与原ax的间距,相对于原ax的对应大小。
-    :param sharex: 与新ax共享x轴的ax对象。也可以是True,表示与原ax共享x轴。
-    :param sharey: 与新ax共享y轴的ax对象。也可以是True,表示与原ax共享y轴。
-    :param hide_repeat_xaxis: 如果共享x轴,是否隐藏重复的x轴标签,默认为True。
-    :param hide_repeat_yaxis: 如果共享y轴,是否隐藏重复的y轴标签,默认为True。
+    在指定位置添加一个新的ax,并可以选择共享x轴或y轴.
+    :param ax: matplotlib的轴对象,用于绘制图形.
+    :param position: 新ax的位置,可以是'right', 'left', 'top', 'bottom'.
+    :param relative_size: 新ax的宽度或高度,相对于原ax的对应大小.
+    :param pad: 新ax与原ax的间距,相对于原ax的对应大小.
+    :param sharex: 与新ax共享x轴的ax对象.也可以是True,表示与原ax共享x轴.
+    :param sharey: 与新ax共享y轴的ax对象.也可以是True,表示与原ax共享y轴.
+    :param hide_repeat_xaxis: 如果共享x轴,是否隐藏重复的x轴标签,默认为True.
+    :param hide_repeat_yaxis: 如果共享y轴,是否隐藏重复的y轴标签,默认为True.
     :param kwargs: 传递给
     '''
     if sharex is True:
@@ -13036,19 +13036,19 @@ def add_side_ax(ax, position='right', relative_size=SIDE_PAD*2, pad=SIDE_PAD, sh
 @iterate_over_axs
 def add_zoom_in_ax(ax, bounds_custom, xlim, ylim, edgecolor=BLACK, ax_facecolor=(1., 1., 1., 0.), label='zoom_in', inset_mode='fig', **kwargs):
     '''
-    放大指定轴的显示范围。
-    :param ax: matplotlib的轴对象,用于绘制图形。
-    # :param bounds: list, 新ax的范围,相对于ax,为一个四元组(left, bottom, width, height)。比如(0.5, 0.5, 0.4, 0.4)表示zoom_in_ax的左下角在ax的(0.5, 0.5)位置,宽度和高度都是0.4
-    : param bounds_custom: 新ax的范围,为一个四元组(left, right, bottom, top)。比如(0.5, 0.9, 0.5, 0.9)表示zoom_in_ax的左下角在ax的(0.5, 0.5)位置,右上角在(0.9, 0.9)位置
-    :param xlim: 将要放大的原图的x轴范围,一个二元组(x1, x2)。
-    :param ylim: 将要放大的原图的y轴范围,一个二元组(y1, y2)。
-    :param edgecolor: 放大框的边框颜色,默认为BLACK。
+    放大指定轴的显示范围.
+    :param ax: matplotlib的轴对象,用于绘制图形.
+    # :param bounds: list, 新ax的范围,相对于ax,为一个四元组(left, bottom, width, height).比如(0.5, 0.5, 0.4, 0.4)表示zoom_in_ax的左下角在ax的(0.5, 0.5)位置,宽度和高度都是0.4
+    : param bounds_custom: 新ax的范围,为一个四元组(left, right, bottom, top).比如(0.5, 0.9, 0.5, 0.9)表示zoom_in_ax的左下角在ax的(0.5, 0.5)位置,右上角在(0.9, 0.9)位置
+    :param xlim: 将要放大的原图的x轴范围,一个二元组(x1, x2).
+    :param ylim: 将要放大的原图的y轴范围,一个二元组(y1, y2).
+    :param edgecolor: 放大框的边框颜色,默认为BLACK.
     :param ax_facecolor: 放大框的背景颜色,默认为(1., 1., 1., 0.), 即透明(防止遮挡原图)
-    :param kwargs: 传递给`ax.inset_axes`的其他参数。
+    :param kwargs: 传递给`ax.inset_axes`的其他参数.
 
     注意:
-    - 该函数会在原图上绘制一个放大框,并返回新的ax对象。
-    - 获得新的ax后仍需要再在新的ax上绘制图形,否则为空白。
+    - 该函数会在原图上绘制一个放大框,并返回新的ax对象.
+    - 获得新的ax后仍需要再在新的ax上绘制图形,否则为空白.
     '''
     # 创建新的ax
     zoom_in_ax = inset_ax(ax, bounds_custom[0], bounds_custom[1], bounds_custom[2], bounds_custom[3], label=label, inset_mode=inset_mode, **kwargs)
@@ -13080,34 +13080,34 @@ def add_zoom_in_ax(ax, bounds_custom, xlim, ylim, edgecolor=BLACK, ax_facecolor=
 
 def zoom_in_xrange(ax, zoom_in_ax, xmin, xmax, color=GREEN, alpha=FAINT_ALPHA, connection_mode=None):
     """
-    在主图上添加一个缩放框,并在缩放图上显示缩放区域。
+    在主图上添加一个缩放框,并在缩放图上显示缩放区域.
     
     参数:
-    ax (Axes): 主图的 Axes 对象。
-    zoom_in_ax (Axes): 缩放图的 Axes 对象。
-    xmin (float): 缩放区域的最小 x 值。
-    xmax (float): 缩放区域的最大 x 值。
-    color (str): 缩放框的颜色。默认为绿色。
-    alpha (float): 缩放框的透明度。默认为淡色。
-    connection_mode (str): 连接线的方向。可以是 'up' 或 'down'。
+    ax (Axes): 主图的 Axes 对象.
+    zoom_in_ax (Axes): 缩放图的 Axes 对象.
+    xmin (float): 缩放区域的最小 x 值.
+    xmax (float): 缩放区域的最大 x 值.
+    color (str): 缩放框的颜色.默认为绿色.
+    alpha (float): 缩放框的透明度.默认为淡色.
+    connection_mode (str): 连接线的方向.可以是 'up' 或 'down'.
     """
     zoom_in_xrange_partial(ax, zoom_in_ax, xmin, xmax, xmin, xmax, color, alpha, connection_mode)
 
 
 def zoom_in_xrange_partial(ax, zoom_in_ax, xmin, xmax, zoom_xmin, zoom_xmax, color=GREEN, alpha=FAINT_ALPHA, connection_mode=None):
     """
-    在主图上添加一个缩放框,并在缩放图上显示缩放区域。(这里的缩放图不会占满整个图像)
+    在主图上添加一个缩放框,并在缩放图上显示缩放区域.(这里的缩放图不会占满整个图像)
     
     参数:
-    ax (Axes): 主图的 Axes 对象。
-    zoom_in_ax (Axes): 缩放图的 Axes 对象。
-    xmin (float): 缩放区域的最小 x 值。
-    xmax (float): 缩放区域的最大 x 值。
-    zoom_xmin (float): zoom_in_ax的最小 x 值。
-    zoom_xmax (float): zoom_in_ax的最大 x 值。
-    color (str): 缩放框的颜色。默认为绿色。
-    alpha (float): 缩放框的透明度。默认为淡色。
-    connection_mode (str): 连接线的方向。可以是 'up' 或 'down'。
+    ax (Axes): 主图的 Axes 对象.
+    zoom_in_ax (Axes): 缩放图的 Axes 对象.
+    xmin (float): 缩放区域的最小 x 值.
+    xmax (float): 缩放区域的最大 x 值.
+    zoom_xmin (float): zoom_in_ax的最小 x 值.
+    zoom_xmax (float): zoom_in_ax的最大 x 值.
+    color (str): 缩放框的颜色.默认为绿色.
+    alpha (float): 缩放框的透明度.默认为淡色.
+    connection_mode (str): 连接线的方向.可以是 'up' 或 'down'.
     """
     # 获取ax和zoom_in_ax的position
     ax_pos = ax.get_position()
@@ -13141,34 +13141,34 @@ def zoom_in_xrange_partial(ax, zoom_in_ax, xmin, xmax, zoom_xmin, zoom_xmax, col
 
 def zoom_in_yrange(ax, zoom_in_ax, ymin, ymax, color=GREEN, alpha=FAINT_ALPHA, connection_mode=None):
     """
-    在主图上添加一个缩放框,并在缩放图上显示缩放区域。
+    在主图上添加一个缩放框,并在缩放图上显示缩放区域.
     
     参数:
-    ax (Axes): 主图的 Axes 对象。
-    zoom_in_ax (Axes): 缩放图的 Axes 对象。
-    ymin (float): 缩放区域的最小 y 值。
-    ymax (float): 缩放区域的最大 y 值。
-    color (str): 缩放框的颜色。默认为绿色。
-    alpha (float): 缩放框的透明度。默认为淡色。
-    connection_mode (str): 连接线的方向。可以是 'left' 或 'right'。
+    ax (Axes): 主图的 Axes 对象.
+    zoom_in_ax (Axes): 缩放图的 Axes 对象.
+    ymin (float): 缩放区域的最小 y 值.
+    ymax (float): 缩放区域的最大 y 值.
+    color (str): 缩放框的颜色.默认为绿色.
+    alpha (float): 缩放框的透明度.默认为淡色.
+    connection_mode (str): 连接线的方向.可以是 'left' 或 'right'.
     """
     zoom_in_yrange_partial(ax, zoom_in_ax, ymin, ymax, ymin, ymax, color, alpha, connection_mode)
 
 
 def zoom_in_yrange_partial(ax, zoom_in_ax, ymin, ymax, zoom_ymin, zoom_ymax, color=GREEN, alpha=FAINT_ALPHA, connection_mode=None):
     """
-    在主图上添加一个缩放框,并在缩放图上显示缩放区域。(这里的缩放图不会占满整个图像)
+    在主图上添加一个缩放框,并在缩放图上显示缩放区域.(这里的缩放图不会占满整个图像)
     
     参数:
-    ax (Axes): 主图的 Axes 对象。
-    zoom_in_ax (Axes): 缩放图的 Axes 对象。
-    ymin (float): 缩放区域的最小 y 值。
-    ymax (float): 缩放区域的最大 y 值。
-    zoom_ymin (float): zoom_in_ax的最小 y 值。
-    zoom_ymax (float): zoom_in_ax的最大 y 值。
-    color (str): 缩放框的颜色。默认为绿色。
-    alpha (float): 缩放框的透明度。默认为淡色。
-    connection_mode (str): 连接线的方向。可以是 'left' 或 'right'。
+    ax (Axes): 主图的 Axes 对象.
+    zoom_in_ax (Axes): 缩放图的 Axes 对象.
+    ymin (float): 缩放区域的最小 y 值.
+    ymax (float): 缩放区域的最大 y 值.
+    zoom_ymin (float): zoom_in_ax的最小 y 值.
+    zoom_ymax (float): zoom_in_ax的最大 y 值.
+    color (str): 缩放框的颜色.默认为绿色.
+    alpha (float): 缩放框的透明度.默认为淡色.
+    connection_mode (str): 连接线的方向.可以是 'left' 或 'right'.
     """
     # 获取ax和zoom_in_ax的position
     ax_pos = ax.get_position()
@@ -13202,7 +13202,7 @@ def zoom_in_yrange_partial(ax, zoom_in_ax, ymin, ymax, zoom_ymin, zoom_ymax, col
 @iterate_over_axs
 def add_twin_ax(ax, axis, color='black', label='twin', inset_mode='fig'):
     '''
-    在指定轴上添加一个新的双轴。
+    在指定轴上添加一个新的双轴.
     :param ax: matplotlib的轴对象,用于绘制图形
     :param axis: 新双轴的位置,'x'或'y'
     :param color: 新双轴的颜色,默认为黑色
@@ -13260,7 +13260,7 @@ def clear_ax(ax):
 # region 初级作图函数(添加连接不同ax的线)
 def add_connection(axA, axB, xA, yA, xB, yB, coordsA='data', coordsB='data', **kwargs):
     """
-    在两个子图之间绘制连接线。
+    在两个子图之间绘制连接线.
     
     参数:
     xA, yA (float): 起始点的 x, y 坐标
@@ -13283,12 +13283,12 @@ def add_connection(axA, axB, xA, yA, xB, yB, coordsA='data', coordsB='data', **k
 @iterate_over_axs
 def set_ax_view_3d(ax, elev=ELEV, azim=AZIM):
     '''
-    对单个或多个3D子图Axes应用统一的视角设置。
+    对单个或多个3D子图Axes应用统一的视角设置.
 
     参数:
     - ax: 单个Axes,或者np.ndarray,list,dict
-    - elev: 视角的高度。
-    - azim: 视角的方位角。
+    - elev: 视角的高度.
+    - azim: 视角的方位角.
     '''
     if isinstance(ax, Axes3D):
         ax.view_init(elev=elev, azim=azim)
@@ -13299,23 +13299,23 @@ def set_ax_view_3d(ax, elev=ELEV, azim=AZIM):
 @direct_use
 def get_ax_position(ax):
     """
-    获取 Matplotlib Axes 对象的位置信息。
+    获取 Matplotlib Axes 对象的位置信息.
 
     参数:
-    ax (matplotlib.axes.Axes): 需要获取位置信息的 Axes 对象。
+    ax (matplotlib.axes.Axes): 需要获取位置信息的 Axes 对象.
 
     返回:
-    tuple: 包含 Axes 对象位置信息的 4 元组, 格式为 (left, bottom, width, height)。
+    tuple: 包含 Axes 对象位置信息的 4 元组, 格式为 (left, bottom, width, height).
         其中 left 和 bottom 表示 Axes 对象在图像中的左下角坐标,
-        width 和 height 表示 Axes 对象的宽度和高度。
-        这些值都是相对于图像大小的比例值,范围在 0 到 1 之间。
+        width 和 height 表示 Axes 对象的宽度和高度.
+        这些值都是相对于图像大小的比例值,范围在 0 到 1 之间.
     """
     return ax.get_position().bounds
 
 @direct_use
 def set_ax_position(ax, left, bottom, width, height):
     '''
-    设置轴的位置。
+    设置轴的位置.
     '''
     ax.set_position([left, bottom, width, height])
 
@@ -13332,7 +13332,7 @@ def get_ax_position_custom(ax):
 
 def set_ax_position_custom(ax, left, right, bottom, top):
     '''
-    设置轴的位置。
+    设置轴的位置.
 
     参数:
     - ax: matplotlib的Axes对象
@@ -13346,13 +13346,13 @@ def set_ax_position_custom(ax, left, right, bottom, top):
 
 def set_relative_ax_position(ax, nrows=1, ncols=1, margin=None, squeeze=False):
     '''
-    自动设置subplot的位置,使其在等分的图像中按照给定的比例占据空间。
+    自动设置subplot的位置,使其在等分的图像中按照给定的比例占据空间.
 
     参数:
-    - nrows: 子图的行数。
-    - ncols: 子图的列数。
-    - ax: 一个或一组matplotlib的Axes对象。
-    - margin: 一个字典,定义了图像边缘的留白,包括left, right, bottom, top。
+    - nrows: 子图的行数.
+    - ncols: 子图的列数.
+    - ax: 一个或一组matplotlib的Axes对象.
+    - margin: 一个字典,定义了图像边缘的留白,包括left, right, bottom, top.
     - squeeze: ax是否被压缩,squeeze为True时,对于单个ax其就是axes对象;squeeze为False时,对于单个ax其是一个(1,1)的np.ndarray对象
     '''
     if margin is None:
@@ -13532,8 +13532,8 @@ def is_ax_3d(ax):
 @iterate_over_axs
 def convert_ax_to_2d(ax):
     '''
-    将一个ax转换为2D的ax。
-    :param ax: matplotlib的3D轴对象,用于绘制图形。
+    将一个ax转换为2D的ax.
+    :param ax: matplotlib的3D轴对象,用于绘制图形.
     '''
     ax_position = ax.get_position()
     fig = ax.get_figure()
@@ -13543,8 +13543,8 @@ def convert_ax_to_2d(ax):
 @iterate_over_axs
 def convert_ax_to_3d(ax):
     '''
-    将一个ax转换为3D的ax。
-    :param ax: matplotlib的2D轴对象,用于绘制图形。
+    将一个ax转换为3D的ax.
+    :param ax: matplotlib的2D轴对象,用于绘制图形.
     '''
     ax_position = ax.get_position()
     fig = ax.get_figure()
@@ -13619,7 +13619,7 @@ def calculate_gs_coordinates(ncols, nrows, left, right, bottom, top, wspace, hsp
 @iterate_over_axs
 def split_ax_by_gs(ax, nrows=1, ncols=1, wspace=None, hspace=None, width_ratios=None, height_ratios=None, sharex=False, sharey=False, squeeze=True, keep_original=False, label='split', inset_mode='fig', **kwargs):
     '''
-    在ax的位置为基础获取一个GridSpec对象,然后根据GridSpec对象获取所有的ax对象。可以用于切分ax。
+    在ax的位置为基础获取一个GridSpec对象,然后根据GridSpec对象获取所有的ax对象.可以用于切分ax.
 
     参数:
     -keep_original: 是否保留原始的ax,默认为False,即不保留(将会被rm);如果为True,则会保留原始的ax;如果为index,则会将原先的ax放在返回的ax中的index位置
@@ -13717,7 +13717,7 @@ def split_with_double_marginal_ax(ax, x_side_ax_position='top', y_side_ax_positi
 # region 初级作图函数(合并ax)
 def merge_ax(axs, rm_mode='rm_axis', label='merge'):
     '''
-        合并给定的轴对象列表或数组为一个轴对象。
+        合并给定的轴对象列表或数组为一个轴对象.
 
         :param axs: 要合并的轴对象列表或数组
         :param rm_mode: 是否删除原始的轴对象.默认为'rm_axis',即删除原始的轴对象;假如为'rm_ax',则删除整个ax;如果是其他值,则不删除原始的轴对象
@@ -13766,9 +13766,9 @@ def get_custom_child_from_ax(ax, child_name):
 # region 初级作图函数(获取多个ax的位置的极值)
 def get_extreme_ax_position(axs, position):
     '''
-    获取多个ax的位置的极值。
-    :param axs: 多个ax对象。
-    :param position: 位置参数,可选'left', 'right', 'top', 'bottom'。
+    获取多个ax的位置的极值.
+    :param axs: 多个ax对象.
+    :param position: 位置参数,可选'left', 'right', 'top', 'bottom'.
     '''
     axs = get_iterable_ax(axs)
     if position not in ['left', 'right', 'top', 'bottom']:
@@ -13830,9 +13830,9 @@ def set_ax_multiple_locator(ax, base, offset=0., axis='both', locator_type='majo
 # region 初级作图函数(formatter)
 def get_linear_but_log_formatter(base='10', label_format='auto'):
     '''
-    假如散点等元素是log后作画的,ax本身的scale是linear,则使用这个formatter可以把tick显示为log的形式。
-    base: 指数的底数,默认是10。
-    label_format: 控制指数部分的格式,例如 '%.0f' 表示整数形式,'%.2f' 表示保留两位小数。默认是'auto',即自动选择。
+    假如散点等元素是log后作画的,ax本身的scale是linear,则使用这个formatter可以把tick显示为log的形式.
+    base: 指数的底数,默认是10.
+    label_format: 控制指数部分的格式,例如 '%.0f' 表示整数形式,'%.2f' 表示保留两位小数.默认是'auto',即自动选择.
     '''
     def linear_but_log_formatter(x, pos):
         if label_format == 'auto':
@@ -13873,7 +13873,7 @@ def set_linear_but_log_axis(ax, axis=None, base='10', label_format='auto'):
 def get_log_e_formatter(label_format='auto'):
     '''
     假设ax本身的scale是log的并且base为e,则使用这个formatter可以把tick显示为e的形式(否则会有很多小数点)
-    label_format: 控制指数部分的格式,例如 '%.0f' 表示整数形式,'%.2f' 表示保留两位小数。默认是'auto',即自动选择。
+    label_format: 控制指数部分的格式,例如 '%.0f' 表示整数形式,'%.2f' 表示保留两位小数.默认是'auto',即自动选择.
     '''
     def log_e_formatter(x, pos):
         if label_format == 'auto':
@@ -13974,16 +13974,16 @@ def set_sym_positive_axis(ax, axis=None, bound=None, label_format='auto'):
 # region 初级作图函数(norm)
 def get_norm(norm_mode='linear', vmin=None, vmax=None, norm_kwargs=None):
     '''
-    根据给定的模式创建一个matplotlib颜色规范化对象。
+    根据给定的模式创建一个matplotlib颜色规范化对象.
 
     参数:
-    - norm_mode (str): 规范化模式。可以是'linear'、'log'、'symlog'、'two_slope'、'boundary'。
-    - vmin (float or None, optional): 规范化范围的最小值。
-    - vmax (float or None, optional): 规范化范围的最大值。
-    - norm_kwargs (dict or None, optional): 规范化函数的其他关键字参数。
+    - norm_mode (str): 规范化模式.可以是'linear'、'log'、'symlog'、'two_slope'、'boundary'.
+    - vmin (float or None, optional): 规范化范围的最小值.
+    - vmax (float or None, optional): 规范化范围的最大值.
+    - norm_kwargs (dict or None, optional): 规范化函数的其他关键字参数.
 
     返回:
-    - norm: 基于指定模式的matplotlib规范化对象。
+    - norm: 基于指定模式的matplotlib规范化对象.
     '''
     if norm_kwargs is None:
         norm_kwargs = {}
@@ -14061,9 +14061,9 @@ def get_norm(norm_mode='linear', vmin=None, vmax=None, norm_kwargs=None):
 # region 初级作图函数(cmap)
 def get_cmap(colors, continuous=True):
     '''
-    生成颜色映射。
-    :param colors: 颜色列表。
-    :param continuous: 是否为连续颜色映射,默认为True。
+    生成颜色映射.
+    :param colors: 颜色列表.
+    :param continuous: 是否为连续颜色映射,默认为True.
     '''
     if len(colors) == 1:
         local_colors = colors * 2
@@ -14078,8 +14078,8 @@ def get_cmap(colors, continuous=True):
 
 def reverse_cmap(cmap):
     '''
-    反转颜色映射。
-    :param cmap: 颜色映射。
+    反转颜色映射.
+    :param cmap: 颜色映射.
     '''
     return cmap.reversed()
 # endregion
@@ -14089,38 +14089,36 @@ def reverse_cmap(cmap):
 @iterate_over_axs
 def add_colorbar(ax, mappable=None, cmap=CMAP, ticks=None, tick_labels=None, discrete_label=None, display_edge_ticks=True, cbar_position=None, cbar_label=None, use_mask=False, mask_color=MASK_COLOR, mask_pos='start', mask_pad=0, mask_cbar_ratio=None, mask_tick='mask', mask_tick_loc=None, label_size=CBAR_LABEL_SIZE, tick_size=CBAR_TICK_SIZE, adjust_tick_size=True, tick_proportion=TICK_PROPORTION, label_kwargs=None, norm_mode='linear', vmin=None, vmax=None, norm_kwargs=None, text_process=None, formatter=None, formatter_kwargs=None, round_digits=ROUND_DIGITS, round_format_type=ROUND_FORMAT, add_leq=False, add_geq=False, inset_mode='fig'):
     '''
-    在指定ax添加颜色条。目前设置norm_mode为'boundary'时,最好输入一个离散的cmap,否则在log模式下会出现问题。
-    :param ax: matplotlib的轴对象,用于绘制图形。
-    :param mappable: 用于绘制颜色条的对象,默认为None。
-    :param cmap: 颜色条的颜色映射,默认为CMAP。可以是离散的或连续的,须与discrete参数相符合。
+    在指定ax添加颜色条.目前设置norm_mode为'boundary'时,最好输入一个离散的cmap,否则在log模式下会出现问题.
+    :param ax: matplotlib的轴对象,用于绘制图形.
+    :param mappable: 用于绘制颜色条的对象,默认为None.
+    :param cmap: 颜色条的颜色映射,默认为CMAP.可以是离散的或连续的.
     :param ticks: 颜色条的刻度,默认为None,自动设置(当不想显示tick的时候可以输入[]);如果输入了,则会使用输入的刻度
     :param tick_labels: 颜色条的刻度标签,默认为None,自动设置;如果输入了,则会使用输入的刻度标签
-    :param discrete: 是否为离散颜色条,默认为False。
-    :param discrete_num: 离散颜色条的数量,默认为5。
-    :param discrete_label: 离散颜色条的标签,默认为None。
-    :param display_edge_ticks: 是否显示颜色条的边缘刻度,默认为True。(只在norm_mode为'boundary'时并且discrete_label不为None时有效)
+    :param discrete_label: 离散颜色条的标签,默认为None.
+    :param display_edge_ticks: 是否显示颜色条的边缘刻度,默认为True.(只在norm_mode为'boundary'时并且discrete_label不为None时有效)
     :param cbar_position: 颜色条的位置,默认为None,即使用默认位置;position参数可选'left', 'right', 'top', 'bottom'
-    :param cbar_label: 颜色条的标签,默认为None。
-    :param use_mask: 是否使用mask颜色条,默认为False。
-    :param mask_color: mask颜色条的颜色,默认为MASK_COLOR。
-    :param mask_pad: mask_colorbar和colorbar的间距,默认为0。
-    :param mask_cbar_ratio: mask颜色条的比例,默认为None。对于连续会自动设置为0.2,对于离散会自动设置为1/(discrete+1)
-    :param mask_tick: mask颜色条的标签,默认为'mask'。
-    :param mask_tick_loc: mask颜色条的标签位置,默认为None。
-    :param label_size: 颜色条标签的字体大小,默认为CBAR_LABEL_SIZE。(这个是指colorbar旁边的colorbar标签的大小)
-    :param tick_size: 颜色条刻度标签的字体大小,默认为CBAR_TICK_SIZE。
-    :param adjust_tick_size: 是否根据颜色条的数量自动调整刻度标签的大小,默认为True。
-    :param tick_proportion: 调整时的比例,默认为TICK_PROPORTION。
-    :param label_kwargs: 颜色条标签的其他参数,默认为None。
-    :param norm_mode: 颜色条的归一化模式,默认为'linear'。可选'linear', 'log', 'symlog', 'twoslope'.
-    :param vmin: 颜色条的最小值,默认为None。
-    :param vmax: 颜色条的最大值,默认为None。
-    :param norm_kwargs: 归一化的其他参数,默认为None。具体会根据不同的norm_mode在内部设置默认值。
-    :param text_process: 文本处理函数,默认为TEXT_PROCESS。
-    :param round_digits: 刻度标签的小数位数,默认为ROUND_DIGITS。
-    :param add_leq: 是否在最小值处添加'<=',默认为False。
-    :param add_geq: 是否在最大值处添加'>=',默认为False。
-    :param inset_mode: 插入模式,默认为'fig'。可选'fig', 'ax'。(指的是如果分割ax获得mask_ax和cbar_ax时,是插入到fig中还是ax中)
+    :param cbar_label: 颜色条的标签,默认为None.
+    :param use_mask: 是否使用mask颜色条,默认为False.
+    :param mask_color: mask颜色条的颜色,默认为MASK_COLOR.
+    :param mask_pad: mask_colorbar和colorbar的间距,默认为0.
+    :param mask_cbar_ratio: mask颜色条的比例,默认为None.对于连续会自动设置为0.2,对于离散会自动设置为1/(discrete+1)
+    :param mask_tick: mask颜色条的标签,默认为'mask'.
+    :param mask_tick_loc: mask颜色条的标签位置,默认为None.
+    :param label_size: 颜色条标签的字体大小,默认为CBAR_LABEL_SIZE.(这个是指colorbar旁边的colorbar标签的大小)
+    :param tick_size: 颜色条刻度标签的字体大小,默认为CBAR_TICK_SIZE.
+    :param adjust_tick_size: 是否根据颜色条的数量自动调整刻度标签的大小,默认为True.
+    :param tick_proportion: 调整时的比例,默认为TICK_PROPORTION.
+    :param label_kwargs: 颜色条标签的其他参数,默认为None.
+    :param norm_mode: 颜色条的归一化模式,默认为'linear'.可选'linear', 'log', 'symlog', 'twoslope'.
+    :param vmin: 颜色条的最小值,默认为None.
+    :param vmax: 颜色条的最大值,默认为None.
+    :param norm_kwargs: 归一化的其他参数,默认为None.具体会根据不同的norm_mode在内部设置默认值.
+    :param text_process: 文本处理函数,默认为TEXT_PROCESS.
+    :param round_digits: 刻度标签的小数位数,默认为ROUND_DIGITS.
+    :param add_leq: 是否在最小值处添加'<=',默认为False.
+    :param add_geq: 是否在最大值处添加'>=',默认为False.
+    :param inset_mode: 插入模式,默认为'fig'.可选'fig', 'ax'.(指的是如果分割ax获得mask_ax和cbar_ax时,是插入到fig中还是ax中)
     '''
     # 设定默认参数
     norm_kwargs = update_dict({}, norm_kwargs)
@@ -14208,6 +14206,13 @@ def add_colorbar(ax, mappable=None, cmap=CMAP, ticks=None, tick_labels=None, dis
 
     # 设置colorbar的标签
     cbar.set_label(cbar_label, fontsize=label_size, **label_kwargs)
+
+    # 在norm_mode 'boundary' 时,用户需要输入norm_kwargs
+    if norm_mode == 'boundary':
+        if 'boundaries' not in norm_kwargs:
+            raise ValueError('当norm_mode为boundary时,需要在norm_kwargs中输入boundaries参数')
+        if 'ncolors' not in norm_kwargs:
+            raise ValueError('当norm_mode为boundary时,需要在norm_kwargs中输入ncolors参数')
 
     # 假如颜色映射是一个离散的,则根据boundaries来设置ticks(假如输入了discrete_label,则插入中间刻度)
     if norm_mode == 'boundary':
@@ -14321,37 +14326,37 @@ def add_colorbar(ax, mappable=None, cmap=CMAP, ticks=None, tick_labels=None, dis
 @iterate_over_axs
 def add_side_colorbar(ax, mappable=None, cmap=CMAP, ticks=None, tick_labels=None, discrete_label=None, display_edge_ticks=True, cbar_position=None, cbar_label=None, use_mask=False, mask_color=MASK_COLOR, mask_pos='start', mask_pad=0, mask_cbar_ratio=None, mask_tick='mask', mask_tick_loc=None, label_size=CBAR_LABEL_SIZE, tick_size=CBAR_TICK_SIZE, adjust_tick_size=True, tick_proportion=TICK_PROPORTION, label_kwargs=None, norm_mode='linear', vmin=None, vmax=None, norm_kwargs=None, text_process=None, formatter=None, formatter_kwargs=None, round_digits=ROUND_DIGITS, round_format_type=ROUND_FORMAT, add_leq=False, add_geq=False, inset_mode='fig'):
     '''
-    在指定ax的旁边添加颜色条。特别注意,对于离散的cmap,用户一定要提供对应的discrete_num
-    :param ax: matplotlib的轴对象,用于绘制图形。
-    :param mappable: 用于绘制颜色条的对象,默认为None。
-    :param cmap: 颜色条的颜色映射,默认为CMAP。可以是离散的或连续的,须与discrete参数相符合。
-    :param continuous_tick_num: 连续颜色条的刻度数量,默认为None,不作设置。
-    :param discrete: 是否为离散颜色条,默认为False。
-    :param discrete_num: 离散颜色条的数量,默认为5。
-    :param discrete_label: 离散颜色条的标签,默认为None。
-    :param display_edge_ticks: 是否显示颜色条的边缘刻度,默认为True。(只在离散颜色条下有效)
-    :param display_center_ticks: 是否显示颜色条的中心刻度,默认为False。(只在离散颜色条下有效,并且假如discrete_label被设置了,即使display_center_ticks为True,也不会显示中心刻度)
+    在指定ax的旁边添加颜色条.特别注意,对于离散的cmap,用户一定要提供对应的discrete_num
+    :param ax: matplotlib的轴对象,用于绘制图形.
+    :param mappable: 用于绘制颜色条的对象,默认为None.
+    :param cmap: 颜色条的颜色映射,默认为CMAP.可以是离散的或连续的,须与discrete参数相符合.
+    :param continuous_tick_num: 连续颜色条的刻度数量,默认为None,不作设置.
+    :param discrete: 是否为离散颜色条,默认为False.
+    :param discrete_num: 离散颜色条的数量,默认为5.
+    :param discrete_label: 离散颜色条的标签,默认为None.
+    :param display_edge_ticks: 是否显示颜色条的边缘刻度,默认为True.(只在离散颜色条下有效)
+    :param display_center_ticks: 是否显示颜色条的中心刻度,默认为False.(只在离散颜色条下有效,并且假如discrete_label被设置了,即使display_center_ticks为True,也不会显示中心刻度)
     :param cbar_position: 颜色条的位置,默认为None,即使用默认位置;position参数可选'left', 'right', 'top', 'bottom'
-    :param cbar_label: 颜色条的标签,默认为None。
-    :param use_mask: 是否使用mask颜色条,默认为False。
-    :param mask_color: mask颜色条的颜色,默认为MASK_COLOR。
-    :param mask_pad: mask_colorbar和colorbar的间距,默认为0。
-    :param mask_cbar_ratio: mask颜色条的比例,默认为None。对于连续会自动设置为0.2,对于离散会自动设置为1/(discrete+1)
-    :param mask_tick: mask颜色条的标签,默认为'mask'。
-    :param mask_tick_loc: mask颜色条的标签位置,默认为None。
-    :param label_size: 颜色条标签的字体大小,默认为CBAR_LABEL_SIZE。
-    :param tick_size: 颜色条刻度标签的字体大小,默认为CBAR_TICK_SIZE。
-    :param adjust_tick_size: 是否根据颜色条的数量自动调整刻度标签的大小,默认为True。
-    :param tick_proportion: 调整时的比例,默认为TICK_PROPORTION。
-    :param label_kwargs: 颜色条标签的其他参数,默认为None。
-    :param norm_mode: 颜色条的归一化模式,默认为'linear'。可选'linear', 'log', 'symlog', 'twoslope'.
-    :param vmin: 颜色条的最小值,默认为None。
-    :param vmax: 颜色条的最大值,默认为None。
-    :param norm_kwargs: 归一化的其他参数,默认为None。具体会根据不同的norm_mode在内部设置默认值。
-    :param text_process: 文本处理函数,默认为TEXT_PROCESS。
-    :param round_digits: 刻度标签的小数位数,默认为ROUND_DIGITS。
-    :param add_leq: 是否在最小值处添加'<=',默认为False。
-    :param add_geq: 是否在最大值处添加'>=',默认为False。
+    :param cbar_label: 颜色条的标签,默认为None.
+    :param use_mask: 是否使用mask颜色条,默认为False.
+    :param mask_color: mask颜色条的颜色,默认为MASK_COLOR.
+    :param mask_pad: mask_colorbar和colorbar的间距,默认为0.
+    :param mask_cbar_ratio: mask颜色条的比例,默认为None.对于连续会自动设置为0.2,对于离散会自动设置为1/(discrete+1)
+    :param mask_tick: mask颜色条的标签,默认为'mask'.
+    :param mask_tick_loc: mask颜色条的标签位置,默认为None.
+    :param label_size: 颜色条标签的字体大小,默认为CBAR_LABEL_SIZE.
+    :param tick_size: 颜色条刻度标签的字体大小,默认为CBAR_TICK_SIZE.
+    :param adjust_tick_size: 是否根据颜色条的数量自动调整刻度标签的大小,默认为True.
+    :param tick_proportion: 调整时的比例,默认为TICK_PROPORTION.
+    :param label_kwargs: 颜色条标签的其他参数,默认为None.
+    :param norm_mode: 颜色条的归一化模式,默认为'linear'.可选'linear', 'log', 'symlog', 'twoslope'.
+    :param vmin: 颜色条的最小值,默认为None.
+    :param vmax: 颜色条的最大值,默认为None.
+    :param norm_kwargs: 归一化的其他参数,默认为None.具体会根据不同的norm_mode在内部设置默认值.
+    :param text_process: 文本处理函数,默认为TEXT_PROCESS.
+    :param round_digits: 刻度标签的小数位数,默认为ROUND_DIGITS.
+    :param add_leq: 是否在最小值处添加'<=',默认为False.
+    :param add_geq: 是否在最大值处添加'>=',默认为False.
     '''
     # 更新默认值
     if isinstance(ax, Axes3D):
@@ -14365,38 +14370,38 @@ def add_side_colorbar(ax, mappable=None, cmap=CMAP, ticks=None, tick_labels=None
 @iterate_over_axs
 def add_scatter_colorbar(ax, mappable=None, cmap=CMAP, edgecolor=BLACK, tick_labels=None, cbar_label=None, cbar_position=None, label_size=CBAR_LABEL_SIZE, tick_size=CBAR_TICK_SIZE, text_pad=1.0, label_pad=None, adjust_tick_size=True, tick_proportion=TICK_PROPORTION, label_kwargs=None, vnorm_mode='linear', vmin=None, vmax=None, vnorm_kwargs=None, snorm_mode='linear', smin=None, smax=None, snorm_kwargs=None, smap=partial(scale_to_new_range, old_min=0, old_max=1, new_min=0.05, new_max=0.95), use_mask=None, mask_marker='X', mask_smap_float=1.0, mask_color=MASK_COLOR, mask_text='mask', epsilon=1e-3, text_process=None, formatter=None, formatter_kwargs=None, round_digits=ROUND_DIGITS, round_format_type=ROUND_FORMAT, add_leq=False, add_geq=False):
     '''
-    在指定ax添加圆形颜色条。如果输入了mappable的同时指定了vmin和vmax,则会按照vmin,vmax来clip这个mappable的范围。
-    :param ax: matplotlib的轴对象,用于绘制图形。
-    :param scatter_smin: 圆形颜色条的scatter的s的最小值。
-    :param scatter_smax: 圆形颜色条的scatter的s的最大值。
-    :param mappable: 用于绘制颜色条的对象,默认为None。
-    :param cmap: 颜色条的颜色映射,默认为CMAP。
-    :param edgecolor: 圆形颜色条的边缘颜色,默认为BLACK。
-    :param tick_labels: 颜色条的刻度标签,默认为None。
-    :param cbar_label: 颜色条的标签,默认为None。
+    在指定ax添加圆形颜色条.如果输入了mappable的同时指定了vmin和vmax,则会按照vmin,vmax来clip这个mappable的范围.
+    :param ax: matplotlib的轴对象,用于绘制图形.
+    :param scatter_smin: 圆形颜色条的scatter的s的最小值.
+    :param scatter_smax: 圆形颜色条的scatter的s的最大值.
+    :param mappable: 用于绘制颜色条的对象,默认为None.
+    :param cmap: 颜色条的颜色映射,默认为CMAP.
+    :param edgecolor: 圆形颜色条的边缘颜色,默认为BLACK.
+    :param tick_labels: 颜色条的刻度标签,默认为None.
+    :param cbar_label: 颜色条的标签,默认为None.
     :param cbar_position: 颜色条的位置,默认为None,即使用默认位置;position参数可选'left', 'right', 'top', 'bottom'
-    :param label_size: 颜色条标签的字体大小,默认为CBAR_LABEL_SIZE。
-    :param tick_size: 颜色条刻度标签的字体大小,默认为CBAR_TICK_SIZE。
-    :param text_pad: scatter一旁的文本的间距,默认为1.0。
-    :param label_pad: 颜色条标签的间距,默认为None。
-    :param adjust_tick_size: 是否根据颜色条的数量自动调整刻度标签的大小,默认为True。
-    :param tick_proportion: 调整时的比例,默认为TICK_PROPORTION。
-    :param label_kwargs: 颜色条标签的其他参数,默认为None。
-    :param vmin: 颜色条的最小值,默认为None。
-    :param vmax: 颜色条的最大值,默认为None。
-    :param vnorm_mode: 颜色条的归一化模式,默认为'linear'。可选'linear', 'log', 'symlog', 'twoslope'.
-    :param vnorm_kwargs: 归一化的其他参数,默认为None。具体会根据不同的norm_mode在内部设置默认值。
-    :param smin: 圆形颜色条的scatter的s的最小值,默认为None。
-    :param smax: 圆形颜色条的scatter的s的最大值,默认为None。
-    :param snorm_mode: 圆形颜色条的scatter的归一化模式,默认为'linear'。可选'linear', 'log', 'symlog', 'twoslope'.
-    :param snorm_kwargs: 圆形颜色条的scatter的归一化的其他参数,默认为None。具体会根据不同的norm_mode在内部设置默认值。
-    :param smap: 圆形颜色条的scatter的归一化函数,默认为partial(scale_to_new_range, old_min=0, old_max=1, new_min=0.05, new_max=0.95)。(自己用的时候可以修改new_min和new_max)
-    :param epsilon: 圆形颜色条的scatter为0时的半径,默认为1e-3。(会自动带入到smap中)
-    :param text_process: 文本处理函数,默认为TEXT_PROCESS。
-    :param round_digits: 刻度标签的小数位数,默认为ROUND_DIGITS。
-    :param round_format_type: 刻度标签的格式,默认为ROUND_FORMAT。
-    :param add_leq: 是否在最小值处添加'<=',默认为False。
-    :param add_geq: 是否在最大值处添加'>=',默认为False。
+    :param label_size: 颜色条标签的字体大小,默认为CBAR_LABEL_SIZE.
+    :param tick_size: 颜色条刻度标签的字体大小,默认为CBAR_TICK_SIZE.
+    :param text_pad: scatter一旁的文本的间距,默认为1.0.
+    :param label_pad: 颜色条标签的间距,默认为None.
+    :param adjust_tick_size: 是否根据颜色条的数量自动调整刻度标签的大小,默认为True.
+    :param tick_proportion: 调整时的比例,默认为TICK_PROPORTION.
+    :param label_kwargs: 颜色条标签的其他参数,默认为None.
+    :param vmin: 颜色条的最小值,默认为None.
+    :param vmax: 颜色条的最大值,默认为None.
+    :param vnorm_mode: 颜色条的归一化模式,默认为'linear'.可选'linear', 'log', 'symlog', 'twoslope'.
+    :param vnorm_kwargs: 归一化的其他参数,默认为None.具体会根据不同的norm_mode在内部设置默认值.
+    :param smin: 圆形颜色条的scatter的s的最小值,默认为None.
+    :param smax: 圆形颜色条的scatter的s的最大值,默认为None.
+    :param snorm_mode: 圆形颜色条的scatter的归一化模式,默认为'linear'.可选'linear', 'log', 'symlog', 'twoslope'.
+    :param snorm_kwargs: 圆形颜色条的scatter的归一化的其他参数,默认为None.具体会根据不同的norm_mode在内部设置默认值.
+    :param smap: 圆形颜色条的scatter的归一化函数,默认为partial(scale_to_new_range, old_min=0, old_max=1, new_min=0.05, new_max=0.95).(自己用的时候可以修改new_min和new_max)
+    :param epsilon: 圆形颜色条的scatter为0时的半径,默认为1e-3.(会自动带入到smap中)
+    :param text_process: 文本处理函数,默认为TEXT_PROCESS.
+    :param round_digits: 刻度标签的小数位数,默认为ROUND_DIGITS.
+    :param round_format_type: 刻度标签的格式,默认为ROUND_FORMAT.
+    :param add_leq: 是否在最小值处添加'<=',默认为False.
+    :param add_geq: 是否在最大值处添加'>=',默认为False.
     '''
     # 获取norm以更新vmin和vmax,smin和smax
     cnorm = get_norm(vnorm_mode, vmin=vmin, vmax=vmax, norm_kwargs=vnorm_kwargs)
@@ -14508,12 +14513,12 @@ def add_side_scatter_colorbar(ax, mappable=None, cmap=CMAP, edgecolor=BLACK, tic
 @iterate_over_axs
 def add_marginal_distribution(ax, data, side_ax=None, side_ax_position='right', side_ax_pad=SIDE_PAD, side_ax_size=0.3, outside=True, color=BLUE, hist=True, stat='density', bins=BIN_NUM, hist_kwargs=None, kde=True, kde_kwargs=None, rm_tick=True, rm_spine=True, rm_axis=True, inset_mode='fig'):
     '''
-    在指定位置添加边缘分布。
-    :param ax: matplotlib的轴对象,用于绘制图形。
-    :param x: x轴的数据。
-    :param y: y轴的数据。
-    :param color: 边缘分布的颜色,默认为BLUE。
-    :param hist_kwargs: 传递给`sns.histplot`的其他参数。
+    在指定位置添加边缘分布.
+    :param ax: matplotlib的轴对象,用于绘制图形.
+    :param x: x轴的数据.
+    :param y: y轴的数据.
+    :param color: 边缘分布的颜色,默认为BLUE.
+    :param hist_kwargs: 传递给`sns.histplot`的其他参数.
     '''
     if hist_kwargs is None:
         hist_kwargs = {}
@@ -14569,30 +14574,30 @@ def add_marginal_distribution(ax, data, side_ax=None, side_ax_position='right', 
 @iterate_over_axs
 def add_double_marginal_distribution(ax, x, y, x_side_ax=None, y_side_ax=None, outside=True, x_side_ax_position='top', y_side_ax_position='right', x_side_ax_pad=SIDE_PAD, y_side_ax_pad=SIDE_PAD, x_side_ax_size=0.3, y_side_ax_size=0.3, x_color=BLUE, y_color=BLUE, hist=True, stat='density', x_bins=BIN_NUM, y_bins=BIN_NUM, x_hist_kwargs=None, y_hist_kwargs=None, kde=True, x_kde_kwargs=None, y_kde_kwargs=None, rm_tick=True, rm_spine=True, rm_axis=True, inset_mode='fig'):
     '''
-    在指定位置添加两个方向的边缘分布。
-    :param ax: matplotlib的轴对象,用于绘制图形。
-    :param x: x轴的数据。
-    :param y: y轴的数据。
-    :param outside: 是否将边缘分布放在外部,默认为True。
-    :param x_side_ax_position: x轴边缘分布的位置,默认为'top'。
-    :param y_side_ax_position: y轴边缘分布的位置,默认为'right'。
-    :param x_side_ax_pad: x轴边缘分布与原ax的间距,默认为0.05。
-    :param y_side_ax_pad: y轴边缘分布与原ax的间距,默认为0.05。
-    :param x_side_ax_size: x轴边缘分布的大小,默认为0.3。
-    :param y_side_ax_size: y轴边缘分布的大小,默认为0.3。
-    :param x_color: x轴边缘分布的颜色,默认为BLUE。
-    :param y_color: y轴边缘分布的颜色,默认为BLUE。
-    :param hist: 是否绘制直方图,默认为True。
-    :param stat: 直方图的统计量,默认为'probability'。
-    :param x_bins: x轴直方图的箱数,默认为BIN_NUM。
-    :param y_bins: y轴直方图的箱数,默认为BIN_NUM。
-    :param x_hist_kwargs: 传递给`plt_hist`的其他参数。
-    :param y_hist_kwargs: 传递给`plt_hist`的其他参数。
-    :param kde: 是否绘制核密度估计,默认为True。
-    :param x_kde_kwargs: 传递给`plt_kde`的其他参数。
-    :param y_kde_kwargs: 传递给`plt_kde`的其他参数。
-    :param rm_tick: 是否隐藏刻度,默认为True。
-    :param rm_spine: 是否隐藏坐标轴,默认为False。
+    在指定位置添加两个方向的边缘分布.
+    :param ax: matplotlib的轴对象,用于绘制图形.
+    :param x: x轴的数据.
+    :param y: y轴的数据.
+    :param outside: 是否将边缘分布放在外部,默认为True.
+    :param x_side_ax_position: x轴边缘分布的位置,默认为'top'.
+    :param y_side_ax_position: y轴边缘分布的位置,默认为'right'.
+    :param x_side_ax_pad: x轴边缘分布与原ax的间距,默认为0.05.
+    :param y_side_ax_pad: y轴边缘分布与原ax的间距,默认为0.05.
+    :param x_side_ax_size: x轴边缘分布的大小,默认为0.3.
+    :param y_side_ax_size: y轴边缘分布的大小,默认为0.3.
+    :param x_color: x轴边缘分布的颜色,默认为BLUE.
+    :param y_color: y轴边缘分布的颜色,默认为BLUE.
+    :param hist: 是否绘制直方图,默认为True.
+    :param stat: 直方图的统计量,默认为'probability'.
+    :param x_bins: x轴直方图的箱数,默认为BIN_NUM.
+    :param y_bins: y轴直方图的箱数,默认为BIN_NUM.
+    :param x_hist_kwargs: 传递给`plt_hist`的其他参数.
+    :param y_hist_kwargs: 传递给`plt_hist`的其他参数.
+    :param kde: 是否绘制核密度估计,默认为True.
+    :param x_kde_kwargs: 传递给`plt_kde`的其他参数.
+    :param y_kde_kwargs: 传递给`plt_kde`的其他参数.
+    :param rm_tick: 是否隐藏刻度,默认为True.
+    :param rm_spine: 是否隐藏坐标轴,默认为False.
     '''
     if x_hist_kwargs is None:
         x_hist_kwargs = {}
@@ -14641,16 +14646,16 @@ def add_double_marginal_distribution(ax, x, y, x_side_ax=None, y_side_ax=None, o
 # region 初级作图函数(添加star)
 def add_star(ax, x, y, label=None, marker=STAR, color=RED, markersize=STAR_SIZE, linestyle='None', **kwargs):
     '''
-    在指定位置添加五角星标记。
-    :param ax: matplotlib的轴对象,用于绘制图形。
-    :param x: 五角星的x坐标。
-    :param y: 五角星的y坐标。
-    :param label: 五角星的标签,默认为None。
-    :param marker: 五角星的标记,默认为STAR。
-    :param color: 五角星的颜色,默认为RED。
-    :param markersize: 五角星的大小,默认为STAR_SIZE。
-    :param linestyle: 连接五角星的线型,默认为'None'。
-    :param kwargs: 传递给`plot`函数的额外关键字参数。
+    在指定位置添加五角星标记.
+    :param ax: matplotlib的轴对象,用于绘制图形.
+    :param x: 五角星的x坐标.
+    :param y: 五角星的y坐标.
+    :param label: 五角星的标签,默认为None.
+    :param marker: 五角星的标记,默认为STAR.
+    :param color: 五角星的颜色,默认为RED.
+    :param markersize: 五角星的大小,默认为STAR_SIZE.
+    :param linestyle: 连接五角星的线型,默认为'None'.
+    :param kwargs: 传递给`plot`函数的额外关键字参数.
     '''
     # 画图
     return ax.plot(x, y, label=label, marker=marker, color=color, markersize=markersize, linestyle=linestyle, **kwargs)
@@ -14658,19 +14663,19 @@ def add_star(ax, x, y, label=None, marker=STAR, color=RED, markersize=STAR_SIZE,
 
 def polygon_star(ax, center, start_angle=np.pi / 2, num_points=5, outer_radius=1, inner_radius=0.4, color=RED, fill=True, adjust_lim=True, **kwargs):
     """
-    在指定的Axes对象上绘制一个星形。(相较于add_star, 此函数可以更加灵活地设置fill等来绘制不同的星形。)
+    在指定的Axes对象上绘制一个星形.(相较于add_star, 此函数可以更加灵活地设置fill等来绘制不同的星形.)
     
     参数:
-    - ax: matplotlib的Axes对象,用于绘制星形。
-    - center: 星形的中心点。
-    - start_angle: 星形的起始角度,默认为np.pi / 2。
-    - num_points: 星形的点数,默认为5。
-    - outer_radius: 星形外圈的半径。
-    - inner_radius: 星形内圈的半径。
-    - color: 星形的颜色,默认为RED。
-    - fill: 是否填充星形,默认为True。
-    - adjust_lim: 是否调整坐标轴范围,默认为True。
-    - kwargs: 传递给`plt_polygon`的额外关键字参数。
+    - ax: matplotlib的Axes对象,用于绘制星形.
+    - center: 星形的中心点.
+    - start_angle: 星形的起始角度,默认为np.pi / 2.
+    - num_points: 星形的点数,默认为5.
+    - outer_radius: 星形外圈的半径.
+    - inner_radius: 星形内圈的半径.
+    - color: 星形的颜色,默认为RED.
+    - fill: 是否填充星形,默认为True.
+    - adjust_lim: 是否调整坐标轴范围,默认为True.
+    - kwargs: 传递给`plt_polygon`的额外关键字参数.
     """
     angles = np.linspace(start_angle, start_angle + 2 * np.pi, num_points * 2, endpoint=False)
     radius = np.array([outer_radius if i % 2 == 0 else inner_radius for i in range(num_points * 2)])
@@ -14685,17 +14690,17 @@ def polygon_star(ax, center, start_angle=np.pi / 2, num_points=5, outer_radius=1
 
 def add_star_heatmap(ax, i, j, label=None, marker=STAR, color=RED, markersize=STAR_SIZE, linestyle='None', **kwargs):
     '''
-    在热图的指定位置添加五角星标记。
+    在热图的指定位置添加五角星标记.
 
     参数:
-    - ax: matplotlib的Axes对象,即热图的绘图区域。
-    - i, j: 要在其上添加五角星的行和列索引。(支持同时添加多个五角星,i和j可以是数组)
-    - label: 五角星的标签,默认为None。
-    - marker: 五角星的标记,默认为STAR。
-    - color: 五角星的颜色,默认为RED。
-    - markersize: 五角星的大小,默认为STAR_SIZE。
-    - linestyle: 连接五角星的线型,默认为'None'。
-    - kwargs: 传递给`plot`函数的额外关键字参数。
+    - ax: matplotlib的Axes对象,即热图的绘图区域.
+    - i, j: 要在其上添加五角星的行和列索引.(支持同时添加多个五角星,i和j可以是数组)
+    - label: 五角星的标签,默认为None.
+    - marker: 五角星的标记,默认为STAR.
+    - color: 五角星的颜色,默认为RED.
+    - markersize: 五角星的大小,默认为STAR_SIZE.
+    - linestyle: 连接五角星的线型,默认为'None'.
+    - kwargs: 传递给`plot`函数的额外关键字参数.
     '''
 
     # 转换行列索引为坐标位置
@@ -14709,14 +14714,14 @@ def add_star_heatmap(ax, i, j, label=None, marker=STAR, color=RED, markersize=ST
 # region 初级作图函数(添加辅助线)
 def add_vline(ax, x, label=None, color=RED, linestyle=AUXILIARY_LINE_STYLE, linewidth=LINE_WIDTH, **kwargs):
     '''
-    在指定位置添加垂直线。
-    :param ax: matplotlib的轴对象,用于绘制图形。
-    :param x: 垂直线的x坐标。
-    :param label: 垂直线的标签,默认为None。
-    :param color: 垂直线的颜色,默认为RED。
-    :param linestyle: 垂直线的线型,默认为AUXILIARY_LINE_STYLE。
-    :param linewidth: 垂直线的线宽,默认为LINE_WIDTH。
-    :param kwargs: 传递给`ax.axvline`的额外关键字参数。
+    在指定位置添加垂直线.
+    :param ax: matplotlib的轴对象,用于绘制图形.
+    :param x: 垂直线的x坐标.
+    :param label: 垂直线的标签,默认为None.
+    :param color: 垂直线的颜色,默认为RED.
+    :param linestyle: 垂直线的线型,默认为AUXILIARY_LINE_STYLE.
+    :param linewidth: 垂直线的线宽,默认为LINE_WIDTH.
+    :param kwargs: 传递给`ax.axvline`的额外关键字参数.
     '''
     # 画图
     return ax.axvline(x, label=label, color=color, linestyle=linestyle, linewidth=linewidth, **kwargs)
@@ -14724,14 +14729,14 @@ def add_vline(ax, x, label=None, color=RED, linestyle=AUXILIARY_LINE_STYLE, line
 
 def add_hline(ax, y, label=None, color=RED, linestyle=AUXILIARY_LINE_STYLE, linewidth=LINE_WIDTH, **kwargs):
     '''
-    在指定位置添加水平线。
-    :param ax: matplotlib的轴对象,用于绘制图形。
-    :param y: 水平线的y坐标。
-    :param label: 水平线的标签,默认为None。
-    :param color: 水平线的颜色,默认为RED。
-    :param linestyle: 水平线的线型,默认为AUXILIARY_LINE_STYLE。
-    :param linewidth: 水平线的线宽,默认为LINE_WIDTH。
-    :param kwargs: 传递给`ax.axhline`的额外关键字参数。
+    在指定位置添加水平线.
+    :param ax: matplotlib的轴对象,用于绘制图形.
+    :param y: 水平线的y坐标.
+    :param label: 水平线的标签,默认为None.
+    :param color: 水平线的颜色,默认为RED.
+    :param linestyle: 水平线的线型,默认为AUXILIARY_LINE_STYLE.
+    :param linewidth: 水平线的线宽,默认为LINE_WIDTH.
+    :param kwargs: 传递给`ax.axhline`的额外关键字参数.
     '''
     # 画图
     return ax.axhline(y, label=label, color=color, linestyle=linestyle, linewidth=linewidth, **kwargs)
@@ -14739,18 +14744,18 @@ def add_hline(ax, y, label=None, color=RED, linestyle=AUXILIARY_LINE_STYLE, line
 
 def add_sline(ax, slope, intercept, reference_point='auto', label=None, color=RED, linestyle=AUXILIARY_LINE_STYLE, linewidth=LINE_WIDTH, **kwargs):
     '''
-    按照斜率和截距添加直线。(贯穿整个ax)
+    按照斜率和截距添加直线.(贯穿整个ax)
 
     add_sline意为add_slope_line
-    :param ax: matplotlib的轴对象,用于绘制图形。
-    :param slope: 直线的斜率。
-    :param intercept: 直线的截距。
-    :param reference_point: 直线的参考点,默认为'auto'。可输入浮点数
-    :param label: 直线的标签,默认为None。
-    :param color: 直线的颜色,默认为RED。
-    :param linestyle: 直线的线型,默认为AUXILIARY_LINE_STYLE。
-    :param linewidth: 直线的线宽,默认为LINE_WIDTH。
-    :param kwargs: 传递给`ax.axline`的额外关键字参数。
+    :param ax: matplotlib的轴对象,用于绘制图形.
+    :param slope: 直线的斜率.
+    :param intercept: 直线的截距.
+    :param reference_point: 直线的参考点,默认为'auto'.可输入浮点数
+    :param label: 直线的标签,默认为None.
+    :param color: 直线的颜色,默认为RED.
+    :param linestyle: 直线的线型,默认为AUXILIARY_LINE_STYLE.
+    :param linewidth: 直线的线宽,默认为LINE_WIDTH.
+    :param kwargs: 传递给`ax.axline`的额外关键字参数.
     '''
     if reference_point == 'auto':
         reference_point = (ax.get_xlim()[0] + ax.get_xlim()[1]) / 2
@@ -14760,15 +14765,15 @@ def add_sline(ax, slope, intercept, reference_point='auto', label=None, color=RE
 
 def add_grid(ax, x_list=None, y_list=None, color=RANA, linestyle=AUXILIARY_LINE_STYLE, linewidth=LINE_WIDTH, **kwargs):
     '''
-    在指定位置添加网格线。
-    :param ax: matplotlib的轴对象,用于绘制图形。
-    :param x: 网格线的x坐标,默认为None。
-    :param y: 网格线的y坐标,默认为None。
-    :param label: 网格线的标签,默认为None。
-    :param color: 网格线的颜色,默认为RED。
-    :param linestyle: 网格线的线型,默认为AUXILIARY_LINE_STYLE。
-    :param linewidth: 网格线的线宽,默认为LINE_WIDTH。
-    :param kwargs: 传递给`ax.grid`的额外关键字参数。
+    在指定位置添加网格线.
+    :param ax: matplotlib的轴对象,用于绘制图形.
+    :param x: 网格线的x坐标,默认为None.
+    :param y: 网格线的y坐标,默认为None.
+    :param label: 网格线的标签,默认为None.
+    :param color: 网格线的颜色,默认为RED.
+    :param linestyle: 网格线的线型,默认为AUXILIARY_LINE_STYLE.
+    :param linewidth: 网格线的线宽,默认为LINE_WIDTH.
+    :param kwargs: 传递给`ax.grid`的额外关键字参数.
     '''
     # 画图
     for x in x_list:
@@ -14820,7 +14825,7 @@ def add_rounded_rectangle(ax, pad=0.05, corner_radius=0.02, edgecolor="black", f
 # region 初级作图函数(添加span)
 def add_vspan(ax, xmin, xmax, label=None, color=GREEN, alpha=FAINT_ALPHA, **kwargs):
     '''
-    在指定位置添加垂直跨度。
+    在指定位置添加垂直跨度.
     '''
     # 画图
     return ax.axvspan(xmin, xmax, label=label, color=color, alpha=alpha, **kwargs)
@@ -14828,7 +14833,7 @@ def add_vspan(ax, xmin, xmax, label=None, color=GREEN, alpha=FAINT_ALPHA, **kwar
 
 def add_hspan(ax, ymin, ymax, label=None, color=GREEN, alpha=FAINT_ALPHA, **kwargs):
     '''
-    在指定位置添加水平跨度。
+    在指定位置添加水平跨度.
     '''
     # 画图
     return ax.axhspan(ymin, ymax, label=label, color=color, alpha=alpha, **kwargs)
@@ -14836,7 +14841,7 @@ def add_hspan(ax, ymin, ymax, label=None, color=GREEN, alpha=FAINT_ALPHA, **kwar
 
 def add_span(ax, color=GREEN, alpha=FAINT_ALPHA, **kwargs):
     '''
-    将整个图像区域涂色。
+    将整个图像区域涂色.
     '''
     # 画图
     color_a = rgb_to_rgba(color, alpha)
@@ -14847,7 +14852,7 @@ def add_span(ax, color=GREEN, alpha=FAINT_ALPHA, **kwargs):
 # region 初级作图函数(创建patch)
 def add_gradient_patch(ax, patch, extent, transform='data', auto_scale=True, vert=True, cmap=DENSITY_CMAP, gradient=None, alpha=None, vmin=None, vmax=None, imshow_kwargs=None):
     '''
-    创建一个渐变色的patch。
+    创建一个渐变色的patch.
 
     参数:
     - ax: matplotlib的Axes对象,用于绘制图形
@@ -14897,12 +14902,12 @@ def add_gradient_patch(ax, patch, extent, transform='data', auto_scale=True, ver
 
 def add_patch(ax, patch, auto_scale=True):
     '''
-    在ax上添加patch。
+    在ax上添加patch.
 
     参数:
-    - ax: matplotlib的Axes对象,用于绘制图形。
-    - patch: matplotlib的Patch对象,用于添加到ax。
-    - auto_scale: 是否自动调整坐标轴范围,默认为True。(如果为False,xlim和ylim不会被影响)
+    - ax: matplotlib的Axes对象,用于绘制图形.
+    - patch: matplotlib的Patch对象,用于添加到ax.
+    - auto_scale: 是否自动调整坐标轴范围,默认为True.(如果为False,xlim和ylim不会被影响)
     '''
     ax.add_patch(patch)
     if auto_scale:
@@ -14911,11 +14916,11 @@ def add_patch(ax, patch, auto_scale=True):
 
 def add_path_patch(ax, vertices, codes=None, facecolor='none', edgecolor=BLACK, auto_scale=True, lw=LINE_WIDTH, **kwargs):
     '''
-    利用path创建patch。
+    利用path创建patch.
 
     参数:
-    - vertices: 顶点坐标。示例: [[0, 0], [1, 0], [1, 1], [0, 1]]
-    - codes: 顶点代码。示例: [Path.MOVETO, Path.LINETO, Path.LINETO, Path.CLOSEPOLY],默认为None,意为第一个是MOVETO,其余是LINETO。CLOSYPOLY表示闭合到MOVETO的点;比较高级的用法还有CURVE3, CURVE4等,可以作出贝塞尔曲线
+    - vertices: 顶点坐标.示例: [[0, 0], [1, 0], [1, 1], [0, 1]]
+    - codes: 顶点代码.示例: [Path.MOVETO, Path.LINETO, Path.LINETO, Path.CLOSEPOLY],默认为None,意为第一个是MOVETO,其余是LINETO.CLOSYPOLY表示闭合到MOVETO的点;比较高级的用法还有CURVE3, CURVE4等,可以作出贝塞尔曲线
     - facecolor: 填充颜色,默认为'none'
     - edgecolor: 边框颜色,默认为BLACK
     - auto_scale: 是否自动调整坐标轴范围,默认为True
@@ -14927,10 +14932,10 @@ def add_path_patch(ax, vertices, codes=None, facecolor='none', edgecolor=BLACK, 
 
 def add_polygon_patch(ax, xy, facecolor='none', edgecolor=BLACK, auto_scale=True, lw=LINE_WIDTH, **kwargs):
     '''
-    创建多边形patch。
+    创建多边形patch.
 
     参数:
-    - xy: 顶点坐标。示例: [[0, 0], [1, 0], [1, 1], [0, 1]]
+    - xy: 顶点坐标.示例: [[0, 0], [1, 0], [1, 1], [0, 1]]
     - facecolor: 填充颜色,默认为'none'
     - edgecolor: 边框颜色,默认为BLACK
     - auto_scale: 是否自动调整坐标轴范围,默认为True
@@ -14942,11 +14947,11 @@ def add_polygon_patch(ax, xy, facecolor='none', edgecolor=BLACK, auto_scale=True
 
 def add_circle_patch(ax, center, radius, facecolor='none', edgecolor=BLACK, auto_scale=True, lw=LINE_WIDTH, **kwargs):
     '''
-    创建圆形patch。
+    创建圆形patch.
 
     参数:
-    - center: 圆心坐标。
-    - radius: 圆半径。
+    - center: 圆心坐标.
+    - radius: 圆半径.
     - facecolor: 填充颜色,默认为'none'
     - edgecolor: 边框颜色,默认为BLACK
     - auto_scale: 是否自动调整坐标轴范围,默认为True
@@ -14978,11 +14983,11 @@ def add_arc_patch(ax, center, radius, theta1, theta2, facecolor='none', edgecolo
 # region 初级作图函数(clip)
 def clip_ax_by_patch(ax, patch):
     '''
-    利用patch对ax进行裁剪。
+    利用patch对ax进行裁剪.
 
     参数:
-    - ax: matplotlib的Axes对象,用于绘制图形。
-    - patch: matplotlib的Patch对象,用于裁剪ax。(可以使用Rectangle, Circle等)
+    - ax: matplotlib的Axes对象,用于绘制图形.
+    - patch: matplotlib的Patch对象,用于裁剪ax.(可以使用Rectangle, Circle等)
     '''
     for artist in ax.get_children():
         artist.set_clip_path(patch)
@@ -14990,7 +14995,7 @@ def clip_ax_by_patch(ax, patch):
 
 def clip_ax_by_polygon(ax, xy, patch_kwargs=None):
     '''
-    利用xy构成的polygon对ax进行裁剪。
+    利用xy构成的polygon对ax进行裁剪.
     '''
     patch_kwargs = update_dict(dict(alpha=0., edgecolor='none'), patch_kwargs)
     patch = add_polygon_patch(ax, xy, **patch_kwargs)
@@ -14999,7 +15004,7 @@ def clip_ax_by_polygon(ax, xy, patch_kwargs=None):
 
 def clip_ax_by_circle(ax, center, radius, patch_kwargs=None):
     '''
-    利用center和radius构成的circle对ax进行裁剪。
+    利用center和radius构成的circle对ax进行裁剪.
     '''
     patch_kwargs = update_dict(dict(alpha=0., edgecolor='none'), patch_kwargs)
     patch = add_circle_patch(ax, center, radius, **patch_kwargs)
@@ -15008,7 +15013,7 @@ def clip_ax_by_circle(ax, center, radius, patch_kwargs=None):
 
 def clip_ax_by_path(ax, vertices, codes=None, patch_kwargs=None):
     '''
-    利用vertices和codes构成的path对ax进行裁剪。
+    利用vertices和codes构成的path对ax进行裁剪.
     '''
     patch_kwargs = update_dict(dict(alpha=0., edgecolor='none'), patch_kwargs)
     patch = add_path_patch(ax, vertices, codes, **patch_kwargs)
@@ -15019,22 +15024,22 @@ def clip_ax_by_path(ax, vertices, codes=None, patch_kwargs=None):
 # region 初级作图函数(添加箭头)
 def add_arrow(ax, x_start, y_start, x_end, y_end, xycoords='data', label=None, fc=RED, ec=RED, linewidth=LINE_WIDTH, arrow_sytle=ARROW_STYLE, head_width=ARROW_HEAD_WIDTH, head_length=ARROW_HEAD_LENGTH, alpha=1.0, **kwargs):
     '''
-    在指定位置添加箭头。更换了使用方式,现在是指定起点和终点,而不是指定增量,并且内部实际调用ax.annotation来保证箭头的头大小相对于ax美观,箭头的终点严格对应xy_end。可以处理输入单个箭头或多个箭头的情况。支持list,array,单个数字并且不会改变原始数据类型。
-    :param ax: matplotlib的轴对象,用于绘制图形。
-    :param x_start: 箭头的起始x坐标。
-    :param y_start: 箭头的起始y坐标。
-    :param x_end: 箭头的终止x坐标。
-    :param y_end: 箭头的终止y坐标。
-    :param label: 箭头的标签,默认为None。
-    :param fc: 箭头的填充颜色,默认为RED。
-    :param ec: 箭头的边框颜色,默认为RED。
-    :param linestyle: 箭头的线型,默认为'-'。
-    :param linewidth: 箭头的线宽,默认为LINE_WIDTH。
-    :param arrow_sytle: 箭头的样式,默认为ARROW_STYLE。
-    :param head_width: 箭头的宽度,默认为ARROW_HEAD_WIDTH。
-    :param head_length: 箭头的长度,默认为ARROW_HEAD_LENGTH。
+    在指定位置添加箭头.更换了使用方式,现在是指定起点和终点,而不是指定增量,并且内部实际调用ax.annotation来保证箭头的头大小相对于ax美观,箭头的终点严格对应xy_end.可以处理输入单个箭头或多个箭头的情况.支持list,array,单个数字并且不会改变原始数据类型.
+    :param ax: matplotlib的轴对象,用于绘制图形.
+    :param x_start: 箭头的起始x坐标.
+    :param y_start: 箭头的起始y坐标.
+    :param x_end: 箭头的终止x坐标.
+    :param y_end: 箭头的终止y坐标.
+    :param label: 箭头的标签,默认为None.
+    :param fc: 箭头的填充颜色,默认为RED.
+    :param ec: 箭头的边框颜色,默认为RED.
+    :param linestyle: 箭头的线型,默认为'-'.
+    :param linewidth: 箭头的线宽,默认为LINE_WIDTH.
+    :param arrow_sytle: 箭头的样式,默认为ARROW_STYLE.
+    :param head_width: 箭头的宽度,默认为ARROW_HEAD_WIDTH.
+    :param head_length: 箭头的长度,默认为ARROW_HEAD_LENGTH.
     :param adjust_end_point: 是否调整箭头的终点,使箭头的end坐标为箭头三角形终点(True)或者箭头直线的终点(False)
-    :param kwargs: 传递给`ax.arrow`的额外关键字参数。
+    :param kwargs: 传递给`ax.arrow`的额外关键字参数.
     '''
 
     # 确保起点和终点坐标可以迭代
@@ -15053,7 +15058,7 @@ def add_arrow(ax, x_start, y_start, x_end, y_end, xycoords='data', label=None, f
 
 def add_mid_arrow(ax, x_start, y_start, x_end, y_end, xycoords='data', label=None, fc=RED, ec=RED, linewidth=LINE_WIDTH, arrow_sytle=ARROW_STYLE, head_width=ARROW_HEAD_WIDTH, head_length=ARROW_HEAD_LENGTH, alpha=1.0, **kwargs):
     '''
-    添加一个从起点到终点的箭头,箭头的中间有一个箭头头。支持输入单个箭头或多个箭头的情况。
+    添加一个从起点到终点的箭头,箭头的中间有一个箭头头.支持输入单个箭头或多个箭头的情况.
     '''
     x_mid = (x_start + x_end) / 2
     y_mid = (y_start + y_end) / 2
@@ -15063,7 +15068,7 @@ def add_mid_arrow(ax, x_start, y_start, x_end, y_end, xycoords='data', label=Non
 
 def add_double_arrow(ax, x_start, y_start, x_end, y_end, xycoords='data', label=None, fc=RED, ec=RED, linewidth=LINE_WIDTH, arrow_sytle=ARROW_STYLE, head_width=ARROW_HEAD_WIDTH, head_length=ARROW_HEAD_LENGTH, alpha=1.0, **kwargs):
     '''
-    添加一个从起点到终点的双箭头。支持输入单个箭头或多个箭头的情况。
+    添加一个从起点到终点的双箭头.支持输入单个箭头或多个箭头的情况.
     '''
     add_arrow(ax, x_start, y_start, x_end, y_end, xycoords=xycoords, label=label, fc=fc, ec=ec, linewidth=linewidth, arrow_sytle=arrow_sytle, head_width=head_width, head_length=head_length, alpha=alpha, **kwargs)
     add_arrow(ax, x_end, y_end, x_start, y_start, xycoords=xycoords, label=label, fc=fc, ec=ec, linewidth=linewidth, arrow_sytle=arrow_sytle, head_width=head_width, head_length=head_length, alpha=alpha, **kwargs)
@@ -15071,8 +15076,8 @@ def add_double_arrow(ax, x_start, y_start, x_end, y_end, xycoords='data', label=
 
 def add_quiver_3d(ax, x_start, y_start, z_start, x_end, y_end, z_end, label=None, color=RED, linewidth=LINE_WIDTH, arrow_length_ratio=0.3, alpha=1.0, **kwargs):
     '''
-    在3D图中添加箭头。https://matplotlib.org/stable/api/_as_gen/mpl_toolkits.mplot3d.axes3d.Axes3D.quiver.html#mpl_toolkits.mplot3d.axes3d.Axes3D.quiver
-    注意: 如果设定length,这里的length会基于原先的箭头加倍得到长度,而不是直接设定长度。
+    在3D图中添加箭头.https://matplotlib.org/stable/api/_as_gen/mpl_toolkits.mplot3d.axes3d.Axes3D.quiver.html#mpl_toolkits.mplot3d.axes3d.Axes3D.quiver
+    注意: 如果设定length,这里的length会基于原先的箭头加倍得到长度,而不是直接设定长度.
     '''
     return ax.quiver(x_start, y_start, z_start, x_end-x_start, y_end-y_start, z_end-z_start, label=label, color=color, linewidth=linewidth, arrow_length_ratio=arrow_length_ratio, alpha=alpha, **kwargs)
 # endregion
@@ -15081,16 +15086,16 @@ def add_quiver_3d(ax, x_start, y_start, z_start, x_end, y_end, z_end, label=None
 # region 初级作图函数(添加注释)
 def add_annotation(ax, text, xy, xytext, xycoords='data', fontsize=FONT_SIZE, arrowprops=None, text_process=None, **kwargs):
     '''
-    在指定位置添加注释。只支持一个注释。
-    :param ax: matplotlib的轴对象,用于绘制图形。
-    :param text: 注释的文本。
-    :param xy: 注释的位置。即箭头的终止位置。
-    :param xytext: 注释文本的位置。即箭头的起始位置。
-    :param xycoords: 注释的坐标系,默认为'data'。也可以选择'axes fraction', 'subfigure fraction'等,见https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.annotate.html#matplotlib.axes.Axes.annotate。
-    :param fontsize: 注释文本的字体大小,默认为FONT_SIZE。
+    在指定位置添加注释.只支持一个注释.
+    :param ax: matplotlib的轴对象,用于绘制图形.
+    :param text: 注释的文本.
+    :param xy: 注释的位置.即箭头的终止位置.
+    :param xytext: 注释文本的位置.即箭头的起始位置.
+    :param xycoords: 注释的坐标系,默认为'data'.也可以选择'axes fraction', 'subfigure fraction'等,见https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.annotate.html#matplotlib.axes.Axes.annotate.
+    :param fontsize: 注释文本的字体大小,默认为FONT_SIZE.
     :param arrowprops: 箭头的属性
-    :param text_process: 文本处理参数,默认为TEXT_PROCESS。
-    :param kwargs: 传递给`ax.annotate`的额外关键字参数。
+    :param text_process: 文本处理参数,默认为TEXT_PROCESS.
+    :param kwargs: 传递给`ax.annotate`的额外关键字参数.
     '''
     text_process = update_dict(TEXT_PROCESS, text_process)
     arrowprops = update_dict(ARROW_PROPS, arrowprops)
@@ -15148,7 +15153,7 @@ def _check_maybe_wrong_transform_for_text(x, y, transform):
 def add_text(ax, text, x=TEXT_X, y=TEXT_Y, text_process=None, transform='ax', va=TEXT_VA, ha=TEXT_HA, fontsize=FONT_SIZE, color=BLACK, **kwargs):
     '''
 
-    在指定位置添加文字。
+    在指定位置添加文字.
     :param ax: matplotlib的轴对象,用于绘制图形
     :param text: 文本内容
     :param x: 文本的x坐标,默认为0.05
@@ -15202,7 +15207,7 @@ def auto_adjust_text(ax, text_obj_list, add_arrow, arrow_style='->', arrow_color
 
 def adjust_text(fig_or_ax, text, new_position=None, new_text=None, text_kwargs=None, text_process=None):
     '''
-    调整指定文本对象的文本,位置和对齐方式。
+    调整指定文本对象的文本,位置和对齐方式.
     
     参数:
     - fig_or_ax: matplotlib的Figure或Axes对象,指定在哪里搜索文本对象
@@ -15235,7 +15240,7 @@ def adjust_text(fig_or_ax, text, new_position=None, new_text=None, text_kwargs=N
 
 def adjust_text_obj(text_obj, new_position=None, new_text=None, text_kwargs=None, text_process=None):
     '''
-    调整指定文本对象的文本,位置和对齐方式。
+    调整指定文本对象的文本,位置和对齐方式.
     
     参数:
     - text_obj: matplotlib的Text对象,要调整的文本对象
@@ -15258,11 +15263,11 @@ def adjust_text_obj(text_obj, new_position=None, new_text=None, text_kwargs=None
 
 def adjust_text_obj_transform(text_obj, new_transform):
     """
-    将Matplotlib text对象的坐标系转换为新的坐标系,同时保持其在图像上的视觉位置不变。
+    将Matplotlib text对象的坐标系转换为新的坐标系,同时保持其在图像上的视觉位置不变.
 
     参数:
-    - text_obj: 要更改transform的Text对象。
-    - new_transform: 新的transform对象。
+    - text_obj: 要更改transform的Text对象.
+    - new_transform: 新的transform对象.
     """
     # 获取text当前的位置
     x_old, y_old = text_obj.get_position()
@@ -15280,15 +15285,15 @@ def adjust_text_obj_transform(text_obj, new_transform):
 
 def adjust_text_obj_alignment(text_obj, ax=None, ha=None, va=None):
     """
-    调整文本对象的对齐方式,同时尽可能保持其在图上的视觉位置不变。
+    调整文本对象的对齐方式,同时尽可能保持其在图上的视觉位置不变.
 
     参数:
-    - text_obj: Matplotlib的Text对象。
-    - ha: 新的水平对齐方式。
-    - va: 新的垂直对齐方式。
+    - text_obj: Matplotlib的Text对象.
+    - ha: 新的水平对齐方式.
+    - va: 新的垂直对齐方式.
 
     注意:
-    只对transdata变换的文本对象有效。
+    只对transdata变换的文本对象有效.
     """
     # 获取文本对象当前的位置、对齐方式和变换参数
     x0, y0 = text_obj.get_position()
@@ -15322,13 +15327,13 @@ def adjust_text_obj_alignment(text_obj, ax=None, ha=None, va=None):
 
 def align_text_obj(text_obj_list, ref_text_obj, ref_ax=None, ha_align_mode='left', va_align_mode='bottom'):
     """
-    将文本对象列表中的文本对象与参考文本对象对齐。
+    将文本对象列表中的文本对象与参考文本对象对齐.
 
     参数:
-    - text_obj_list: 包含要对齐的文本对象的列表。
-    - ref_text_obj: 参考文本对象,用于对齐。
-    - ha_align_mode: 水平对齐方式,默认为'left'。假如设置为None,则不对齐。
-    - va_align_mode: 垂直对齐方式,默认为'bottom'。假如设置为None,则不对齐。
+    - text_obj_list: 包含要对齐的文本对象的列表.
+    - ref_text_obj: 参考文本对象,用于对齐.
+    - ha_align_mode: 水平对齐方式,默认为'left'.假如设置为None,则不对齐.
+    - va_align_mode: 垂直对齐方式,默认为'bottom'.假如设置为None,则不对齐.
 
     注意:
     - 对于xylabel,title等文本对象,这个函数不适用
@@ -15486,7 +15491,7 @@ def add_axes_dict_tag(axes_dict, tag_dict=None, ref_ax=None, **kwargs):
 
 def add_axes_list_tag_by_order(axes_list, tag_kwargs=None, ref_ax=None, **kwargs):
     '''
-    按照顺序加a,b,c...标签。
+    按照顺序加a,b,c...标签.
     '''
     tag_kwargs = update_dict({}, tag_kwargs)
     tag_list = get_tag(len(axes_list), **tag_kwargs)
@@ -15498,23 +15503,23 @@ def add_axes_list_tag_by_order(axes_list, tag_kwargs=None, ref_ax=None, **kwargs
 # region 复杂作图函数(matplotlib系列,输入向量使用)
 def plt_edge_scatter(ax, x, y, color=BLUE, edge_color=BLACK, s=MARKER_SIZE**2, edge_prop=1.1, label=None, density=False, edge_kwargs=None, sc_kwargs=None):
     '''
-    绘制带边界的散点图。
+    绘制带边界的散点图.
 
     参数:
-    - ax (matplotlib.axes.Axes): matplotlib的轴对象,用于绘制图形。
-    - x (numpy.ndarray or list): x轴的数据。
-    - y (numpy.ndarray or list): y轴的数据。 
-    - color (str or tuple, optional): 散点的颜色,默认为BLUE。
-    - edge_color (str or tuple, optional): 散点的边界颜色,默认为BLACK。
-    - s (float, optional): 散点的大小,默认为MARKER_SIZE**2。
-    - edge_prop (float, optional): 散点的边界比例,默认为1.1。
-    - label (str or None, optional): 散点的标签,默认为None。
-    - density (bool, optional): 是否绘制密度图,默认为False。
-    - edge_kwargs (dict or None, optional): 传递给plt_scatter的其他参数。
-    - sc_kwargs (dict or None, optional): 传递给plt_density_scatter或者plt_scatter的其他参数,取决于是否使用density。
+    - ax (matplotlib.axes.Axes): matplotlib的轴对象,用于绘制图形.
+    - x (numpy.ndarray or list): x轴的数据.
+    - y (numpy.ndarray or list): y轴的数据. 
+    - color (str or tuple, optional): 散点的颜色,默认为BLUE.
+    - edge_color (str or tuple, optional): 散点的边界颜色,默认为BLACK.
+    - s (float, optional): 散点的大小,默认为MARKER_SIZE**2.
+    - edge_prop (float, optional): 散点的边界比例,默认为1.1.
+    - label (str or None, optional): 散点的标签,默认为None.
+    - density (bool, optional): 是否绘制密度图,默认为False.
+    - edge_kwargs (dict or None, optional): 传递给plt_scatter的其他参数.
+    - sc_kwargs (dict or None, optional): 传递给plt_density_scatter或者plt_scatter的其他参数,取决于是否使用density.
 
     返回:
-    - matplotlib.collections.PathCollection or None: 如果density为True,则返回plt_density_scatter的返回值,否则返回plt_scatter的返回值。
+    - matplotlib.collections.PathCollection or None: 如果density为True,则返回plt_density_scatter的返回值,否则返回plt_scatter的返回值.
     '''
     # 设置默认参数
     if edge_kwargs is None:
@@ -15541,25 +15546,25 @@ def plt_edge_scatter(ax, x, y, color=BLUE, edge_color=BLACK, s=MARKER_SIZE**2, e
 
 def plt_colorful_scatter(ax, x, y, c, cmap=CMAP, norm_mode='linear', vmin=None, vmax=None, norm_kwargs=None, s=MARKER_SIZE**2, label=None, label_cmap_float=1.0, scatter_kwargs=None, cbar=True, cbar_postion=None, cbar_kwargs=None):
     '''
-    绘制颜色关于c值变化的散点图。
+    绘制颜色关于c值变化的散点图.
 
     参数:
-    - ax (matplotlib.axes.Axes): matplotlib的轴对象, 用于绘制图形。
-    - x (numpy.ndarray or list): x轴的数据。
-    - y (numpy.ndarray or list): y轴的数据。 
-    - c (numpy.ndarray or list): 颜色的数据。
-    - cmap (matplotlib.colors.Colormap, optional): 颜色映射, 默认为CMAP。
+    - ax (matplotlib.axes.Axes): matplotlib的轴对象, 用于绘制图形.
+    - x (numpy.ndarray or list): x轴的数据.
+    - y (numpy.ndarray or list): y轴的数据. 
+    - c (numpy.ndarray or list): 颜色的数据.
+    - cmap (matplotlib.colors.Colormap, optional): 颜色映射, 默认为CMAP.
     - norm_mode (str, optional): 颜色映射的规范化模式, 可选 'linear', 'log', 'symlog', 'two_slope'等, 默认为 'linear'
-    - vmin (float, optional): 颜色映射的最小值, 默认为None。
-    - vmax (float, optional): 颜色映射的最大值, 默认为None。
+    - vmin (float, optional): 颜色映射的最小值, 默认为None.
+    - vmax (float, optional): 颜色映射的最大值, 默认为None.
     - norm_kwargs (dict or None, optional): 颜色映射规范化的其他参数
-    - s (float, optional): 散点的大小, 默认为MARKER_SIZE**2。
-    - label (str or None, optional): 散点的标签, 默认为None。
-    - label_cmap_float (float, optional): 代表性点的颜色映射模式, 默认为1.0。如果输入整数则会raise ValueError。
-    - scatter_kwargs (dict or None, optional): 传递给plt_scatter的其他参数。
-    - cbar (bool, optional): 是否添加颜色条,默认为True。
-    - cbar_postion (str or None, optional): 颜色条的位置,默认为None。
-    - cbar_kwargs (dict or None, optional): 传递给add_side_colorbar的其他参数。
+    - s (float, optional): 散点的大小, 默认为MARKER_SIZE**2.
+    - label (str or None, optional): 散点的标签, 默认为None.
+    - label_cmap_float (float, optional): 代表性点的颜色映射模式, 默认为1.0.如果输入整数则会raise ValueError.
+    - scatter_kwargs (dict or None, optional): 传递给plt_scatter的其他参数.
+    - cbar (bool, optional): 是否添加颜色条,默认为True.
+    - cbar_postion (str or None, optional): 颜色条的位置,默认为None.
+    - cbar_kwargs (dict or None, optional): 传递给add_side_colorbar的其他参数.
     '''
     # 设置默认参数
     if scatter_kwargs is None:
@@ -15597,7 +15602,7 @@ def plt_colorful_scatter(ax, x, y, c, cmap=CMAP, norm_mode='linear', vmin=None, 
 
 def plt_colorful_line(ax, x, y, c, cmap=CMAP, norm_mode='linear', vmin=None, vmax=None, norm_kwargs=None, cbar=True, cbar_postion=None, cbar_kwargs=None, line_kwargs=None, adjust_lim=True):
     '''
-    绘制颜色关于c值变化的线图。
+    绘制颜色关于c值变化的线图.
     
     参数:
     - ax (Axes): 绘图轴
@@ -15680,7 +15685,7 @@ def plt_bar_with_value(ax, x, y, label=None, color=BLUE, width=BAR_WIDTH, vert=T
 
 def plt_group_bar(ax, x, y, label_list, width=None, inner_gap=0.0, colors=CMAP, vert=True, **kwargs):
     '''
-    绘制分组的柱状图。
+    绘制分组的柱状图.
     :param ax: matplotlib的轴对象,用于绘制图形
     :param x: x轴的分组标签,大组,每个组包含多个柱子(比如['A', 'B'])
     :param y: 一个二维列表或数组,表示每组中柱子的高度(shape=(len(x), len(label_list)),例如[[1, 2, 3], [4, 5, 6]])
@@ -15739,7 +15744,7 @@ def plt_two_side_bar(ax, x, y1, y2, label1=None, label2=None, width=BAR_WIDTH, c
 
 def plt_group_box(ax, x, y, label_list, width=None, inner_gap=0.0, colors=CMAP, vert=True, **kwargs):
     '''
-    绘制分组的箱线图。
+    绘制分组的箱线图.
     :param ax: matplotlib的轴对象,用于绘制图形
     :param x: x轴的分组标签,大组,每个组包含多个箱线图(比如['A', 'B'])
     :param y: 一个三维列表或数组,表示每组中每个箱线图的所有数据点
@@ -15906,7 +15911,7 @@ def plt_linregress(ax, x, y, xlog=False, ylog=False, xlog_base=10, ylog_base=10,
 
 def plt_density_scatter(ax, x, y, label=None, label_cmap_float=1.0, estimate_type='kde', bw_method='auto', bins_x=BIN_NUM, bins_y=BIN_NUM, cmap=DENSITY_CMAP, norm_mode='linear', vmin=None, vmax=None, norm_kwargs=None, cbar=True, cbar_label='density', cbar_position=None, scatter_kwargs=None, cbar_kwargs=None):
     '''
-    绘制密度散点图。
+    绘制密度散点图.
     :param ax: matplotlib的轴对象,用于绘制图形
     :param x: x轴的数据
     :param y: y轴的数据
@@ -15999,7 +16004,7 @@ def plt_density_line(ax, x, y, stat='density', bins_x=None, bins_y=None, cmap=DE
 
 def plt_marginal_density_scatter(ax, x, y, x_side_ax=None, y_side_ax=None, density_scatter_kwargs=None, marginal_kwargs=None):
     '''
-    绘制密度散点图和边缘分布。
+    绘制密度散点图和边缘分布.
     :param ax: matplotlib的轴对象,用于绘制图形
     :param x: x轴的数据
     :param y: y轴的数据
@@ -16292,7 +16297,7 @@ def plt_marginal_hist_2d(ax, x, y, x_side_ax=None, y_side_ax=None, stat='probabi
 
 def plt_vector_input_bar(ax, x, y, label=None, color=BLUE, vert=True, equal_space=False, err=None, capsize=PLT_CAP_SIZE, ecolor=BLACK, elabel=None, width=BAR_WIDTH, bar_kwargs=None, ebar_kwargs=None):
     '''
-    使用x和y绘制柱状图,可以接受plt.bar的其他参数,此函数的特性是会根据x的值作为bar的位置,当x包含字符串或者equal_space=True时,会自动变成等距离排列。这个函数的特殊性是可以接受向量值的width,color,capsize,ecolor
+    使用x和y绘制柱状图,可以接受plt.bar的其他参数,此函数的特性是会根据x的值作为bar的位置,当x包含字符串或者equal_space=True时,会自动变成等距离排列.这个函数的特殊性是可以接受向量值的width,color,capsize,ecolor
     :param ax: matplotlib的轴对象,用于绘制图形
     :param x: x轴的数据
     :param y: y轴的数据
@@ -16346,12 +16351,12 @@ def plt_xlog_bar(*args, **kwargs):
 
 def plt_polygon_heatmap(ax, xy_dict, value_dict, mask=None, mask_color=MASK_COLOR, norm_mode='linear', vmin=None, vmax=None, norm_kwargs=None, cmap=CMAP, edgecolor=BLACK, cbar=True, cbar_position=None, cbar_label=None, fill=True, adjust_lim=True, polygon_kwargs=None, cbar_kwargs=None):
     '''
-    绘制多边形热力图。
+    绘制多边形热力图.
 
     参数:
     - ax (matplotlib.axes.Axes): matplotlib的轴对象,用于绘制图形
-    - xy_dict (dict): 包含多个区域的顶点坐标的字典。示例: {'region1': [(0, 0), (1, 1), (1, 0)], 'region2': [(1, 1), (2, 2), (2, 1)]}
-    - value_dict (dict): 包含多个区域的值的字典。示例: {'region1': 1, 'region2': 2}
+    - xy_dict (dict): 包含多个区域的顶点坐标的字典.示例: {'region1': [(0, 0), (1, 1), (1, 0)], 'region2': [(1, 1), (2, 2), (2, 1)]}
+    - value_dict (dict): 包含多个区域的值的字典.示例: {'region1': 1, 'region2': 2}
     - mask (dict or None, optional): 包含多个区域的掩码的字典,默认为None
     - mask_color (str or tuple, optional): 掩码的颜色,默认为MASK_COLOR
     - norm_mode (str, optional): 归一化模式,默认为'linear'
@@ -16369,7 +16374,7 @@ def plt_polygon_heatmap(ax, xy_dict, value_dict, mask=None, mask_color=MASK_COLO
     - cbar_kwargs (dict or None, optional): 传递给add_side_colorbar的额外关键字参数
 
     返回:
-    - add_side_colorbar的返回值,如果cbar为False,则返回None。
+    - add_side_colorbar的返回值,如果cbar为False,则返回None.
     '''
     # 设置默认参数
     if vmin is None:
@@ -16497,7 +16502,7 @@ def plt_advance_quiver(ax):
 # region 复杂作图函数(matplotlib系列,输入dict使用)
 def plt_group_bar_dict(ax, data, width=None, colors=CMAP, vert=True, **kwargs):
     """
-    使用字典数据绘制分组的柱状图。
+    使用字典数据绘制分组的柱状图.
     
     :param ax: matplotlib的轴对象
     :param data: 字典格式输入,结构为: {'A': {'x': 1, 'y': 2, 'z': 3}, 'B': {'x': 4, 'y': 5, 'z': 6}}
@@ -16544,7 +16549,7 @@ def plt_colorful_scatter_3d(ax, x, y, z, c, cmap=CMAP, norm_mode='linear', vmin=
     - norm_kwargs (dict or None, optional): 颜色映射规范化的其他参数
     - s (float, optional): 散点的大小, 默认为MARKER_SIZE**2
     - label (str or None, optional): 散点的标签, 默认为None
-    - label_cmap_float (float, optional): 代表性点的颜色映射模式, 默认为1.0。如果输入整数则会raise ValueError
+    - label_cmap_float (float, optional): 代表性点的颜色映射模式, 默认为1.0.如果输入整数则会raise ValueError
     - scatter_kwargs (dict or None, optional): 传递给plt_scatter的其他参数
     - cbar (bool, optional): 是否添加颜色条,默认为True
     - cbar_postion (str or None, optional): 颜色条的位置,默认为None
@@ -16654,14 +16659,14 @@ def plt_voxel_heatmap(ax, data, cmap=CMAP, norm_mode='linear', vmin=None, vmax=N
 
 def plt_vstack(ax, x, y_values, z_sets, cmap=CMAP, alpha=FAINT_ALPHA):
     """
-    在三维坐标系中以堆叠方式绘制数据集。
+    在三维坐标系中以堆叠方式绘制数据集.
     
     参数：
     - x: 一维数组,代表x轴的数据点
     - y_sets: 一个包含多个y数据集的二维数组(每个数据集对应x轴的数据点)
     - z_values: 每个y数据集的对应z轴值,决定在z轴上的位置(可以是array或者list)
     - colormap: 字符串,指定用于多边形填充颜色的colormap
-    - alpha: 透明度值,控制多边形的透明度。
+    - alpha: 透明度值,控制多边形的透明度.
 
     使用示例:
     x = np.linspace(0, 10, 100)
@@ -16676,8 +16681,8 @@ def plt_vstack(ax, x, y_values, z_sets, cmap=CMAP, alpha=FAINT_ALPHA):
     # 定义辅助函数,生成位于(x, z)曲线之下的多边形的顶点
     def polygon_under_graph(x, z):
         """
-        构造顶点列表,定义填充(x, z)曲线之下的多边形区域。
-        假设x是升序排列。
+        构造顶点列表,定义填充(x, z)曲线之下的多边形区域.
+        假设x是升序排列.
         """
         return [(x[0], 0.), *zip(x, z), (x[-1], 0.)]
 
@@ -16861,7 +16866,7 @@ def plt_scatter_heatmap(ax, color_data, size_data, cmap=HEATMAP_CMAP, edgecolor=
 
 def plt_group_bar_df(ax, df, bar_width=None, group_by='columns', colors=CMAP, vert=True, **kwargs):
     '''
-    基于DataFrame绘制分组的柱状图,根据分组是按照行还是列来自动处理。
+    基于DataFrame绘制分组的柱状图,根据分组是按照行还是列来自动处理.
     :param ax: matplotlib的轴对象,用于绘制图形
     :param df: 数据存放的DataFrame
     :param bar_width: 单个柱子的宽度,默认为None,自动确定宽度
@@ -17370,16 +17375,16 @@ def get_suitable_s(ax, num):
 # region 通用函数(transform)
 def map_transform(x, y, source_transform, target_transform):
     """
-    将坐标从一个 transform 转换到另一个 transform。
+    将坐标从一个 transform 转换到另一个 transform.
 
     参数：
-    - ax: matplotlib 的 Axes 对象。
-    - x, y: 要转换的坐标。
-    - source_transform: 源坐标系统的 transform。比如ax.transAxes
-    - target_transform: 目标坐标系统的 transform。
+    - ax: matplotlib 的 Axes 对象.
+    - x, y: 要转换的坐标.
+    - source_transform: 源坐标系统的 transform.比如ax.transAxes
+    - target_transform: 目标坐标系统的 transform.
 
     返回：
-    - 转换后的坐标 (x_new, y_new)。
+    - 转换后的坐标 (x_new, y_new).
 
     注意:
     不要转换data坐标,因为data坐标随着图像继续作画,或者改变坐标轴的范围,会发生变化
@@ -17401,13 +17406,13 @@ def map_transform(x, y, source_transform, target_transform):
 @to_be_improved
 def is_xlabel(obj):
     '''
-    判断对象是否是x轴标签。
+    判断对象是否是x轴标签.
     
     参数：
-        obj: Matplotlib对象。
+        obj: Matplotlib对象.
         
     返回：
-        is_xlabel: 布尔值,表示对象是否是x轴标签。
+        is_xlabel: 布尔值,表示对象是否是x轴标签.
     '''
     if isinstance(obj, plt.matplotlib.text.Text):
         if obj.get_text() == obj.axes.get_xlabel() and obj.get_position() == obj.axes.xaxis.label.get_position():
@@ -17418,13 +17423,13 @@ def is_xlabel(obj):
 @to_be_improved
 def is_ylabel(obj):
     '''
-    判断对象是否是y轴标签。
+    判断对象是否是y轴标签.
     
     参数：
-        obj: Matplotlib对象。
+        obj: Matplotlib对象.
         
     返回：
-        is_ylabel: 布尔值,表示对象是否是y轴标签。
+        is_ylabel: 布尔值,表示对象是否是y轴标签.
     '''
     if isinstance(obj, plt.matplotlib.text.Text):
         if obj.get_text() == obj.axes.get_ylabel() and obj.get_position() == obj.axes.yaxis.label.get_position():
@@ -17434,13 +17439,13 @@ def is_ylabel(obj):
 
 def is_title(obj):
     '''
-    判断对象是否是标题。
+    判断对象是否是标题.
     
     参数：
-        obj: Matplotlib对象。
+        obj: Matplotlib对象.
         
     返回：
-        is_title: 布尔值,表示对象是否是标题。
+        is_title: 布尔值,表示对象是否是标题.
     '''
     try:
         if obj == obj.axes.title:
@@ -17452,13 +17457,13 @@ def is_title(obj):
 @to_be_improved
 def is_ax_bounding_box(obj):
     '''
-    判断对象是否是坐标轴的边界。
+    判断对象是否是坐标轴的边界.
     
     参数：
-        obj: Matplotlib对象。
+        obj: Matplotlib对象.
         
     返回：
-        is_ax_bounding_box: 布尔值,表示对象是否是坐标轴的边界。
+        is_ax_bounding_box: 布尔值,表示对象是否是坐标轴的边界.
     '''
     if isinstance(obj, plt.matplotlib.patches.Patch):
         if obj.get_xy() == (0, 0) and obj.get_width() == 1 and obj.get_height() == 1 and obj.get_angle() == 0:
@@ -17470,38 +17475,38 @@ def is_ax_bounding_box(obj):
 # region 通用函数(zorder)
 def set_zorder(obj, new_zorder):
     '''
-    设置对象的zorder值。zorder值越高,对象就越靠近顶部。
+    设置对象的zorder值.zorder值越高,对象就越靠近顶部.
     
     参数：
-        obj: matplotlib图形对象。
-        new_zorder: 新的zorder值,类型为整数或浮点数。
+        obj: matplotlib图形对象.
+        new_zorder: 新的zorder值,类型为整数或浮点数.
     '''
     obj.set_zorder(new_zorder)
 
 
 def get_zorder(obj):
     '''
-    获取给定图形对象的zorder值。
+    获取给定图形对象的zorder值.
     
     参数：
-        obj: Matplotlib图形对象。
+        obj: Matplotlib图形对象.
         
     返回：
-        zorder: 图形对象的zorder值。
+        zorder: 图形对象的zorder值.
     '''
     return obj.get_zorder()
 
 
 def get_zorder_dict(ax, include_axes=False):
     '''
-    获取ax中所有对象及其zorder值,并以字典形式返回。
+    获取ax中所有对象及其zorder值,并以字典形式返回.
     
     参数：
-        ax: matplotlib的Axes对象。
-        include_axes: 布尔值,表示是否包含坐标轴的zorder。
+        ax: matplotlib的Axes对象.
+        include_axes: 布尔值,表示是否包含坐标轴的zorder.
         
     返回：
-        zorders: 包含对象及其zorder值的字典。
+        zorders: 包含对象及其zorder值的字典.
     '''
     zorder_dict = {}
     for obj in ax.get_children():
@@ -17525,14 +17530,14 @@ def get_zorder_dict(ax, include_axes=False):
 @to_be_improved
 def show_zorder(ax, include_axes=False, font_size=FONT_SIZE, color=RED, alpha=FAINT_ALPHA):
     '''
-    在图上显示所有对象的zorder值。
+    在图上显示所有对象的zorder值.
     
     参数：
-        ax: matplotlib的Axes对象。
-        include_axes: 布尔值,表示是否显示坐标轴的zorder。
-        font_size: 文本的字体大小。
-        color: 文本的颜色。
-        alpha: 文本的透明度。
+        ax: matplotlib的Axes对象.
+        include_axes: 布尔值,表示是否显示坐标轴的zorder.
+        font_size: 文本的字体大小.
+        color: 文本的颜色.
+        alpha: 文本的透明度.
     '''
     zorder_dict = get_zorder_dict(ax, include_axes)
     max_zorder = np.max(list(zorder_dict.values())) + 1
@@ -17677,7 +17682,7 @@ def move_spine_to_origin(ax, axis='both', arrow=True):
 @iterate_over_axs
 def rm_ax_spine(ax, spines_to_remove=None):
     '''
-    移除轴的边框。
+    移除轴的边框.
 
     参数:
     - ax: matplotlib的Axes对象
@@ -17694,7 +17699,7 @@ def rm_ax_spine(ax, spines_to_remove=None):
 
 def rm_cbar_spine(cbar):
     '''
-    移除cbar的边框。(这里就不是通过spine的设置来移除了)
+    移除cbar的边框.(这里就不是通过spine的设置来移除了)
 
     参数:
     - cbar: matplotlib的Colorbar对象
@@ -17704,7 +17709,7 @@ def rm_cbar_spine(cbar):
 @iterate_over_axs
 def set_ax_spine(ax, spine_params=None):
     '''
-    应用边框参数到轴。
+    应用边框参数到轴.
 
     参数:
     - axs: matplotlib的Axes对象或者可迭代对象
@@ -17719,15 +17724,15 @@ def set_ax_spine(ax, spine_params=None):
 # region 通用函数(tick)
 def add_nested_tick(ax, axis, ticks, labels, location=0, length=TICK_MAJOR_SIZE*4, width=0):
     """
-    在给定的轴上添加嵌套的刻度线和标签。为了美观起见, 使用了这个函数后再添加xlabel最好在sec上添加, 语法几乎等同于ax.set_xlabel等
+    在给定的轴上添加嵌套的刻度线和标签.为了美观起见, 使用了这个函数后再添加xlabel最好在sec上添加, 语法几乎等同于ax.set_xlabel等
 
     参数:
     ax (matplotlib.axes.Axes): 要添加嵌套刻度线的轴
     axis (str): 要添加嵌套刻度线的轴,可以是'x'或'y'
     ticks (list): 要添加的刻度线的位置
     labels (list): 要添加的标签
-    location (float, optional): 次要刻度线的位置。默认为0
-    length (float, optional): 刻度线的长度。默认为 None。
+    location (float, optional): 次要刻度线的位置.默认为0
+    length (float, optional): 刻度线的长度.默认为 None.
     """
     if axis == 'x':
         sec = ax.secondary_xaxis(location=location)
@@ -17744,14 +17749,14 @@ def add_nested_tick(ax, axis, ticks, labels, location=0, length=TICK_MAJOR_SIZE*
 
 def add_sep_tick(ax, axis, ticks, length=TICK_MAJOR_SIZE*4, width=TICK_MAJOR_WIDTH*2):
     """
-    在给定的轴上添加tick作为某种分界线。为了美观起见, 使用了这个函数后再添加xlabel最好在sec上添加, 语法几乎等同于ax.set_xlabel等
+    在给定的轴上添加tick作为某种分界线.为了美观起见, 使用了这个函数后再添加xlabel最好在sec上添加, 语法几乎等同于ax.set_xlabel等
 
     参数:
     ax (matplotlib.axes.Axes): 要添加嵌套刻度线的轴
     axis (str): 要添加嵌套刻度线的轴,可以是'x'或'y'
     ticks (list): 要添加的刻度线的位置
-    length (float, optional): 刻度线的长度。默认为 None。
-    width (float, optional): 刻度线的宽度。默认为LINE_WIDTH。
+    length (float, optional): 刻度线的长度.默认为 None.
+    width (float, optional): 刻度线的宽度.默认为LINE_WIDTH.
     """
     if axis == 'x':
         sec = ax.secondary_xaxis(location=0)
@@ -17767,7 +17772,7 @@ def add_sep_tick(ax, axis, ticks, length=TICK_MAJOR_SIZE*4, width=TICK_MAJOR_WID
 @iterate_over_axs
 def rm_ax_tick(ax, axis=None, which='both'):
     '''
-    移除轴的刻度。
+    移除轴的刻度.
 
     参数:
     - ax: matplotlib的Axes对象
@@ -17789,7 +17794,7 @@ def rm_ax_tick(ax, axis=None, which='both'):
 @iterate_over_axs
 def rm_ax_ticklabel(ax, axis=None, which='both'):
     '''
-    移除轴的刻度。
+    移除轴的刻度.
 
     参数:
     - ax: matplotlib的Axes对象
@@ -17811,7 +17816,7 @@ def rm_ax_ticklabel(ax, axis=None, which='both'):
 @iterate_over_axs
 def set_ax_tick(ax, ticks, labels, axis, which='major'):
     '''
-    设置轴的刻度。
+    设置轴的刻度.
     
     参数:
     - ax: matplotlib的Axes对象
@@ -18061,7 +18066,7 @@ def share_axis_to_target(axs, target_ax, sharex=True, sharey=True):
 @iterate_over_axs
 def move_axis(ax, axis, position):
     '''
-    将ax的某个轴移动到指定位置。(与move ax区分,move ax是移动整个ax的位置)
+    将ax的某个轴移动到指定位置.(与move ax区分,move ax是移动整个ax的位置)
     '''
     if axis == 'y':
         if position == 'right':
@@ -18081,7 +18086,7 @@ def move_axis(ax, axis, position):
 @iterate_over_axs
 def rm_ax_axis(ax):
     '''
-    移除轴的坐标轴。(除了title,其他的都会被移除,比如外框,刻度,刻度标签等)
+    移除轴的坐标轴.(除了title,其他的都会被移除,比如外框,刻度,刻度标签等)
 
     参数:
     - ax: matplotlib的Axes对象
@@ -18091,7 +18096,7 @@ def rm_ax_axis(ax):
 @iterate_over_axs
 def rm_ax_specific_axis(ax, axis=None):
     '''
-    移除轴的特定坐标轴。
+    移除轴的特定坐标轴.
 
     参数:
     - ax: matplotlib的Axes对象
@@ -18114,7 +18119,7 @@ def rm_ax_specific_axis(ax, axis=None):
 @iterate_over_axs
 def set_ax_aspect(ax, aspect=1, adjustable='datalim', **kwargs):
     '''
-    设置轴的纵横比。
+    设置轴的纵横比.
 
     参数:
     - ax: matplotlib的Axes对象
@@ -18203,7 +18208,7 @@ def get_xylim_by_aspect_ratio(xlim, ylim, aspect_ratio=1.0):
 @iterate_over_axs
 def set_symlog_scale(ax, axis, linthresh, linscale=1, **kwargs):
     '''
-    设置对数坐标轴的对称对数刻度。
+    设置对数坐标轴的对称对数刻度.
 
     参数:
     - ax (matplotlib.axes.Axes): matplotlib的Axes对象
@@ -18224,7 +18229,7 @@ def set_symlog_scale(ax, axis, linthresh, linscale=1, **kwargs):
 # region 通用函数(title, label, tick调整, 对齐)
 def align_label(axs, axis, fig=None):
     '''
-    将多个轴的标签对齐。
+    将多个轴的标签对齐.
 
     参数:
     - axs: matplotlib的Axes对象或对象列表,array([ax1, ax2, ...])
@@ -18232,8 +18237,8 @@ def align_label(axs, axis, fig=None):
     - fig: matplotlib的Figure对象
 
     注意:
-    - 假如某个ax的轴在左侧,而其他的在右侧,那么无法对齐。
-    - 如果出现无法对齐的情况,可以尝试align_label_manual。
+    - 假如某个ax的轴在左侧,而其他的在右侧,那么无法对齐.
+    - 如果出现无法对齐的情况,可以尝试align_label_manual.
     '''
     local_axs = get_iterable_ax(axs)
     if fig is None:
@@ -18246,7 +18251,7 @@ def align_label(axs, axis, fig=None):
 
 def align_label_manual(axs, axis, label_coord):
     '''
-    将多个轴的标签对齐。
+    将多个轴的标签对齐.
 
     参数:
     - axs: matplotlib的Axes对象或对象列表,array([ax1, ax2, ...])
@@ -18398,8 +18403,8 @@ def suitable_tick_size(num_ticks, plt_size, tick_size=TICK_SIZE, proportion=TICK
 @iterate_over_axs
 def adjust_ax_tick(ax, xtick_rotation=XTICK_ROTATION, ytick_rotation=YTICK_ROTATION, proportion=TICK_PROPORTION):
     '''
-    x轴和y轴的刻度标签字体大小根据刻度数量和轴的大小进行调整。(要写在set_ax之后,否则会被覆盖)
-    自动旋转x轴刻度标签。
+    x轴和y轴的刻度标签字体大小根据刻度数量和轴的大小进行调整.(要写在set_ax之后,否则会被覆盖)
+    自动旋转x轴刻度标签.
     '''
     ax_width, ax_height = get_ax_size(ax)
     # 获取x轴和y轴的刻度数量
@@ -18831,7 +18836,7 @@ def get_fig_type(obj):
 # region 通用函数(创建fig, ax, gs)
 def get_fig(width=AX_WIDTH, height=AX_HEIGHT, dpi=FIG_DPI, **kwargs):
     '''
-        创建一个空白图形。
+        创建一个空白图形.
     '''
     return plt.figure(figsize=(width, height), dpi=dpi, **kwargs)
 
@@ -18860,7 +18865,7 @@ def get_subfig(fig=None, nrows=1, ncols=1, squeeze=True, wspace=None, hspace=Non
 
 def get_fig_subfig(nrows=1, ncols=1, subfig_width=AX_WIDTH, subfig_height=AX_HEIGHT, fig_width=None, fig_height=None, dpi=FIG_DPI, get_fig_kwargs=None, subfig_kwargs=None):
     '''
-        创建一个图形和子图对象。
+        创建一个图形和子图对象.
 
         利用subfig有几个好处: 
         可以创建不均匀的ax,比如说左侧三个,右侧两个ax(先创建两个subfig然后利用get_ax分别创建ax,记得设置adjust_params或者adjust_params_custom而不是margin使得边框对齐)
@@ -18979,8 +18984,8 @@ def adjust_ax_custom(ax, ncols=None, nrows=None, adjust_params_custom=None):
 
 def get_fig_ax(nrows=1, ncols=1, ax_width=AX_WIDTH, ax_height=AX_HEIGHT, fig_width=None, fig_height=None, sharex=False, sharey=False, rm_repeat_tick_label_when_share=RM_REPEAT_TICK_LABEL_WHEN_SHARE, subplots_params=None, squeeze=True, margin=None, label='ax'):
     '''
-    创建一个图形和轴对象,并根据提供的参数调整布局和轴的方框边缘。
-    推荐的方式是设定ax_width和ax_height,而不是fig_width和fig_height。当设定ax_width和ax_height时,fig_width和fig_height会自动计算, 此时设定margin或adjust_params不会破坏ax框的比例
+    创建一个图形和轴对象,并根据提供的参数调整布局和轴的方框边缘.
+    推荐的方式是设定ax_width和ax_height,而不是fig_width和fig_height.当设定ax_width和ax_height时,fig_width和fig_height会自动计算, 此时设定margin或adjust_params不会破坏ax框的比例
     如果想要先把fig分成等分,然后在每个等分里设置框的位置,使用margin
     如果想要最外层的图有自己单独的距离图像边框的范围,使用adjust_params和adjust_params_custom,并且使用get_fig_gs,再从gs获取ax;示例:adjust_params={'left': 0.2, 'right': 0.8, 'top': 0.8, 'bottom': 0.2, 'wspace': 0.5, 'hspace': 0.5},这里的left,right,top,bottom是相对于整个fig的位置(可以理解为最外围的pad),wspace和hspace是子图之间的间距(相对于average width和average height)
 
@@ -18988,15 +18993,15 @@ def get_fig_ax(nrows=1, ncols=1, ax_width=AX_WIDTH, ax_height=AX_HEIGHT, fig_wid
     本函数只支持等大的ax,如果需要不等大的,可以使用merge_ax,split_ax来获得;或者使用subfig来创建不等大的ax
 
     Parameters:
-    - figsize: 元组,指定图形的宽度和高度。
-    - nrows, ncols: 整数,指定子图的行数和列数。
-    - ax_width, ax_height: 浮点数,指定子图的宽度和高度。
-    - fig_width, fig_height: 浮点数,指定图形的宽度和高度。(优先级高于ax_width和ax_height,如果设置了则会覆盖ax_width和ax_height的设置)
-    - sharex, sharey: 布尔值或字符串,指定是否共享x轴和y轴。(可以是'all', 'none', 'row', 'col', True, False)
+    - figsize: 元组,指定图形的宽度和高度.
+    - nrows, ncols: 整数,指定子图的行数和列数.
+    - ax_width, ax_height: 浮点数,指定子图的宽度和高度.
+    - fig_width, fig_height: 浮点数,指定图形的宽度和高度.(优先级高于ax_width和ax_height,如果设置了则会覆盖ax_width和ax_height的设置)
+    - sharex, sharey: 布尔值或字符串,指定是否共享x轴和y轴.(可以是'all', 'none', 'row', 'col', True, False)
     - rm_repeat_tick_label_when_share: 布尔值,指定是否移除多余的刻度标签(当sharex或者sharey时)
 
     Returns:
-    - fig, ax: 创建的图形和轴对象。
+    - fig, ax: 创建的图形和轴对象.
     '''
     subplots_params = update_dict({}, subplots_params)
     margin = update_dict(MARGIN, margin)
@@ -19040,7 +19045,7 @@ def get_fig_ax_3d(**kwargs):
 
 def get_gs_original(fig=None, nrows=1, ncols=1, left=None, bottom=None, right=None, top=None, wspace=None, hspace=None, width_ratios=None, height_ratios=None):
     '''
-    获取一个GridSpec对象。(不推荐使用,因为随着子图的数量的增加,这个参数会变得很难调整,因为这里的left,right,top,bottom是相对于整个fig的位置,而随着ax数量增加,fig的大小会变化,对于相同的值边框空白大小会不同,无法对齐)
+    获取一个GridSpec对象.(不推荐使用,因为随着子图的数量的增加,这个参数会变得很难调整,因为这里的left,right,top,bottom是相对于整个fig的位置,而随着ax数量增加,fig的大小会变化,对于相同的值边框空白大小会不同,无法对齐)
 
     注意:
     对于gs,其始终是2维的,即使是1行或者1列
@@ -19053,7 +19058,7 @@ def get_gs_original(fig=None, nrows=1, ncols=1, left=None, bottom=None, right=No
 
 def get_gs_custom(fig=None, nrows=1, ncols=1, left=None, bottom=None, right=None, top=None, wspace=None, hspace=None, width_ratios=None, height_ratios=None):
     '''
-    获取一个GridSpec对象。但是left等参数是相对于ax的位置,而不是fig的位置
+    获取一个GridSpec对象.但是left等参数是相对于ax的位置,而不是fig的位置
 
     注意:
     对于gs,其始终是2维的,即使是1行或者1列
@@ -19114,7 +19119,7 @@ def get_fig_gs_custom(nrows=1, ncols=1, ax_width=AX_WIDTH, ax_height=AX_HEIGHT, 
 
 def get_gs_inside_ax(ax, nrows=1, ncols=1, wspace=None, hspace=None, width_ratios=None, height_ratios=None):
     '''
-    以ax的位置为基础获取一个GridSpec对象。
+    以ax的位置为基础获取一个GridSpec对象.
     '''
     left, right, bottom, top = get_ax_position_custom(ax)
     fig = ax.figure
@@ -19123,7 +19128,7 @@ def get_gs_inside_ax(ax, nrows=1, ncols=1, wspace=None, hspace=None, width_ratio
 
 def get_all_ax_from_gs(gs, sharex=False, sharey=False, rm_repeat_tick_label_when_share=RM_REPEAT_TICK_LABEL_WHEN_SHARE, squeeze=True, label='gs', **kwargs):
     '''
-    从GridSpec对象中获取所有的轴对象。
+    从GridSpec对象中获取所有的轴对象.
     '''
     if not isinstance(sharex, str):
         sharex = "all" if sharex else "none"
@@ -19160,7 +19165,7 @@ def get_all_ax_from_gs(gs, sharex=False, sharey=False, rm_repeat_tick_label_when
 
 def get_ax_from_gs(gs, index=None, label='gs', **kwargs):
     '''
-    从GridSpec对象中获取轴对象。
+    从GridSpec对象中获取轴对象.
 
     参数:
     gs: 可以是完整的gs,也可以是索引之后的gs(如果是索引之后的gs,则index必须为None)
@@ -19198,7 +19203,7 @@ def get_all_subfig_from_gs(gs, squeeze=True):
 
 def get_subfig_from_gs(gs, index=None, **kwargs):
     '''
-    从GridSpec对象中获取子图对象。
+    从GridSpec对象中获取子图对象.
 
     参数:
     gs: 可以是完整的gs,也可以是索引之后的gs(如果是索引之后的gs,则index必须为None)
@@ -19246,7 +19251,7 @@ def get_ax_inside_ax(ax, nrows=1, ncols=1, wspace=None, hspace=None, width_ratio
 
 def get_gs_inside_gs(gs, index=None, nrows=1, ncols=1, wspace=None, hspace=None, width_ratios=None, height_ratios=None):
     '''
-    从GridSpec对象中获取一个新的GridSpec对象。实现方式是先创建ax,使用get_gs_inside_ax获取gs,再删除ax
+    从GridSpec对象中获取一个新的GridSpec对象.实现方式是先创建ax,使用get_gs_inside_ax获取gs,再删除ax
     '''
     ax = get_ax_from_gs(gs, index=index)
     sub_gs = get_gs_inside_ax(ax, nrows=nrows, ncols=ncols, wspace=wspace, hspace=hspace, width_ratios=width_ratios, height_ratios=height_ratios)
@@ -19307,8 +19312,8 @@ def save_fig_lite(fig, filename, formats=None, dpi=SAVEFIG_DPI/3, close=True, bb
 
 def save_fig_3d(fig, filename, elev_list=None, azim_list=np.arange(0, 360, 30), formats=None, dpi=SAVEFIG_DPI, close=True, bbox_inches=BBOX_INCHES, pkl=True, ax=None, generate_video=False, frame_rate=FRAME_RATE, delete_figs=False, video_formats=None, savefig_kwargs=None):
     '''
-    保存3D图形的多个视角,对于每个视角,都会生成图片（并在文件名上加入角度）,然后将图片合成视频。
-    对于filename,如果以'.png','.pdf'或'.eps'结尾,则按照后缀名保存,否则按照formats列表中的格式保存。
+    保存3D图形的多个视角,对于每个视角,都会生成图片（并在文件名上加入角度）,然后将图片合成视频.
+    对于filename,如果以'.png','.pdf'或'.eps'结尾,则按照后缀名保存,否则按照formats列表中的格式保存.
     '''
     if elev_list is None:
         elev_list = [ELEV]
@@ -19413,11 +19418,11 @@ def save_ax(axs, filename, close=False, pkl=False, bbox_inches='tight', **kwargs
 # region 通用函数(复制ax)
 def copy_ax_content(source_ax, target_ax):
     """
-    将 source_ax 的内容拷贝到 target_ax 中,保持所有图形元素（如线条、散点、图例等）。
+    将 source_ax 的内容拷贝到 target_ax 中,保持所有图形元素（如线条、散点、图例等）.
     
     参数:
-    source_ax (matplotlib.axes.Axes): 源 Axes 对象。
-    target_ax (matplotlib.axes.Axes): 目标 Axes 对象。
+    source_ax (matplotlib.axes.Axes): 源 Axes 对象.
+    target_ax (matplotlib.axes.Axes): 目标 Axes 对象.
     """
     # 复制线条
     for line in source_ax.get_lines():
@@ -19904,11 +19909,11 @@ def multi_process_fig(cls, init_kwargs, method_list, process_num=10):
 # region 拼图相关函数
 def concat_fig(fig_paths_grid, filename, formats=None, background='transparent', delete_temp_files=True):
     '''
-    根据二维图片路径列表自动拼接成网格布局的图片。
+    根据二维图片路径列表自动拼接成网格布局的图片.
 
     参数:
-        fig_paths_grid (list of list): 二维图片路径列表,每个内部列表代表一行。(如果输入一维,自动转换为二维,并横向排列,如果想要纵向排列,输入时使用[[path1],[path2]])
-        filename (str): 拼接后图片的保存路径。
+        fig_paths_grid (list of list): 二维图片路径列表,每个内部列表代表一行.(如果输入一维,自动转换为二维,并横向排列,如果想要纵向排列,输入时使用[[path1],[path2]])
+        filename (str): 拼接后图片的保存路径.
     '''
     if formats is None:
         formats = [SAVEFIG_RASTER_FORMAT]
@@ -19987,7 +19992,7 @@ def concat_fig(fig_paths_grid, filename, formats=None, background='transparent',
 
 def concat_fig_with_tag(figs_grid, filename, tags=None, formats=None, background='transparent', close=True, tag_size=TAG_SIZE, tag_color=BLACK, tag_position=FIG_TAG_POS, tag_kwargs=None, auto_tag_params=None):
     '''
-    根据图片和标签自动拼接成网格布局的图片。(和concat_fig的用法基本相同,但是这里是输入fig对象并添加标签)
+    根据图片和标签自动拼接成网格布局的图片.(和concat_fig的用法基本相同,但是这里是输入fig对象并添加标签)
 
     参数:
         figs_grid (list): matplotlib的fig对象列表
@@ -20025,7 +20030,7 @@ def concat_fig_with_tag(figs_grid, filename, tags=None, formats=None, background
 def fig_to_video(fig_paths, filename, frame_rate=FRAME_RATE, delete_figs=False, formats=None):
     '''
     Combine PNG figs into MP4 videos and/or GIF figs, checking for the existence of each fig.
-    假如fig_paths中的图片没有后缀,则会自动寻找有无对应的.png,.pdf或.eps文件,如果有则转换为.png文件,并生成视频。
+    假如fig_paths中的图片没有后缀,则会自动寻找有无对应的.png,.pdf或.eps文件,如果有则转换为.png文件,并生成视频.
     Parameters:
     - fig_paths: List of paths to the input figs.
     - filename: Base path for the output video or GIF fig. Extension will be added based on format.
