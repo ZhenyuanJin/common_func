@@ -762,7 +762,7 @@ def get_time(char='_', unit='us'):
     获取当前时间,支持秒/毫秒/微秒级精度
     
     :param char: 时间各部分分隔符,默认为下划线
-    :param unit: 时间单位（'s'-秒, 'ms'-毫秒, 'us'-微秒）,默认为'us'
+    :param unit: 时间单位('s'-秒, 'ms'-毫秒, 'us'-微秒),默认为'us'
     :return: 格式化后的时间字符串
     """
     unit = unit.lower()
@@ -1454,7 +1454,7 @@ def select_output(index):
         def wrapper(*args, **kwargs):
             result = func(*args, **kwargs)
             
-            # 如果是序列类型（如元组,列表）则按索引提取
+            # 如果是序列类型(如元组,列表)则按索引提取
             if hasattr(result, "__getitem__"):
                 return result[index]
             else:
@@ -1589,7 +1589,7 @@ class CallOnceExecutor(MethodRecorder):
         return executor_wrapper
     
     def can_execute(self, method_name):
-        """检查方法是否可以执行（未被调用过）"""
+        """检查方法是否可以执行(未被调用过)"""
         return not self.was_called(method_name)
     
     def get_action(self):
@@ -1899,7 +1899,7 @@ def func_line_profiler(func):
             # 执行被分析的函数
             result = profiled_func(*args, **kwargs)
         finally:
-            # 输出逐行分析结果（单位：微秒）
+            # 输出逐行分析结果(单位：微秒)
             profiler.print_stats(output_unit=1e-6)
         return result
     return wrapper
@@ -2199,14 +2199,14 @@ def safe_path_join(*paths):
     os.path.join的再封装,保证不会因为中间的多余/或\导致路径不是预想的路径
     并且如果输入了空字符串或者None,则会自动忽略
     '''
-    # 清理每个路径,去除前导和尾随的斜杠（只保留中间路径的斜杠）
+    # 清理每个路径,去除前导和尾随的斜杠(只保留中间路径的斜杠)
     cleaned_paths = []
     for i, path in enumerate(paths):
         if path is None or path == "":
             continue
         else:
             if i == 0:
-                # 第一个路径可以保留前导的斜杠（如果是绝对路径）,但去掉尾部的斜杠
+                # 第一个路径可以保留前导的斜杠(如果是绝对路径),但去掉尾部的斜杠
                 cleaned_paths.append(path.rstrip("/\\"))
             else:
                 # 后续路径要去掉前导和尾随斜杠
@@ -2496,17 +2496,17 @@ def check_all_file_exist(*paths):
 
 def find_files_with_any_extension(path):
     """
-    查找指定路径的所有匹配文件（包括原始路径和任意后缀版本）
+    查找指定路径的所有匹配文件(包括原始路径和任意后缀版本)
     
     参数:
         path (str): 文件路径
         
     返回:
-        list: 包含所有匹配文件的完整路径列表（可能为空）
+        list: 包含所有匹配文件的完整路径列表(可能为空)
     """
     result = []
     
-    # 如果原始路径存在（文件或目录）,加入结果
+    # 如果原始路径存在(文件或目录),加入结果
     if os.path.exists(path):
         result.append(path)
     
@@ -2514,14 +2514,14 @@ def find_files_with_any_extension(path):
     dir_path = os.path.dirname(path) or '.'  # 处理无目录的情况
     file_name = os.path.basename(path)
     
-    # 构建匹配模式（文件名.*）
+    # 构建匹配模式(文件名.*)
     pattern = os.path.join(dir_path, f"{file_name}.*")
     
-    # 查找所有符合条件的普通文件（排除目录）
+    # 查找所有符合条件的普通文件(排除目录)
     for p in glob.glob(pattern):
-        # 排除以点结尾的无效文件（如 "file."）
+        # 排除以点结尾的无效文件(如 "file.")
         if os.path.isfile(p) and not p.endswith('.'):
-            # 避免重复添加原始路径（如果已存在）
+            # 避免重复添加原始路径(如果已存在)
             if p != path:
                 result.append(p)
     
@@ -3318,9 +3318,9 @@ def save_joblib(obj, filename, compress=0, protocol=None, add_ext='auto'):
 
     参数:
     - obj: 需要保存的对象
-    - filename: 保存的文件名（如果没有以 .joblib 结尾,会自动添加）
+    - filename: 保存的文件名(如果没有以 .joblib 结尾,会自动添加)
     - compress: 压缩级别,默认为 0(范围为 0 到 9),0 表示不压缩,9 表示最大压缩
-    - protocol: 序列化协议版本（默认使用 joblib 的默认协议）.可以传递一个整数(如 3,4 或 5)
+    - protocol: 序列化协议版本(默认使用 joblib 的默认协议).可以传递一个整数(如 3,4 或 5)
       表示 Python 的 Pickle 序列化协议版本
     - add_ext:是否自动添加后缀,默认为 'auto',会自动添加后缀;如果不需要自动添加后缀,可以将此参数设置为 False
     """
@@ -3795,7 +3795,7 @@ def init_lmdb(filename, size=1, unit='gb'):
             existing_env.close()
             initial_map_size = max(initial_map_size, existing_map_size)
         except lmdb.Error:
-            # 处理无法打开的情况（如文件损坏）
+            # 处理无法打开的情况(如文件损坏)
             pass
     
     return lmdb.open(filename, 
@@ -4413,9 +4413,9 @@ def camel_to_snake(name):
         SimpleXMLParser -> simple_xml_parser
         version2Update -> version2_update
     """
-    # 处理连续大写字母的情况（如HTTP）
+    # 处理连续大写字母的情况(如HTTP)
     s1 = re.sub(r'(.)([A-Z][a-z]+)', r'\1_\2', name)
-    # 处理单个大写字母（或数字后的大写字母）的情况
+    # 处理单个大写字母(或数字后的大写字母)的情况
     s2 = re.sub(r'([a-z0-9])([A-Z])', r'\1_\2', s1)
     # 转换为全小写
     return s2.lower()
@@ -5558,7 +5558,7 @@ def remove_list_element(original_list, elements_to_remove, mode='skip'):
     Args:
         original_list: 原始列表
         elements_to_remove: 需要移除的元素列表
-        mode: 处理模式,'skip'（默认跳过不存在元素）或 'raise'（元素不存在时报错）
+        mode: 处理模式,'skip'(默认跳过不存在元素)或 'raise'(元素不存在时报错)
     
     Returns:
         list: 移除元素后的新列表
@@ -5608,7 +5608,7 @@ def pure_list(l):
         # 如果是列表,递归地对每个元素调用 pure_list
         return [pure_list(item) for item in l]
     elif isinstance(l, np.ndarray):
-        # 如果是numpy数组,且其形状大于1（即不是单个数字）,先将其转换为列表
+        # 如果是numpy数组,且其形状大于1(即不是单个数字),先将其转换为列表
         if l.shape:  # 检查数组是否不仅仅是单个元素
             return [pure_list(item) for item in l.tolist()]
         else:
@@ -6173,7 +6173,7 @@ def get_sorted_keys_and_mean_std_arrays_from_dict_of_list(data_dict):
     print(y_mean)
     print(y_std)
     '''
-    # 提取并排序x轴数据（参数值）
+    # 提取并排序x轴数据(参数值)
     sorted_keys = sorted(data_dict.keys(), key=float)
     x = np.array(sorted_keys)
     
@@ -6412,7 +6412,7 @@ def pure_tuple(tpl):
         # 如果是列表,先将其转换为元组
         return tuple([pure_tuple(item) for item in tpl])
     elif isinstance(tpl, np.ndarray):
-        # 如果是numpy数组,且其形状大于1（即不是单个数字）,先将其转换为元组
+        # 如果是numpy数组,且其形状大于1(即不是单个数字),先将其转换为元组
         if tpl.shape:  # 检查数组是否不仅仅是单个元素
             return tuple([pure_tuple(item) for item in tpl.tolist()])
         else:
@@ -7130,7 +7130,7 @@ def get_param_value(func, args, kwargs, param_name):
     :param args: 位置参数
     :param kwargs: 关键字参数
     :param param_name: 需要获取值的参数名称
-    :return: 参数的值（如果存在）,否则为 None
+    :return: 参数的值(如果存在),否则为 None
     """
     signature = inspect.signature(func)
     bound_args = signature.bind_partial(*args, **kwargs)
@@ -8237,8 +8237,8 @@ def lowess_smooth(x, y, frac=0.2):
     对给定的 x 和 y 数据使用 LOWESS 进行平滑处理.函数内部会确保 x 是有序的.
     
     参数:
-    x (array-like): 自变量（输入）的数据.
-    y (array-like): 因变量（输出）的数据.
+    x (array-like): 自变量(输入)的数据.
+    y (array-like): 因变量(输出)的数据.
     frac (float): 控制局部回归时使用的窗口大小,值越大,曲线越平滑.默认值为 0.2.
     
     返回:
@@ -11670,7 +11670,7 @@ def filter_data_by_xylim(x, y, xlim=None, ylim=None):
             if (xlim is None or (xlim[0] <= xi <= xlim[1])) and 
                (ylim is None or (ylim[0] <= yi <= ylim[1]))
         ]
-        # 处理过滤结果（包括空结果的情况）
+        # 处理过滤结果(包括空结果的情况)
         if filtered_data:
             x_filtered, y_filtered = zip(*filtered_data)
             return list(x_filtered), list(y_filtered)
@@ -15401,7 +15401,7 @@ def scale_ax_font_size(ax, factor=1.0):
     for t in ax.get_xticklabels() + ax.get_yticklabels():
         _scale_font_size(t, factor)
 
-    # # legend（直接修改,保持位置等属性）
+    # legend(直接修改,保持位置等属性)
     lgd = ax.get_legend()
     if lgd:
         _scale_font_size(lgd.get_title(), factor)
@@ -17392,7 +17392,7 @@ def map_transform(x, y, source_transform, target_transform):
     # 将 (x, y) 点转换到 source_transform 的坐标系统中
     source_to_display = source_transform.transform([x, y])
     
-    # 获取 target_transform 的逆变换（从 display 转到 target）
+    # 获取 target_transform 的逆变换(从 display 转到 target)
     display_to_target = target_transform.inverted()
     
     # 使用逆变换将 display 坐标转换到 target 坐标系统
@@ -17639,7 +17639,7 @@ def get_ax_size(ax):
     # 获取轴的边界框,这是相对于图形大小的
     bbox = ax.get_position()
     
-    # 计算轴的实际尺寸（英寸）
+    # 计算轴的实际尺寸(英寸)
     ax_width = fig_width * bbox.width
     ax_height = fig_height * bbox.height
     
@@ -19266,7 +19266,7 @@ def save_fig(fig, filename, formats=None, dpi=SAVEFIG_DPI, close=True, bbox_inch
     保存图形到指定的文件格式(搭配concat_str使用,concat_str可以用于生成文件名)
 
     参数:
-    filename - 保存文件的基础名（不建议包含扩展名）
+    filename - 保存文件的基础名(不建议包含扩展名)
     formats - 要保存的文件格式列表,默认为 [SAVEFIG_FORMAT]
     dpi - 图像的分辨率,默认为 SAVEFIG_DPI
     close - 是否在保存后关闭图形,默认为 True
@@ -19312,7 +19312,7 @@ def save_fig_lite(fig, filename, formats=None, dpi=SAVEFIG_DPI/3, close=True, bb
 
 def save_fig_3d(fig, filename, elev_list=None, azim_list=np.arange(0, 360, 30), formats=None, dpi=SAVEFIG_DPI, close=True, bbox_inches=BBOX_INCHES, pkl=True, ax=None, generate_video=False, frame_rate=FRAME_RATE, delete_figs=False, video_formats=None, savefig_kwargs=None):
     '''
-    保存3D图形的多个视角,对于每个视角,都会生成图片（并在文件名上加入角度）,然后将图片合成视频.
+    保存3D图形的多个视角,对于每个视角,都会生成图片(并在文件名上加入角度),然后将图片合成视频.
     对于filename,如果以'.png','.pdf'或'.eps'结尾,则按照后缀名保存,否则按照formats列表中的格式保存.
     '''
     if elev_list is None:
@@ -19418,7 +19418,7 @@ def save_ax(axs, filename, close=False, pkl=False, bbox_inches='tight', **kwargs
 # region 通用函数(复制ax)
 def copy_ax_content(source_ax, target_ax):
     """
-    将 source_ax 的内容拷贝到 target_ax 中,保持所有图形元素（如线条,散点,图例等）.
+    将 source_ax 的内容拷贝到 target_ax 中,保持所有图形元素(如线条,散点,图例等).
     
     参数:
     source_ax (matplotlib.axes.Axes): 源 Axes 对象.
