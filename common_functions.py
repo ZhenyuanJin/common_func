@@ -17857,6 +17857,27 @@ def reduce_ax_tick(ax, axis='both', max_num=5):
         ax.yaxis.set_major_locator(plt.MaxNLocator(max_num))
         ax.yaxis.set_minor_locator(plt.NullLocator())
 
+@iterate_over_axs
+def reduce_ax_tick_by_indices(ax, axis, tick_indices=None):
+    if tick_indices is None:
+        tick_indices = []
+    
+    if axis == 'x':
+        xticks = ax.get_xticks()
+        xticklabels = ax.get_xticklabels()
+        xticks_new = [xticks[i] for i in tick_indices]
+        xticklabels_new = [xticklabels[i].get_text() for i in tick_indices]
+        ax.set_xticks(xticks_new, labels=xticklabels_new)
+    
+    if axis == 'y':
+        yticks = ax.get_yticks()
+        yticklabels = ax.get_yticklabels()
+        yticks_new = [yticks[i] for i in tick_indices]
+        yticklabels_new = [yticklabels[i].get_text() for i in tick_indices]
+        ax.set_yticks(yticks_new, labels=yticklabels_new)
+    
+    return ax
+
 
 def set_cbar_tick(cbar, norm_mode='linear', ticks=None):
     pass
