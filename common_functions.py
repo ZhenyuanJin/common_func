@@ -1454,7 +1454,7 @@ def select_output(index):
         def wrapper(*args, **kwargs):
             result = func(*args, **kwargs)
             
-            # 如果是序列类型（如元组、列表）则按索引提取
+            # 如果是序列类型（如元组,列表）则按索引提取
             if hasattr(result, "__getitem__"):
                 return result[index]
             else:
@@ -3320,7 +3320,7 @@ def save_joblib(obj, filename, compress=0, protocol=None, add_ext='auto'):
     - obj: 需要保存的对象
     - filename: 保存的文件名（如果没有以 .joblib 结尾,会自动添加）
     - compress: 压缩级别,默认为 0(范围为 0 到 9),0 表示不压缩,9 表示最大压缩
-    - protocol: 序列化协议版本（默认使用 joblib 的默认协议）.可以传递一个整数(如 3、4 或 5)
+    - protocol: 序列化协议版本（默认使用 joblib 的默认协议）.可以传递一个整数(如 3,4 或 5)
       表示 Python 的 Pickle 序列化协议版本
     - add_ext:是否自动添加后缀,默认为 'auto',会自动添加后缀;如果不需要自动添加后缀,可以将此参数设置为 False
     """
@@ -4611,7 +4611,7 @@ def extract_float_from_filename(filename, key, separator="d"):
     match = pattern.search(filename)
     
     if match:
-        # 如果有小数部分,拼接成浮点数；否则返回整数
+        # 如果有小数部分,拼接成浮点数;否则返回整数
         integer_part, decimal_part = match.groups()
         if decimal_part is not None:
             return float(f"{integer_part}.{decimal_part}")
@@ -6797,7 +6797,7 @@ def get_index(*slices):
 
 
 def slice_to_array(s):
-    # 获取 start、stop、step,处理 step 为 None 的情况
+    # 获取 start,stop,step,处理 step 为 None 的情况
     start = s.start
     stop = s.stop
     step = s.step if s.step is not None else 1
@@ -7146,7 +7146,7 @@ def get_all_func(module, only_module=True):
 
     参数:
     module: Python模块对象,你想要获取函数名的模块.
-    only_module: 布尔值,如果为True,只返回模块中自己定义的函数；
+    only_module: 布尔值,如果为True,只返回模块中自己定义的函数;
                  如果为False,返回模块中的所有函数,包括导入的函数.
 
     返回值:
@@ -7544,7 +7544,7 @@ def npnan_in_list(lst):
 # endregion
 
 
-# region 数据处理相关函数(缩放、标准化、裁剪、按比例分配、划分、分bin、卷积、平滑化)
+# region 数据处理相关函数(缩放,标准化,裁剪,按比例分配,划分,分bin,卷积,平滑化)
 def scale_range(min_val, max_val, prop):
     '''
     根据最小值和最大值计算扩展后的范围.
@@ -7803,7 +7803,7 @@ def normalize_on_column(data, column_name, vmin, vmax):
 
 def clip(data, vmin, vmax):
     '''
-    将输入数据中的值限制在vmin和vmax之间.支持列表、字典、Pandas DataFrame和Series.
+    将输入数据中的值限制在vmin和vmax之间.支持列表,字典,Pandas DataFrame和Series.
 
     参数:
     - data: 输入数据,可以是列表,字典,np.array,Pandas DataFrame或Series.
@@ -8024,7 +8024,7 @@ def get_bin_idx(data, bins, right=False, left_most=True, right_most=True):
     获取数据在指定区间的索引.
 
     参数:
-    - data: 输入数据,可以是单个数值、列表、numpy数组.
+    - data: 输入数据,可以是单个数值,列表,numpy数组.
     - bin: 区间列表,例如[0, 10, 20, 30].
     - right: 是否包含右边界.(只管内部的区间,不管最左和最右的区间)
     - left_most: 是否包含最左边界, 当数据为最左边界时,返回0.
@@ -12286,7 +12286,7 @@ def plt_bar_dict(ax, data, label=None, color=BLUE, width=BAR_WIDTH, vert=True, *
 # region 初级作图函数(matplotlib系列,三维作图)
 def plt_scatter_3d(ax, x, y, z, label=None, color=BLUE, **kwargs):
     '''
-    使用x、y和z绘制3D散点图,可以接受ax.scatter的其他参数
+    使用x,y和z绘制3D散点图,可以接受ax.scatter的其他参数
     :param ax: matplotlib的3D轴对象,用于绘制图形
     :param x: x轴的数据
     :param y: y轴的数据
@@ -12307,7 +12307,7 @@ def plt_scatter_3d(ax, x, y, z, label=None, color=BLUE, **kwargs):
 
 def plt_line_3d(ax, x, y, z, label=None, color=BLUE, **kwargs):
     '''
-    使用x、y和z绘制3D折线图,可以接受ax.plot的其他参数
+    使用x,y和z绘制3D折线图,可以接受ax.plot的其他参数
     :param ax: matplotlib的3D轴对象,用于绘制图形
     :param x: x轴的数据
     :param y: y轴的数据
@@ -12325,7 +12325,7 @@ def plt_line_3d(ax, x, y, z, label=None, color=BLUE, **kwargs):
 
 def plt_bar_3d(ax, x, y, z, dx, dy, dz, label=None, color=BLUE, **kwargs):
     '''
-    使用x、y和z绘制3D柱状图,可以接受ax.bar3d的其他参数
+    使用x,y和z绘制3D柱状图,可以接受ax.bar3d的其他参数
     :param ax: matplotlib的3D轴对象,用于绘制图形
     :param x: x轴的数据
     :param y: y轴的数据
@@ -12342,7 +12342,7 @@ def plt_bar_3d(ax, x, y, z, dx, dy, dz, label=None, color=BLUE, **kwargs):
 
 def plt_surface_3d(ax, x, y, z, label=None, color=BLUE, alpha=FAINT_ALPHA, **kwargs):
     '''
-    使用x、y和z绘制3D曲面图,可以接受ax.plot_surface的其他参数
+    使用x,y和z绘制3D曲面图,可以接受ax.plot_surface的其他参数
     :param ax: matplotlib的3D轴对象,用于绘制图形
     :param x: x轴的数据
     :param y: y轴的数据
@@ -12398,7 +12398,7 @@ def plt_voxel_3d(ax, data, label=None, color=BLUE, facecolors=None, edgecolors=N
 
 def plt_stem_3d(ax, x, y, z, label=None, linefmt='-', markerfmt='o', basefmt='k-', **kwargs):
     '''
-    使用x、y和z绘制3D棉棒图,可以接受ax.stem的其他参数
+    使用x,y和z绘制3D棉棒图,可以接受ax.stem的其他参数
     :param ax: matplotlib的3D轴对象,用于绘制图形
     :param x: x轴的数据
     :param y: y轴的数据
@@ -12513,7 +12513,7 @@ def sns_hist(ax, data, bins=BIN_NUM, label=None, color=BLUE, log_scale=False, st
 # region 初级作图函数(sns系列,输入pd dataframe或series使用)
 def sns_scatter_pd(ax, data, x=None, y=None, label=None, color=BLUE, **kwargs):
     '''
-    使用data的x和y列绘制散点图,可以接受sns.scatterplot的其他参数;当x为'index'时,使用DataFrame的索引作为x轴;对于Series,使用索引作为x轴,值作为y轴；当x列有重复,则会自动合并重复的x列并在对应位置绘制多个散点图.
+    使用data的x和y列绘制散点图,可以接受sns.scatterplot的其他参数;当x为'index'时,使用DataFrame的索引作为x轴;对于Series,使用索引作为x轴,值作为y轴;当x列有重复,则会自动合并重复的x列并在对应位置绘制多个散点图.
     :param ax: matplotlib的轴对象,用于绘制图形
     :param data: 用于绘制散点图的数据集
     :param x: x轴的列名
@@ -12542,7 +12542,7 @@ def sns_scatter_pd(ax, data, x=None, y=None, label=None, color=BLUE, **kwargs):
 
 def sns_line_pd(ax, data, x=None, y=None, label=None, color=BLUE, **kwargs):
     '''
-    使用data的x和y列绘制折线图,可以接受sns.lineplot的其他参数;当x为'index'时,使用DataFrame的索引作为x轴;对于Series,使用索引作为x轴,值作为y轴；当x列有重复,则会自动合并重复的x列并计算y的均值和标准误差,作为折线图的值和误差线.
+    使用data的x和y列绘制折线图,可以接受sns.lineplot的其他参数;当x为'index'时,使用DataFrame的索引作为x轴;对于Series,使用索引作为x轴,值作为y轴;当x列有重复,则会自动合并重复的x列并计算y的均值和标准误差,作为折线图的值和误差线.
     :param ax: matplotlib的轴对象,用于绘制图形.
     :param data: 用于绘制折线图的数据集,可以是pd.Series或pd.DataFrame.
     :param x: x轴的列名或'index',对于pd.DataFrame有效.
@@ -12573,8 +12573,8 @@ def sns_bar_pd(ax, data, x=None, y=None, label=None, bar_width=BAR_WIDTH, color=
     使用data的x和y列或索引和值绘制柱状图,可以接受sns.barplot的其他参数,现支持DataFrame和Series.对于dataframe,假如x列都不重复,则会自动变成等距离排列,假设x列有重复,则会自动合并重复的x列并计算y的均值和标准误差,作为柱状图的值和误差线.假如x为index,则会使用DataFrame的索引作为x轴,由于index是不重复的,所以会自动变成等距离排列.对于Series,自动使用series的index和值作图
     :param ax: matplotlib的轴对象,用于绘制图形
     :param data: 用于绘制柱状图的DataFrame或Series
-    :param x: x轴的列名或为'index'时使用DataFrame的索引；对于Series,保持为None
-    :param y: y轴的列名；对于Series,此参数不使用
+    :param x: x轴的列名或为'index'时使用DataFrame的索引;对于Series,保持为None
+    :param y: y轴的列名;对于Series,此参数不使用
     :param label: 图例标签,默认为None
     :param bar_width: 柱状图的宽度,默认为BAR_WIDTH
     :param color: 柱状图的颜色,默认为BLUE
@@ -13977,7 +13977,7 @@ def get_norm(norm_mode='linear', vmin=None, vmax=None, norm_kwargs=None):
     根据给定的模式创建一个matplotlib颜色规范化对象.
 
     参数:
-    - norm_mode (str): 规范化模式.可以是'linear'、'log'、'symlog'、'two_slope'、'boundary'.
+    - norm_mode (str): 规范化模式.可以是'linear','log','symlog','two_slope','boundary'.
     - vmin (float or None, optional): 规范化范围的最小值.
     - vmax (float or None, optional): 规范化范围的最大值.
     - norm_kwargs (dict or None, optional): 规范化函数的其他关键字参数.
@@ -14794,7 +14794,7 @@ def add_rounded_rectangle(ax, pad=0.05, corner_radius=0.02, edgecolor="black", f
     corner_radius: 圆角半径(归一化到画布尺寸)
     edgecolor: 边框颜色
     facecolor: 填充颜色
-    **kwargs: 其他图形参数(颜色、线宽等)
+    **kwargs: 其他图形参数(颜色,线宽等)
     """
     # 获取坐标轴在画布中的位置信息
     bbox = ax.get_position()
@@ -15295,7 +15295,7 @@ def adjust_text_obj_alignment(text_obj, ax=None, ha=None, va=None):
     注意:
     只对transdata变换的文本对象有效.
     """
-    # 获取文本对象当前的位置、对齐方式和变换参数
+    # 获取文本对象当前的位置,对齐方式和变换参数
     x0, y0 = text_obj.get_position()
     
     # 计算原始边界框
@@ -17555,7 +17555,7 @@ def show_zorder(ax, include_axes=False, font_size=FONT_SIZE, color=RED, alpha=FA
                 x_text, y_text = offsets[0]
             else:
                 continue
-        elif isinstance(obj, mpatches.Patch):  # 包括矩形、圆等图形对象
+        elif isinstance(obj, mpatches.Patch):  # 包括矩形,圆等图形对象
             try:
                 center = obj.get_center()
                 x_text, y_text = center
@@ -18132,7 +18132,7 @@ def set_ax_aspect(ax, aspect=1, adjustable='datalim', **kwargs):
 @iterate_over_axs
 def set_ax_aspect_3d(ax, aspect=(1, 1, 1), adjustable='datalim', **kwargs):
     '''
-    设置3D轴的x、y和z方向的比例
+    设置3D轴的x,y和z方向的比例
 
     参数:
     - ax: matplotlib的Axes对象
@@ -18531,12 +18531,12 @@ def set_ax_legend(ax, loc=LEGEND_LOC, fontsize=LEGEND_SIZE, bbox_to_anchor=None,
 @iterate_over_axs
 def set_ax(ax, xlabel=None, ylabel=None, zlabel=None, xlabel_pad=LABEL_PAD, ylabel_pad=LABEL_PAD, zlabel_pad=LABEL_PAD, title=None, title_pad=TITLE_PAD, text_process=None, title_size=TITLE_SIZE, label_size=LABEL_SIZE, tick_size=TICK_SIZE, xtick=None, ytick=None, ztick=None, xtick_label=None, ytick_label=None, ztick_label=None, xtick_size=None, ytick_size=None, ztick_size=None, xtick_rotation=None, ytick_rotation=None, adjust_tick_size=True, tick_proportion=TICK_PROPORTION, legend=True, legend_size=LEGEND_SIZE, xlim=None, ylim=None, zlim=None, xlog=False, ylog=False, zlog=False, elev=None, azim=None, legend_loc=LEGEND_LOC, bbox_to_anchor=None, rm_exist_legend=True, legend_kwargs=None, tight_layout=False, reset_scale=False):
     '''
-    设置图表的轴、标题、范围和图例
+    设置图表的轴,标题,范围和图例
 
     参数:
     ax - 绘图的Axes对象
-    xlabel, ylabel, zlabel - x轴、y轴和z轴的标签
-    xlabel_pad, ylabel_pad, zlabel_pad - x轴、y轴和z轴标签的间距
+    xlabel, ylabel, zlabel - x轴,y轴和z轴的标签
+    xlabel_pad, ylabel_pad, zlabel_pad - x轴,y轴和z轴标签的间距
     title - 图标题
     title_pad - 标题的间距
     text_process - 文本处理参数
@@ -19418,7 +19418,7 @@ def save_ax(axs, filename, close=False, pkl=False, bbox_inches='tight', **kwargs
 # region 通用函数(复制ax)
 def copy_ax_content(source_ax, target_ax):
     """
-    将 source_ax 的内容拷贝到 target_ax 中,保持所有图形元素（如线条、散点、图例等）.
+    将 source_ax 的内容拷贝到 target_ax 中,保持所有图形元素（如线条,散点,图例等）.
     
     参数:
     source_ax (matplotlib.axes.Axes): 源 Axes 对象.
