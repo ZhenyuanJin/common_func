@@ -562,6 +562,76 @@ def get_refined_grid(start, end, coarse_num, keypoints, near_num, refine_factor)
     
     return all_points
 
+
+# region timeseries
+def find_steady_state(timeseries, threshold, mode='median'):
+    """
+    Find steady state characteristics in a time series.
+    
+    Args:
+        time_series: 输入时间序列数据
+        threshold: 判定稳定的阈值
+    
+    Returns:
+        steady_value: 稳态典型值(使用中位数)
+        steady_phase: 稳定阶段的所有数据点(从稳定起点到结尾)
+        steady_start_idx: 稳定阶段的起始索引
+    """
+    # 计算稳态典型值
+    if mode == 'median':
+        steady_value = np.median(timeseries)
+    elif mode == 'mean':
+        steady_value = np.mean(timeseries)
+    else:
+        raise ValueError(f"Unsupported mode: {mode}")
+    
+    # 找出所有接近稳态值的候选点
+    near_steady_mask = np.abs(timeseries - steady_value) < threshold
+    near_steady_indices = np.where(near_steady_mask)[0]
+    
+    # 处理空候选情况(说明threshold过小)
+    if len(near_steady_indices) == 0:
+        return find_steady_state(timeseries, threshold=threshold * 2, mode=mode)
+    
+    # 确定稳定起始点(取候选点前20%位置)
+    steady_start_idx = near_steady_indices[int(len(near_steady_indices) * 0.2)]
+    
+    # 提取稳定阶段数据
+    steady_timeseries = timeseries[steady_start_idx:]
+    
+    return steady_value, steady_timeseries, steady_start_idx
+
+
+def get_unified_steady_state(multi_timeseries, threshold, mode='median'):
+    """
+    获取多个节点统一的稳态起始点和稳态时间序列。
+    
+    对每个节点计算其稳态起始索引，取所有节点中的最大值作为统一的起始索引，
+    然后从这个统一索引开始截取所有节点的稳态时间序列。
+    
+    Args:
+        multi_timeseries: 形状为 (n_nodes, n_timesteps) 的时间序列数组
+        threshold: 判定稳定的阈值
+        mode: 计算典型值的模式，'median' 或 'mean'
+    
+    Returns:
+        unified_start_idx: 统一的稳态起始索引
+        steady_timeseries: 形状为 (n_nodes, n_timesteps) 的稳态时间序列
+    """
+    n_nodes = multi_timeseries.shape[0]
+    all_steady_start_idxs = np.zeros(n_nodes, dtype=int)
+    
+    for node in range(n_nodes):
+        _, _, start_idx = find_steady_state(multi_timeseries[node, :], threshold, mode)
+        all_steady_start_idxs[node] = start_idx
+    
+    unified_start_idx = np.max(all_steady_start_idxs)
+    steady_timeseries = multi_timeseries[:, unified_start_idx:]
+    
+    return unified_start_idx, steady_timeseries
+# endregion
+
+
 # region eigen
 def sort_eigenvalues_eigenvectors(eigenvalues, eigenvectors):
     '''
