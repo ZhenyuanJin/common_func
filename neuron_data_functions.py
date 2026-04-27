@@ -685,7 +685,7 @@ class AvalancheToolbox:
             local_get_avalanche_kwargs = get_avalanche_kwargs.copy()
         
         spikes_sum = np.sum(neuron_idx_data(spikes, neuron_idx, keep_size=True), axis=1, keepdims=True)
-        ISI_mean = get_ISI_mean(spikes_sum, dt, neuron_idx=neuron_idx)
+        ISI_mean = get_ISI_mean(spikes_sum, dt)
         if use_ISI_bin_size is False:
             bin_size = local_get_avalanche_kwargs.pop('bin_size')
         else:
