@@ -13848,7 +13848,7 @@ def _set_ax_alternating_ticklabel_pad_single_axis(ax, axis='x', ticks=None, tick
     else:
         raise ValueError("far_tickline_mode must be 'same' or 'follow_far'")
     target_far_tick_width = major_tick_width
-    target_far_label_pad = near_pad
+    target_far_label_pad = far_pad
     if ticks is None:
         if axis == 'x':
             ticks = ax.get_xticks()
@@ -13859,8 +13859,19 @@ def _set_ax_alternating_ticklabel_pad_single_axis(ax, axis='x', ticks=None, tick
 
     ticks = np.asarray(ticks)
 
+    if axis == 'x':
+        current_ticklabels = ax.get_xticklabels(minor=False)
+    elif axis == 'y':
+        current_ticklabels = ax.get_yticklabels(minor=False)
+    else:
+        raise ValueError("axis must be 'x' or 'y'")
+
     if tick_labels is None:
-        labels = [f'{tick:g}' for tick in ticks]
+        current_label_texts = [label.get_text() for label in current_ticklabels]
+        if len(current_label_texts) == len(ticks) and any(text != '' for text in current_label_texts):
+            labels = current_label_texts
+        else:
+            labels = [f'{tick:g}' for tick in ticks]
     elif callable(tick_labels):
         labels = [str(tick_labels(tick)) for tick in ticks]
     else:
@@ -13889,23 +13900,24 @@ def _set_ax_alternating_ticklabel_pad_single_axis(ax, axis='x', ticks=None, tick
     far_labels = [labels[i] for i in far_idx]
 
     local_tick_size = tick_size
-    if local_tick_size is None:
-        if axis == 'x':
-            current_ticklabels = ax.get_xticklabels(minor=False)
-        elif axis == 'y':
-            current_ticklabels = ax.get_yticklabels(minor=False)
-        else:
-            raise ValueError("axis must be 'x' or 'y'")
-        if len(current_ticklabels) > 0:
+    local_tick_rotation = None
+    if len(current_ticklabels) > 0:
+        if local_tick_size is None:
             local_tick_size = current_ticklabels[0].get_fontsize()
+        local_tick_rotation = current_ticklabels[0].get_rotation()
 
     if axis == 'x':
         ax.set_xticks(near_ticks)
         ax.set_xticklabels(near_labels)
         ax.set_xticks(far_ticks, minor=True)
         ax.set_xticklabels(far_labels, minor=True)
-        ax.tick_params(axis='x', which='major', pad=near_pad, labelsize=local_tick_size)
-        ax.tick_params(axis='x', which='minor', labelbottom=True, pad=target_far_label_pad, labelsize=local_tick_size)
+        major_tick_params = dict(axis='x', which='major', pad=near_pad, labelsize=local_tick_size)
+        minor_tick_params = dict(axis='x', which='minor', labelbottom=True, pad=target_far_label_pad, labelsize=local_tick_size)
+        if local_tick_rotation is not None:
+            major_tick_params['labelrotation'] = local_tick_rotation
+            minor_tick_params['labelrotation'] = local_tick_rotation
+        ax.tick_params(**major_tick_params)
+        ax.tick_params(**minor_tick_params)
         if hide_far_tickline:
             ax.tick_params(axis='x', which='minor', length=0)
         else:
@@ -13915,8 +13927,13 @@ def _set_ax_alternating_ticklabel_pad_single_axis(ax, axis='x', ticks=None, tick
         ax.set_yticklabels(near_labels)
         ax.set_yticks(far_ticks, minor=True)
         ax.set_yticklabels(far_labels, minor=True)
-        ax.tick_params(axis='y', which='major', pad=near_pad, labelsize=local_tick_size)
-        ax.tick_params(axis='y', which='minor', labelleft=True, pad=target_far_label_pad, labelsize=local_tick_size)
+        major_tick_params = dict(axis='y', which='major', pad=near_pad, labelsize=local_tick_size)
+        minor_tick_params = dict(axis='y', which='minor', labelleft=True, pad=target_far_label_pad, labelsize=local_tick_size)
+        if local_tick_rotation is not None:
+            major_tick_params['labelrotation'] = local_tick_rotation
+            minor_tick_params['labelrotation'] = local_tick_rotation
+        ax.tick_params(**major_tick_params)
+        ax.tick_params(**minor_tick_params)
         if hide_far_tickline:
             ax.tick_params(axis='y', which='minor', length=0)
         else:
@@ -13939,7 +13956,7 @@ def set_ax_alternating_ticklabel_pad(ax, axis='x', ticks=None, tick_labels=None,
     :param far_pad: 远离组标签与坐标轴的距离
     :param hide_far_tickline: 是否隐藏远离组的tick线
     :param tick_size: tick标签字号,默认为None(自动沿用当前主刻度字号)
-    :param far_tickline_mode: far组tick线模式,'same'与major一致,'follow_far'用far_pad控制线长; far与major文字到tick距离一致
+    :param far_tickline_mode: far组tick线模式,'same'与major一致,'follow_far'用far_pad控制线长
     '''
     if axis == 'both':
         axis = ['x', 'y']
