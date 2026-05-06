@@ -13829,6 +13829,137 @@ def set_ax_multiple_locator(ax, base, offset=0., axis='both', locator_type='majo
     '''
     locator = ticker.MultipleLocator(base, offset=offset, **kwargs)
     set_ax_locator(ax, locator, axis=axis, locator_type=locator_type)
+
+
+def _set_ax_alternating_ticklabel_pad_single_axis(ax, axis='x', ticks=None, tick_labels=None, near_is='even', parity_mode='value', near_pad=2, far_pad=20, hide_far_tickline=True, tick_size=None, far_tickline_mode='same'):
+    if axis == 'x':
+        major_tick_length = ax.xaxis.majorTicks[0].tick1line.get_markersize()
+        major_tick_width = ax.xaxis.majorTicks[0].tick1line.get_markeredgewidth()
+    elif axis == 'y':
+        major_tick_length = ax.yaxis.majorTicks[0].tick1line.get_markersize()
+        major_tick_width = ax.yaxis.majorTicks[0].tick1line.get_markeredgewidth()
+    else:
+        raise ValueError("axis must be 'x' or 'y'")
+
+    if far_tickline_mode == 'same':
+        target_far_tick_length = major_tick_length
+    elif far_tickline_mode == 'follow_far':
+        target_far_tick_length = max(float(far_pad), major_tick_length)
+    else:
+        raise ValueError("far_tickline_mode must be 'same' or 'follow_far'")
+    target_far_tick_width = major_tick_width
+    target_far_label_pad = near_pad
+    if ticks is None:
+        if axis == 'x':
+            ticks = ax.get_xticks()
+        elif axis == 'y':
+            ticks = ax.get_yticks()
+        else:
+            raise ValueError("axis must be 'x' or 'y'")
+
+    ticks = np.asarray(ticks)
+
+    if tick_labels is None:
+        labels = [f'{tick:g}' for tick in ticks]
+    elif callable(tick_labels):
+        labels = [str(tick_labels(tick)) for tick in ticks]
+    else:
+        labels = [str(label) for label in tick_labels]
+
+    if parity_mode == 'value':
+        parity_mask = np.round(ticks).astype(int) % 2 == 0
+    elif parity_mode == 'index':
+        parity_mask = np.arange(len(ticks)) % 2 == 0
+    else:
+        raise ValueError("parity_mode must be 'value' or 'index'")
+
+    if near_is == 'even':
+        near_mask = parity_mask
+    elif near_is == 'odd':
+        near_mask = ~parity_mask
+    else:
+        raise ValueError("near_is must be 'even' or 'odd'")
+
+    near_idx = np.where(near_mask)[0]
+    far_idx = np.where(~near_mask)[0]
+
+    near_ticks = ticks[near_idx]
+    far_ticks = ticks[far_idx]
+    near_labels = [labels[i] for i in near_idx]
+    far_labels = [labels[i] for i in far_idx]
+
+    local_tick_size = tick_size
+    if local_tick_size is None:
+        if axis == 'x':
+            current_ticklabels = ax.get_xticklabels(minor=False)
+        elif axis == 'y':
+            current_ticklabels = ax.get_yticklabels(minor=False)
+        else:
+            raise ValueError("axis must be 'x' or 'y'")
+        if len(current_ticklabels) > 0:
+            local_tick_size = current_ticklabels[0].get_fontsize()
+
+    if axis == 'x':
+        ax.set_xticks(near_ticks)
+        ax.set_xticklabels(near_labels)
+        ax.set_xticks(far_ticks, minor=True)
+        ax.set_xticklabels(far_labels, minor=True)
+        ax.tick_params(axis='x', which='major', pad=near_pad, labelsize=local_tick_size)
+        ax.tick_params(axis='x', which='minor', labelbottom=True, pad=target_far_label_pad, labelsize=local_tick_size)
+        if hide_far_tickline:
+            ax.tick_params(axis='x', which='minor', length=0)
+        else:
+            ax.tick_params(axis='x', which='minor', length=target_far_tick_length, width=target_far_tick_width)
+    elif axis == 'y':
+        ax.set_yticks(near_ticks)
+        ax.set_yticklabels(near_labels)
+        ax.set_yticks(far_ticks, minor=True)
+        ax.set_yticklabels(far_labels, minor=True)
+        ax.tick_params(axis='y', which='major', pad=near_pad, labelsize=local_tick_size)
+        ax.tick_params(axis='y', which='minor', labelleft=True, pad=target_far_label_pad, labelsize=local_tick_size)
+        if hide_far_tickline:
+            ax.tick_params(axis='y', which='minor', length=0)
+        else:
+            ax.tick_params(axis='y', which='minor', length=target_far_tick_length, width=target_far_tick_width)
+
+
+@iterate_over_axs
+def set_ax_alternating_ticklabel_pad(ax, axis='x', ticks=None, tick_labels=None, near_is='even', parity_mode='value', near_pad=2, far_pad=20, hide_far_tickline=True, tick_size=None, far_tickline_mode='same'):
+    '''
+    让指定坐标轴上的tick标签按奇偶交错显示:
+    一组更靠近坐标轴,另一组更远离坐标轴.
+
+    :param ax: matplotlib的轴对象
+    :param axis: 'x'、'y'、'both' 或 ['x', 'y']
+    :param ticks: 参与交错显示的tick位置,默认使用当前轴tick
+    :param tick_labels: tick标签,可以是list或可调用对象
+    :param near_is: 哪一组靠近坐标轴,'even'或'odd'
+    :param parity_mode: 奇偶分组方式,'value'按tick值,'index'按顺序
+    :param near_pad: 靠近组标签与坐标轴的距离
+    :param far_pad: 远离组标签与坐标轴的距离
+    :param hide_far_tickline: 是否隐藏远离组的tick线
+    :param tick_size: tick标签字号,默认为None(自动沿用当前主刻度字号)
+    :param far_tickline_mode: far组tick线模式,'same'与major一致,'follow_far'用far_pad控制线长; far与major文字到tick距离一致
+    '''
+    if axis == 'both':
+        axis = ['x', 'y']
+    if isinstance(axis, str):
+        axis = [axis]
+
+    for local_axis in axis:
+        _set_ax_alternating_ticklabel_pad_single_axis(
+            ax=ax,
+            axis=local_axis,
+            ticks=ticks,
+            tick_labels=tick_labels,
+            near_is=near_is,
+            parity_mode=parity_mode,
+            near_pad=near_pad,
+            far_pad=far_pad,
+            hide_far_tickline=hide_far_tickline,
+            tick_size=tick_size,
+            far_tickline_mode=far_tickline_mode
+        )
 # endregion
 
 
