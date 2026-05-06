@@ -3492,6 +3492,9 @@ def compare_dict(dict1, dict2, ignore_key=None):
 
     # 递归比较值
     def compare_values(v1, v2):
+        if type(v1) is not type(v2):
+            return False
+
         # 处理NumPy数组
         if isinstance(v1, np.ndarray) and isinstance(v2, np.ndarray):
             return np.array_equal(v1, v2)
