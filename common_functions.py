@@ -350,6 +350,8 @@ SAVEFIG_PKL = False
 # region 颜色映射参数(注意,颜色映射在使用整数调用时会出现和使用浮点数调用时不同的效果,比如输入1会映射到第一个颜色,但输入1.0会映射到cmap的最顶端)
 CMAP = plt.cm.viridis
 HEATMAP_CMAP = plt.cm.jet
+PLASMA_CMAP = plt.cm.plasma
+TRUNCATED_PLASMA_CMAP = mcolors.LinearSegmentedColormap.from_list("truncated_plasma_cmap", plt.cm.plasma(np.linspace(0.0, 0.8, 256)))
 DENSITY_CMAP = mcolors.LinearSegmentedColormap.from_list("density_cmap", [RANA, BLUE])
 CONTRAST_CMAP = mcolors.LinearSegmentedColormap.from_list("contrast_cmap", [REDBULL, WHITE, FERRARI])
 CONTRAST_WITH_MID_CMAP = mcolors.LinearSegmentedColormap.from_list("contrast_with_mid_cmap", [REDBULL, (0.5, 0.6, 0.4), FERRARI])
