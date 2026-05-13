@@ -13501,6 +13501,47 @@ def move_ax(ax, d_left=None, d_right=None, d_bottom=None, d_top=None, keep_size=
     set_ax_position_custom(ax, left, right, bottom, top)
 
 
+@iterate_over_axs
+def resize_ax_keep_aspect(ax, scale=1.0, mode='center'):
+    '''
+    在保持ax横纵比不变的前提下,按照指定的位似中心进行等比例缩放.
+
+    参数:
+    - scale: 缩放比例,大于1为放大,0到1为缩小.
+    - mode: 位似中心,字符串可选与matplotlib legend的loc对齐.
+        可选:
+        'best', 'upper right', 'upper left', 'lower left', 'lower right',
+        'right', 'center left', 'center right', 'lower center',
+        'upper center', 'center'
+    '''
+    if scale <= 0:
+        raise ValueError(f'scale should be greater than 0, but got {scale}.')
+
+    left, right, bottom, top = get_ax_position_custom(ax)
+    mode_dict = {
+        'best': ((left + right) / 2, (bottom + top) / 2),
+        'center': ((left + right) / 2, (bottom + top) / 2),
+        'upper left': (left, top),
+        'upper center': ((left + right) / 2, top),
+        'upper right': (right, top),
+        'center left': (left, (bottom + top) / 2),
+        'center right': (right, (bottom + top) / 2),
+        'right': (right, (bottom + top) / 2),
+        'lower left': (left, bottom),
+        'lower center': ((left + right) / 2, bottom),
+        'lower right': (right, bottom),
+    }
+    if mode not in mode_dict:
+        raise ValueError(f'Unknown mode {mode}.')
+
+    center_x, center_y = mode_dict[mode]
+    left = center_x + (left - center_x) * scale
+    right = center_x + (right - center_x) * scale
+    bottom = center_y + (bottom - center_y) * scale
+    top = center_y + (top - center_y) * scale
+    set_ax_position_custom(ax, left, right, bottom, top)
+
+
 def rm_end_ax_and_align(axes, row=None, col=None):
     '''
     移除指定行/列的最后一个ax,并重新对齐剩余的子图
