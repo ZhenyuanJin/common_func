@@ -214,14 +214,15 @@ TICK_MAJOR_SIZE = 8     # x轴主刻度线的长度
 TICK_MINOR_SIZE = 4     # x轴次刻度线的长度
 TICK_DIRECTION = 'out'     # 刻度线的方向
 RM_REPEAT_TICK_LABEL_WHEN_SHARE = True     # 当共享坐标轴时,去除重复的刻度标签
-AX_FACECOLOR = (1., 1., 1., 0.5)     # 背景具有一定的透明度,防止遮挡
+AX_FACECOLOR = (1., 1., 1., 0.9)     # 背景具有一定的透明度,防止遮挡
 
 
 def set_font_size(font_size):
     '''
     目前并未生效,函数的默认值绑定导致了这个问题,需要设置为none在内部赋予
     '''
-    global FONT_SIZE, TITLE_SIZE, LABEL_SIZE, TICK_SIZE, LEGEND_SIZE
+    global FONT_SIZE, TITLE_SIZE, SUP_TITLE_SIZE, LABEL_SIZE, TICK_SIZE, LEGEND_SIZE
+    global CBAR_LABEL_SIZE, CBAR_TICK_SIZE, LABEL_PAD, TITLE_PAD, TAG_SIZE
     
     FONT_SIZE = font_size
     TITLE_SIZE = FONT_SIZE*2
@@ -229,6 +230,11 @@ def set_font_size(font_size):
     LABEL_SIZE = FONT_SIZE*2
     TICK_SIZE = FONT_SIZE*4/3
     LEGEND_SIZE = FONT_SIZE*4/3
+    CBAR_LABEL_SIZE = TICK_SIZE
+    CBAR_TICK_SIZE = TICK_SIZE
+    LABEL_PAD = LABEL_SIZE/3
+    TITLE_PAD = TITLE_SIZE/3
+    TAG_SIZE = SUP_TITLE_SIZE
     
     # 更新Matplotlib全局设置
     plt.rcParams.update({
@@ -240,6 +246,9 @@ def set_font_size(font_size):
         'legend.fontsize': LEGEND_SIZE,
         'figure.titlesize': SUP_TITLE_SIZE
     })
+
+
+
 # endregion
 
 
@@ -12671,7 +12680,7 @@ def sns_box_pd(ax, data, x, y, color=BLUE, orient='v', **kwargs):
 
 
 # region 初级作图函数(sns系列,可同时接受矩阵和dataframe)
-def sns_heatmap(ax, data, cmap=HEATMAP_CMAP, square=True, cbar=True, cbar_position=None, cbar_label=None, discrete_label=None, xtick_rotation=XTICK_ROTATION, ytick_rotation=YTICK_ROTATION, show_xtick=True, show_ytick=True, show_all_xtick=True, show_all_ytick=True, xtick_fontsize=TICK_SIZE, ytick_fontsize=TICK_SIZE, mask=None, mask_color=MASK_COLOR, mask_tick='mask', norm_mode='linear', vmin=None, vmax=None, norm_kwargs=None, text_process=None, heatmap_kwargs=None, cbar_kwargs=None):
+def sns_heatmap(ax, data, cmap=HEATMAP_CMAP, square=True, cbar=True, cbar_position=None, cbar_label=None, discrete_label=None, xtick_rotation=XTICK_ROTATION, ytick_rotation=YTICK_ROTATION, show_xtick=True, show_ytick=True, show_all_xtick=True, show_all_ytick=True, xtick_fontsize=None, ytick_fontsize=None, mask=None, mask_color=MASK_COLOR, mask_tick='mask', norm_mode='linear', vmin=None, vmax=None, norm_kwargs=None, text_process=None, heatmap_kwargs=None, cbar_kwargs=None):
     '''
     使用数据绘制热图,可以接受sns.heatmap的其他参数;注意,如果要让heatmap按照ax的框架显示,需要将square设置为False(如果想要mask是透明的,需要将mask_color设置为None)
     :param ax: matplotlib的轴对象,用于绘制图形
@@ -12705,6 +12714,11 @@ def sns_heatmap(ax, data, cmap=HEATMAP_CMAP, square=True, cbar=True, cbar_positi
     '''
     text_process = update_dict(TEXT_PROCESS, text_process)
     cbar_kwargs = update_dict({}, cbar_kwargs)
+    if xtick_fontsize is None:
+        xtick_fontsize = TICK_SIZE
+    if ytick_fontsize is None:
+        ytick_fontsize = TICK_SIZE
+
     # 如果data是array,则转换为DataFrame
     if isinstance(data, np.ndarray):
         local_data = pd.DataFrame(data)
@@ -14286,7 +14300,7 @@ def reverse_cmap(cmap):
 
 # region 初级作图函数(添加colorbar)
 @iterate_over_axs
-def add_colorbar(ax, mappable=None, cmap=CMAP, ticks=None, tick_labels=None, discrete_label=None, display_edge_ticks=True, cbar_position=None, cbar_label=None, use_mask=False, mask_color=MASK_COLOR, mask_pos='start', mask_pad=0, mask_cbar_ratio=None, mask_tick='mask', mask_tick_loc=None, label_size=CBAR_LABEL_SIZE, tick_size=CBAR_TICK_SIZE, adjust_tick_size=True, tick_proportion=TICK_PROPORTION, label_kwargs=None, norm_mode='linear', vmin=None, vmax=None, norm_kwargs=None, text_process=None, formatter=None, formatter_kwargs=None, round_digits=ROUND_DIGITS, round_format_type=ROUND_FORMAT, add_leq=False, add_geq=False, inset_mode='fig'):
+def add_colorbar(ax, mappable=None, cmap=CMAP, ticks=None, tick_labels=None, discrete_label=None, display_edge_ticks=True, cbar_position=None, cbar_label=None, use_mask=False, mask_color=MASK_COLOR, mask_pos='start', mask_pad=0, mask_cbar_ratio=None, mask_tick='mask', mask_tick_loc=None, label_size=None, tick_size=None, adjust_tick_size=True, tick_proportion=TICK_PROPORTION, label_kwargs=None, norm_mode='linear', vmin=None, vmax=None, norm_kwargs=None, text_process=None, formatter=None, formatter_kwargs=None, round_digits=ROUND_DIGITS, round_format_type=ROUND_FORMAT, add_leq=False, add_geq=False, inset_mode='fig'):
     '''
     在指定ax添加颜色条.目前设置norm_mode为'boundary'时,最好输入一个离散的cmap,否则在log模式下会出现问题.
     :param ax: matplotlib的轴对象,用于绘制图形.
@@ -14327,6 +14341,10 @@ def add_colorbar(ax, mappable=None, cmap=CMAP, ticks=None, tick_labels=None, dis
         mappable = ScalarMappable(norm=norm, cmap=cmap)
     if label_kwargs is None:
         label_kwargs = {}
+    if label_size is None:
+        label_size = CBAR_LABEL_SIZE
+    if tick_size is None:
+        tick_size = CBAR_TICK_SIZE
     if vmin is None:
         vmin = mappable.norm.vmin
     if vmax is None:
@@ -14523,7 +14541,7 @@ def add_colorbar(ax, mappable=None, cmap=CMAP, ticks=None, tick_labels=None, dis
         return [cbar]
 
 @iterate_over_axs
-def add_side_colorbar(ax, mappable=None, cmap=CMAP, ticks=None, tick_labels=None, discrete_label=None, display_edge_ticks=True, cbar_position=None, cbar_label=None, use_mask=False, mask_color=MASK_COLOR, mask_pos='start', mask_pad=0, mask_cbar_ratio=None, mask_tick='mask', mask_tick_loc=None, label_size=CBAR_LABEL_SIZE, tick_size=CBAR_TICK_SIZE, adjust_tick_size=True, tick_proportion=TICK_PROPORTION, label_kwargs=None, norm_mode='linear', vmin=None, vmax=None, norm_kwargs=None, text_process=None, formatter=None, formatter_kwargs=None, round_digits=ROUND_DIGITS, round_format_type=ROUND_FORMAT, add_leq=False, add_geq=False, inset_mode='fig'):
+def add_side_colorbar(ax, mappable=None, cmap=CMAP, ticks=None, tick_labels=None, discrete_label=None, display_edge_ticks=True, cbar_position=None, cbar_label=None, use_mask=False, mask_color=MASK_COLOR, mask_pos='start', mask_pad=0, mask_cbar_ratio=None, mask_tick='mask', mask_tick_loc=None, label_size=None, tick_size=None, adjust_tick_size=True, tick_proportion=TICK_PROPORTION, label_kwargs=None, norm_mode='linear', vmin=None, vmax=None, norm_kwargs=None, text_process=None, formatter=None, formatter_kwargs=None, round_digits=ROUND_DIGITS, round_format_type=ROUND_FORMAT, add_leq=False, add_geq=False, inset_mode='fig'):
     '''
     在指定ax的旁边添加颜色条.特别注意,对于离散的cmap,用户一定要提供对应的discrete_num
     :param ax: matplotlib的轴对象,用于绘制图形.
@@ -14567,7 +14585,7 @@ def add_side_colorbar(ax, mappable=None, cmap=CMAP, ticks=None, tick_labels=None
     return add_colorbar(side_ax, mappable=mappable, cmap=cmap, ticks=ticks, tick_labels=tick_labels, discrete_label=discrete_label, display_edge_ticks=display_edge_ticks, cbar_position=cbar_position, cbar_label=cbar_label, use_mask=use_mask, mask_color=mask_color, mask_pos=mask_pos, mask_pad=mask_pad, mask_cbar_ratio=mask_cbar_ratio, mask_tick=mask_tick, mask_tick_loc=mask_tick_loc, label_size=label_size, tick_size=tick_size, adjust_tick_size=adjust_tick_size, tick_proportion=tick_proportion, label_kwargs=label_kwargs, norm_mode=norm_mode, vmin=vmin, vmax=vmax, norm_kwargs=norm_kwargs, text_process=text_process, formatter=formatter, formatter_kwargs=formatter_kwargs, round_digits=round_digits, round_format_type=round_format_type, add_leq=add_leq, add_geq=add_geq, inset_mode=inset_mode)
 
 @iterate_over_axs
-def add_scatter_colorbar(ax, mappable=None, cmap=CMAP, edgecolor=BLACK, tick_labels=None, cbar_label=None, cbar_position=None, label_size=CBAR_LABEL_SIZE, tick_size=CBAR_TICK_SIZE, text_pad=1.0, label_pad=None, adjust_tick_size=True, tick_proportion=TICK_PROPORTION, label_kwargs=None, vnorm_mode='linear', vmin=None, vmax=None, vnorm_kwargs=None, snorm_mode='linear', smin=None, smax=None, snorm_kwargs=None, smap=partial(scale_to_new_range, old_min=0, old_max=1, new_min=0.05, new_max=0.95), use_mask=None, mask_marker='X', mask_smap_float=1.0, mask_color=MASK_COLOR, mask_text='mask', epsilon=1e-3, text_process=None, formatter=None, formatter_kwargs=None, round_digits=ROUND_DIGITS, round_format_type=ROUND_FORMAT, add_leq=False, add_geq=False):
+def add_scatter_colorbar(ax, mappable=None, cmap=CMAP, edgecolor=BLACK, tick_labels=None, cbar_label=None, cbar_position=None, label_size=None, tick_size=None, text_pad=1.0, label_pad=None, adjust_tick_size=True, tick_proportion=TICK_PROPORTION, label_kwargs=None, vnorm_mode='linear', vmin=None, vmax=None, vnorm_kwargs=None, snorm_mode='linear', smin=None, smax=None, snorm_kwargs=None, smap=partial(scale_to_new_range, old_min=0, old_max=1, new_min=0.05, new_max=0.95), use_mask=None, mask_marker='X', mask_smap_float=1.0, mask_color=MASK_COLOR, mask_text='mask', epsilon=1e-3, text_process=None, formatter=None, formatter_kwargs=None, round_digits=ROUND_DIGITS, round_format_type=ROUND_FORMAT, add_leq=False, add_geq=False):
     '''
     在指定ax添加圆形颜色条.如果输入了mappable的同时指定了vmin和vmax,则会按照vmin,vmax来clip这个mappable的范围.
     :param ax: matplotlib的轴对象,用于绘制图形.
@@ -14612,6 +14630,10 @@ def add_scatter_colorbar(ax, mappable=None, cmap=CMAP, edgecolor=BLACK, tick_lab
     text_process = update_dict(TEXT_PROCESS, text_process)
     cbar_position = update_dict(CBAR_POSITION, cbar_position)
     label_kwargs = update_dict({}, label_kwargs)
+    if label_size is None:
+        label_size = CBAR_LABEL_SIZE
+    if tick_size is None:
+        tick_size = CBAR_TICK_SIZE
 
     # 由于cbar已经非常完善,这里调用cbar来获得需要的scatter的tick_labels(注意要输入smin等)
     if tick_labels is None:
@@ -14697,7 +14719,7 @@ def add_scatter_colorbar(ax, mappable=None, cmap=CMAP, edgecolor=BLACK, tick_lab
         ax.set_xlabel(cbar_label, fontsize=label_size, labelpad=label_pad, **label_kwargs)
 
 @iterate_over_axs
-def add_side_scatter_colorbar(ax, mappable=None, cmap=CMAP, edgecolor=BLACK, tick_labels=None, cbar_label=None, cbar_position=None, label_size=CBAR_LABEL_SIZE, tick_size=CBAR_TICK_SIZE, text_pad=1.0, label_pad=None, adjust_tick_size=True, tick_proportion=TICK_PROPORTION, label_kwargs=None, vnorm_mode='linear', vmin=None, vmax=None, vnorm_kwargs=None, snorm_mode='linear', smin=None, smax=None, snorm_kwargs=None, smap=partial(scale_to_new_range, old_min=0, old_max=1, new_min=0.05, new_max=0.95), use_mask=None, mask_marker='X', mask_smap_float=1.0, mask_color=MASK_COLOR, mask_text='mask', epsilon=1e-3, text_process=None, formatter=None, formatter_kwargs=None, round_digits=ROUND_DIGITS, round_format_type=ROUND_FORMAT, add_leq=False, add_geq=False, inset_mode='fig'):
+def add_side_scatter_colorbar(ax, mappable=None, cmap=CMAP, edgecolor=BLACK, tick_labels=None, cbar_label=None, cbar_position=None, label_size=None, tick_size=None, text_pad=1.0, label_pad=None, adjust_tick_size=True, tick_proportion=TICK_PROPORTION, label_kwargs=None, vnorm_mode='linear', vmin=None, vmax=None, vnorm_kwargs=None, snorm_mode='linear', smin=None, smax=None, snorm_kwargs=None, smap=partial(scale_to_new_range, old_min=0, old_max=1, new_min=0.05, new_max=0.95), use_mask=None, mask_marker='X', mask_smap_float=1.0, mask_color=MASK_COLOR, mask_text='mask', epsilon=1e-3, text_process=None, formatter=None, formatter_kwargs=None, round_digits=ROUND_DIGITS, round_format_type=ROUND_FORMAT, add_leq=False, add_geq=False, inset_mode='fig'):
     if isinstance(ax, Axes3D):
         cbar_position = update_dict(CBAR_POSITION_3D, cbar_position)
     else:
@@ -15283,7 +15305,7 @@ def add_quiver_3d(ax, x_start, y_start, z_start, x_end, y_end, z_end, label=None
 
 
 # region 初级作图函数(添加注释)
-def add_annotation(ax, text, xy, xytext, xycoords='data', fontsize=FONT_SIZE, arrowprops=None, text_process=None, **kwargs):
+def add_annotation(ax, text, xy, xytext, xycoords='data', fontsize=None, arrowprops=None, text_process=None, **kwargs):
     '''
     在指定位置添加注释.只支持一个注释.
     :param ax: matplotlib的轴对象,用于绘制图形.
@@ -15298,6 +15320,8 @@ def add_annotation(ax, text, xy, xytext, xycoords='data', fontsize=FONT_SIZE, ar
     '''
     text_process = update_dict(TEXT_PROCESS, text_process)
     arrowprops = update_dict(ARROW_PROPS, arrowprops)
+    if fontsize is None:
+        fontsize = FONT_SIZE
 
     # 自动调整dict
     if 'head_length' in arrowprops.keys() and 'head_length' not in arrowprops['arrowstyle']:
@@ -15319,7 +15343,7 @@ def add_annotation(ax, text, xy, xytext, xycoords='data', fontsize=FONT_SIZE, ar
     return ax.annotate(text, xy, xytext=xytext, xycoords=xycoords, fontsize=fontsize, arrowprops=arrowprops, **kwargs)
 
 
-def add_bar_label(ax, bars, labels, label_type='edge', padding=0., rotation=90., text_process=None, fontsize=FONT_SIZE, **kwargs):
+def add_bar_label(ax, bars, labels, label_type='edge', padding=0., rotation=90., text_process=None, fontsize=None, **kwargs):
     '''
     在柱状图上添加标签
 
@@ -15337,6 +15361,8 @@ def add_bar_label(ax, bars, labels, label_type='edge', padding=0., rotation=90.,
     不可以使用va和ha
     '''
     text_process = update_dict(TEXT_PROCESS, text_process)
+    if fontsize is None:
+        fontsize = FONT_SIZE
     local_labels = [format_text(label, text_process) for label in labels]
     return ax.bar_label(bars, labels=local_labels, label_type=label_type, padding=padding, rotation=rotation, fontsize=fontsize, **kwargs)
 # endregion
@@ -15349,7 +15375,7 @@ def _check_maybe_wrong_transform_for_text(x, y, transform):
             print(f"Warning: x={x}, y={y}, transform={transform} may be wrong.")
 
 
-def add_text(ax, text, x=TEXT_X, y=TEXT_Y, text_process=None, transform='ax', va=TEXT_VA, ha=TEXT_HA, fontsize=FONT_SIZE, color=BLACK, **kwargs):
+def add_text(ax, text, x=TEXT_X, y=TEXT_Y, text_process=None, transform='ax', va=TEXT_VA, ha=TEXT_HA, fontsize=None, color=BLACK, **kwargs):
     '''
 
     在指定位置添加文字.
@@ -15362,6 +15388,8 @@ def add_text(ax, text, x=TEXT_X, y=TEXT_Y, text_process=None, transform='ax', va
     :param kwargs: 传递给'ax.text'的额外关键字参数
     '''
     text_process = update_dict(TEXT_PROCESS, text_process)
+    if fontsize is None:
+        fontsize = FONT_SIZE
     _check_maybe_wrong_transform_for_text(x, y, transform)
     # 处理文本
     text = format_text(text, text_process)
@@ -15376,14 +15404,14 @@ def add_text(ax, text, x=TEXT_X, y=TEXT_Y, text_process=None, transform='ax', va
     return ax.text(x, y, text, transform=transform, va=va, ha=ha, fontsize=fontsize, color=color, **kwargs)
 
 
-def add_multi_text_by_list(ax, text_list, x_list, y_list, text_process=None, transform='ax', va=TEXT_VA, ha=TEXT_HA, fontsize=FONT_SIZE, color=BLACK, **kwargs):
+def add_multi_text_by_list(ax, text_list, x_list, y_list, text_process=None, transform='ax', va=TEXT_VA, ha=TEXT_HA, fontsize=None, color=BLACK, **kwargs):
     text_obj_list = []
     for text, x, y in zip(text_list, x_list, y_list):
         text_obj_list.append(add_text(ax, text, x=x, y=y, text_process=text_process, transform=transform, va=va, ha=ha, fontsize=fontsize, color=color, **kwargs))
     return text_obj_list
 
 
-def add_multi_text_by_dict(ax, x_dict, y_dict, text_process=None, transform='ax', va=TEXT_VA, ha=TEXT_HA, fontsize=FONT_SIZE, color=BLACK, **kwargs):
+def add_multi_text_by_dict(ax, x_dict, y_dict, text_process=None, transform='ax', va=TEXT_VA, ha=TEXT_HA, fontsize=None, color=BLACK, **kwargs):
     # check the keys of x_dict and y_dict are the same
     if set(x_dict.keys()) != set(y_dict.keys()):
         raise ValueError("The keys of x_dict and y_dict must be the same.")
@@ -15986,7 +16014,7 @@ def plt_group_box(ax, x, y, label_list, width=None, inner_gap=0.0, colors=CMAP, 
         ax.set_yticklabels(x)
 
 
-def plt_linregress(ax, x, y, xlog=False, ylog=False, xlog_base=10, ylog_base=10, xlog_base_str=None, ylog_base_str=None, linear_but_log=False, label=None, scatter_color=BLUE, line_color=RED, line_bound='data', show_list=None, round_digit_dict=None, round_format_dict=None, text_size=FONT_SIZE, scatter_kwargs=None, line_kwargs=None, text_kwargs=None, regress_kwargs=None, show_scatter=True, scatter_mode='original'):
+def plt_linregress(ax, x, y, xlog=False, ylog=False, xlog_base=10, ylog_base=10, xlog_base_str=None, ylog_base_str=None, linear_but_log=False, label=None, scatter_color=BLUE, line_color=RED, line_bound='data', show_list=None, round_digit_dict=None, round_format_dict=None, text_size=None, scatter_kwargs=None, line_kwargs=None, text_kwargs=None, regress_kwargs=None, show_scatter=True, scatter_mode='original'):
     '''
     使用线性回归结果绘制散点图和回归线,可以输入scatter的其他参数
 
@@ -16021,6 +16049,8 @@ def plt_linregress(ax, x, y, xlog=False, ylog=False, xlog_base=10, ylog_base=10,
         text_kwargs = {}
     if show_list is None:
         show_list = ['r', 'p']
+    if text_size is None:
+        text_size = FONT_SIZE
 
     x = np.array(x)
     y = np.array(y)
@@ -16429,7 +16459,7 @@ def plt_cdf(ax, data, label=None, color=BLUE, vert=True, **kwargs):
     return plt_line(ax, cdf.x, cdf.y, label=label, color=color, vert=vert, **kwargs)
 
 
-def plt_compare_cdf_ks(ax, data1, data2, label1=None, label2=None, color1=BLUE, color2=RED, vert=True, text_x=TEXT_X, text_y=TEXT_Y, fontsize=FONT_SIZE, round_digit_dict=None, round_format_dict=None, show_list=None, text_kwargs=None, cdf_kwargs=None):
+def plt_compare_cdf_ks(ax, data1, data2, label1=None, label2=None, color1=BLUE, color2=RED, vert=True, text_x=TEXT_X, text_y=TEXT_Y, fontsize=None, round_digit_dict=None, round_format_dict=None, show_list=None, text_kwargs=None, cdf_kwargs=None):
     '''
     使用两组数据绘制累积分布函数图,并计算K-S检验的p值
     :param ax: matplotlib的轴对象,用于绘制图形
@@ -16443,6 +16473,8 @@ def plt_compare_cdf_ks(ax, data1, data2, label1=None, label2=None, color1=BLUE, 
     '''
     if cdf_kwargs is None:
         cdf_kwargs = {}
+    if fontsize is None:
+        fontsize = FONT_SIZE
 
     plt_cdf(ax, data1, label=label1, color=color1, vert=vert, **cdf_kwargs)
     plt_cdf(ax, data2, label=label2, color=color2, vert=vert, **cdf_kwargs)
@@ -16611,7 +16643,7 @@ def plt_polygon_heatmap(ax, xy_dict, value_dict, mask=None, mask_color=MASK_COLO
         return add_side_colorbar(ax, cmap=cmap, norm_mode=norm_mode, vmin=vmin, vmax=vmax, norm_kwargs=norm_kwargs, cbar_label=cbar_label, cbar_position=cbar_position, use_mask=use_mask, mask_color=mask_color, **cbar_kwargs)
 
 
-def plt_qq_plot(ax, data_x, data_y, n_quantiles=None, scatter_color=BLUE, line_color=RED, scatter_kwargs=None, line_kwargs=None, text_x=TEXT_X, text_y=TEXT_Y, show_list=None, round_digit_dict=None, round_format_dict=None, fontsize=FONT_SIZE, text_kwargs=None):
+def plt_qq_plot(ax, data_x, data_y, n_quantiles=None, scatter_color=BLUE, line_color=RED, scatter_kwargs=None, line_kwargs=None, text_x=TEXT_X, text_y=TEXT_Y, show_list=None, round_digit_dict=None, round_format_dict=None, fontsize=None, text_kwargs=None):
     """
     绘制QQ图
     :param ax: matplotlib的轴对象
@@ -16635,6 +16667,8 @@ def plt_qq_plot(ax, data_x, data_y, n_quantiles=None, scatter_color=BLUE, line_c
         scatter_kwargs = {}
     if line_kwargs is None:
         line_kwargs = {}
+    if fontsize is None:
+        fontsize = FONT_SIZE
     plt_scatter(ax, quantiles_x, quantiles_y, color=scatter_color, **scatter_kwargs)
     plt_line(ax, [quantiles_x.min(), quantiles_x.max()], [quantiles_y.min(), quantiles_y.max()], color=line_color, **line_kwargs)
 
@@ -16647,7 +16681,7 @@ def plt_qq_plot(ax, data_x, data_y, n_quantiles=None, scatter_color=BLUE, line_c
     ax.set_title('QQ Plot')
 
 
-def plt_pp_plot(ax, data_x, data_y, n_points=None, scatter_color=BLUE, line_color=RED, scatter_kwargs=None, line_kwargs=None, text_x=TEXT_X, text_y=TEXT_Y, show_list=None, round_digit_dict=None, round_format_dict=None, fontsize=FONT_SIZE, text_kwargs=None):
+def plt_pp_plot(ax, data_x, data_y, n_points=None, scatter_color=BLUE, line_color=RED, scatter_kwargs=None, line_kwargs=None, text_x=TEXT_X, text_y=TEXT_Y, show_list=None, round_digit_dict=None, round_format_dict=None, fontsize=None, text_kwargs=None):
     """
     绘制PP图
     :param ax: matplotlib的轴对象
@@ -16675,6 +16709,8 @@ def plt_pp_plot(ax, data_x, data_y, n_points=None, scatter_color=BLUE, line_colo
         scatter_kwargs = {}
     if line_kwargs is None:
         line_kwargs = {}
+    if fontsize is None:
+        fontsize = FONT_SIZE
     
     # 绘制散点图
     plt_scatter(ax, cdf_x, cdf_y, color=scatter_color, **scatter_kwargs)
@@ -16898,7 +16934,7 @@ def plt_vstack(ax, x, y_values, z_sets, cmap=CMAP, alpha=FAINT_ALPHA):
 
 
 # region 复杂作图函数(matplotlib系列,输入dataframe使用)
-def plt_scatter_heatmap(ax, color_data, size_data, cmap=HEATMAP_CMAP, edgecolor=RANA, vnorm_mode='linear', vmin=None, vmax=None, vnorm_kwargs=None, snorm_mode='linear', smin=None, smax=None, snorm_kwargs=None, rel_smap=partial(scale_to_new_range, old_min=0, old_max=1, new_min=0.05, new_max=0.95), smask=None, smask_marker='X', smask_smap_float=1.0, smask_text='mask', cmask=None, cmask_color=MASK_COLOR, cmask_text='mask', add_cbar=True, cbar_position=None, cbar_label=None, size_label=None, align_label_coord=4, xtick_rotation=XTICK_ROTATION, ytick_rotation=YTICK_ROTATION, show_xtick=True, show_ytick=True, show_all_xtick=True, show_all_ytick=True, xtick_fontsize=TICK_SIZE, ytick_fontsize=TICK_SIZE, grid_kwargs=None, scatter_kwargs=None, cbar_kwargs=None, scatter_cbar_kwargs=None, inset_mode='fig'):
+def plt_scatter_heatmap(ax, color_data, size_data, cmap=HEATMAP_CMAP, edgecolor=RANA, vnorm_mode='linear', vmin=None, vmax=None, vnorm_kwargs=None, snorm_mode='linear', smin=None, smax=None, snorm_kwargs=None, rel_smap=partial(scale_to_new_range, old_min=0, old_max=1, new_min=0.05, new_max=0.95), smask=None, smask_marker='X', smask_smap_float=1.0, smask_text='mask', cmask=None, cmask_color=MASK_COLOR, cmask_text='mask', add_cbar=True, cbar_position=None, cbar_label=None, size_label=None, align_label_coord=4, xtick_rotation=XTICK_ROTATION, ytick_rotation=YTICK_ROTATION, show_xtick=True, show_ytick=True, show_all_xtick=True, show_all_ytick=True, xtick_fontsize=None, ytick_fontsize=None, grid_kwargs=None, scatter_kwargs=None, cbar_kwargs=None, scatter_cbar_kwargs=None, inset_mode='fig'):
     '''
     使用DataFrame绘制圆形热图
     :param ax: matplotlib的轴对象,用于绘制图形
@@ -16927,6 +16963,10 @@ def plt_scatter_heatmap(ax, color_data, size_data, cmap=HEATMAP_CMAP, edgecolor=
     cbar_kwargs = update_dict({}, cbar_kwargs)
     scatter_cbar_kwargs = update_dict({}, scatter_cbar_kwargs)
     snorm_kwargs = update_dict({'clip': True}, snorm_kwargs) # 默认clip=True,不然如果产生负的size会报错
+    if xtick_fontsize is None:
+        xtick_fontsize = TICK_SIZE
+    if ytick_fontsize is None:
+        ytick_fontsize = TICK_SIZE
 
     # 将数据转换为dataframe
     if isinstance(color_data, np.ndarray):
@@ -17444,7 +17484,7 @@ def add_vline_extreme_value(ax, x, y, extreme_type, label=None, color=None, line
 
 
 # region 复杂作图函数(添加文字)
-def add_text_by_dict(ax, text_dict, show_list=None, round_digit_dict=None, round_format_dict=None, unit_dict=None, unit_mode='()', color_dict=None, fontsize=FONT_SIZE, text_x=TEXT_X, text_y=TEXT_Y, text_process=None, text_kwargs=None):
+def add_text_by_dict(ax, text_dict, show_list=None, round_digit_dict=None, round_format_dict=None, unit_dict=None, unit_mode='()', color_dict=None, fontsize=None, text_x=TEXT_X, text_y=TEXT_Y, text_process=None, text_kwargs=None):
     '''
     利用dict的key和value添加文字(每个key一行)
     
@@ -17474,6 +17514,8 @@ def add_text_by_dict(ax, text_dict, show_list=None, round_digit_dict=None, round
         unit_dict = {key: None for key in show_list}
     if color_dict is None:
         color_dict = {key: BLACK for key in show_list}
+    if fontsize is None:
+        fontsize = FONT_SIZE
     text_process = update_dict(TEXT_PROCESS, text_process)
     if text_kwargs is None:
         text_kwargs = {}
@@ -17727,7 +17769,7 @@ def get_zorder_dict(ax, include_axes=False):
 
 
 @to_be_improved
-def show_zorder(ax, include_axes=False, font_size=FONT_SIZE, color=RED, alpha=FAINT_ALPHA):
+def show_zorder(ax, include_axes=False, font_size=None, color=RED, alpha=FAINT_ALPHA):
     '''
     在图上显示所有对象的zorder值.
     
@@ -17738,6 +17780,8 @@ def show_zorder(ax, include_axes=False, font_size=FONT_SIZE, color=RED, alpha=FA
         color: 文本的颜色.
         alpha: 文本的透明度.
     '''
+    if font_size is None:
+        font_size = FONT_SIZE
     zorder_dict = get_zorder_dict(ax, include_axes)
     max_zorder = np.max(list(zorder_dict.values())) + 1
     
@@ -18551,7 +18595,7 @@ def label_title_process(x_label, y_label, z_label, title, text_process=None):
     return format_text(x_label, text_process), format_text(y_label, text_process), format_text(z_label, text_process), format_text(title, text_process)
 
 
-def set_fig_title(fig, title, text_process=None, title_size=SUP_TITLE_SIZE, **kwargs):
+def set_fig_title(fig, title, text_process=None, title_size=None, **kwargs):
     '''
     设置图形的标题
 
@@ -18563,6 +18607,8 @@ def set_fig_title(fig, title, text_process=None, title_size=SUP_TITLE_SIZE, **kw
     - kwargs: 传递给fig.suptitle的其他参数,比如y值,可以控制标题的位置
     '''
     text_process = update_dict(TEXT_PROCESS, text_process)
+    if title_size is None:
+        title_size = SUP_TITLE_SIZE
 
     # 处理标题
     local_title = format_text(title, text_process)
@@ -18575,11 +18621,13 @@ def add_fig_title(*args, **kwargs):
     return set_fig_title(*args, **kwargs)
 
 
-def add_axes_title(axes, title, text_process=None, title_size=TITLE_SIZE, pad=50., **kwargs):
+def add_axes_title(axes, title, text_process=None, title_size=None, pad=50., **kwargs):
     '''
     在多个ax的中间添加标题
     '''
     text_process = update_dict(TEXT_PROCESS, text_process)
+    if title_size is None:
+        title_size = TITLE_SIZE
     title = format_text(title, text_process)
 
     merged_ax = merge_ax(axes, rm_mode=False)
@@ -18588,11 +18636,13 @@ def add_axes_title(axes, title, text_process=None, title_size=TITLE_SIZE, pad=50
     rm_ax_axis(merged_ax)
 
 
-def add_axes_xylabel(axes, xlabel=None, ylabel=None, text_process=None, label_size=TITLE_SIZE, pad=30., **kwargs):
+def add_axes_xylabel(axes, xlabel=None, ylabel=None, text_process=None, label_size=None, pad=30., **kwargs):
     '''
     给多个ax添加xylabel,例如一列ax的ylabel位于中间位置
     '''
     text_process = update_dict(TEXT_PROCESS, text_process)
+    if label_size is None:
+        label_size = TITLE_SIZE
     xlabel = format_text(xlabel, text_process)
     ylabel = format_text(ylabel, text_process)
 
@@ -18609,12 +18659,14 @@ def get_tick_size(ax):
     return x_tick_size, y_tick_size
 
 
-def suitable_tick_size(num_ticks, plt_size, tick_size=TICK_SIZE, proportion=TICK_PROPORTION):
+def suitable_tick_size(num_ticks, plt_size, tick_size=None, proportion=TICK_PROPORTION):
     '''
     Adjusts the font size of the tick labels based on the number of ticks and the size of the axis.
 
     plt_size是标量,单位inch
     '''
+    if tick_size is None:
+        tick_size = TICK_SIZE
     if num_ticks == 0:
         return tick_size
     suitable_tick_size = inch_to_point(plt_size) / num_ticks * proportion
@@ -18727,12 +18779,14 @@ def rm_ax_legend(ax):
         legend.remove()
 
 @iterate_over_axs
-def set_ax_legend(ax, loc=LEGEND_LOC, fontsize=LEGEND_SIZE, bbox_to_anchor=None, text_process=None, rm_exist_legend=True, ncols=1, facecolor='inherit', edgecolor='0.8', labelcolor=None, **kwargs):
+def set_ax_legend(ax, loc=LEGEND_LOC, fontsize=None, bbox_to_anchor=None, text_process=None, rm_exist_legend=True, ncols=1, facecolor='inherit', edgecolor='0.8', labelcolor=None, **kwargs):
     '''
     facecolor: 图例框的颜色,默认为'inherit';如果想要不设置,可以设置为'none'或者'None'(注意这个是字符串)
     edgecolor: 图例框的边框颜色,默认为'0.8';如果想要不设置,可以设置为'none'或者'None'(注意这个是字符串)
     labelcolor: label中文字的颜色,如果需要和line,scatter一致,可以设置为'linecolor'
     '''
+    if fontsize is None:
+        fontsize = LEGEND_SIZE
     if rm_exist_legend:
         # 去掉已有的图例
         rm_ax_legend(ax)
@@ -18749,7 +18803,7 @@ def set_ax_legend(ax, loc=LEGEND_LOC, fontsize=LEGEND_SIZE, bbox_to_anchor=None,
 
 # region 通用函数(一键调整ax)
 @iterate_over_axs
-def set_ax(ax, xlabel=None, ylabel=None, zlabel=None, xlabel_pad=LABEL_PAD, ylabel_pad=LABEL_PAD, zlabel_pad=LABEL_PAD, title=None, title_pad=TITLE_PAD, text_process=None, title_size=TITLE_SIZE, label_size=LABEL_SIZE, tick_size=TICK_SIZE, xtick=None, ytick=None, ztick=None, xtick_label=None, ytick_label=None, ztick_label=None, xtick_size=None, ytick_size=None, ztick_size=None, xtick_rotation=None, ytick_rotation=None, adjust_tick_size=True, tick_proportion=TICK_PROPORTION, legend=True, legend_size=LEGEND_SIZE, xlim=None, ylim=None, zlim=None, xlog=False, ylog=False, zlog=False, elev=None, azim=None, legend_loc=LEGEND_LOC, bbox_to_anchor=None, rm_exist_legend=True, legend_kwargs=None, tight_layout=False, reset_scale=False):
+def set_ax(ax, xlabel=None, ylabel=None, zlabel=None, xlabel_pad=None, ylabel_pad=None, zlabel_pad=None, title=None, title_pad=None, text_process=None, title_size=None, label_size=None, tick_size=None, xtick=None, ytick=None, ztick=None, xtick_label=None, ytick_label=None, ztick_label=None, xtick_size=None, ytick_size=None, ztick_size=None, xtick_rotation=None, ytick_rotation=None, adjust_tick_size=True, tick_proportion=TICK_PROPORTION, legend=True, legend_size=None, xlim=None, ylim=None, zlim=None, xlog=False, ylog=False, zlog=False, elev=None, azim=None, legend_loc=LEGEND_LOC, bbox_to_anchor=None, rm_exist_legend=True, legend_kwargs=None, tight_layout=False, reset_scale=False):
     '''
     设置图表的轴,标题,范围和图例
 
@@ -18773,6 +18827,24 @@ def set_ax(ax, xlabel=None, ylabel=None, zlabel=None, xlabel_pad=LABEL_PAD, ylab
     '''
     text_process = update_dict(TEXT_PROCESS, text_process)
     legend_kwargs = update_dict({}, legend_kwargs)
+
+    if xlabel_pad is None:
+        xlabel_pad = LABEL_PAD
+    if ylabel_pad is None:
+        ylabel_pad = LABEL_PAD
+    if zlabel_pad is None:
+        zlabel_pad = LABEL_PAD
+    if title_pad is None:
+        title_pad = TITLE_PAD
+    if title_size is None:
+        title_size = TITLE_SIZE
+    if label_size is None:
+        label_size = LABEL_SIZE
+    if tick_size is None:
+        tick_size = TICK_SIZE
+    if legend_size is None:
+        legend_size = LEGEND_SIZE
+
     if xtick_rotation is None:
         xtick_rotation = get_tick_rotation(ax, 'x')
     if ytick_rotation is None:
