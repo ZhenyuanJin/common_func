@@ -189,6 +189,8 @@ TICK_SIZE = FONT_SIZE*4/3     # 默认刻度标签字体大小
 LEGEND_SIZE = FONT_SIZE*4/3     # 默认图例字体大小
 LINE_WIDTH = 3     # 默认线宽
 MARKER_SIZE = LINE_WIDTH*2     # 默认标记大小,注意散点图的s是面积,markersize是直径
+LEGEND_FRAME_LINEWIDTH = LINE_WIDTH / 3     # 默认图例外框线宽
+ERRORBAR_LINEWIDTH = LINE_WIDTH     # 默认误差线线宽
 AX_WIDTH = 5   # 默认图形宽度(单个图形)
 AX_HEIGHT = 5   # 默认图形高度(单个图形)
 FIG_SIZE = (AX_WIDTH / ( MARGIN['right'] - MARGIN['left'] ), AX_HEIGHT / ( MARGIN['top'] - MARGIN['bottom'] ))     # 默认图形大小
@@ -288,14 +290,15 @@ def set_font_size_paper_mode():
     )
 
 
-def set_line_style(line_width=3., marker_size=None, tick_major_width=None, tick_minor_width=None, tick_major_size=None, tick_minor_size=None, axes_linewidth=None, star_size=None):
+def set_line_style(line_width=3., marker_size=None, tick_major_width=None, tick_minor_width=None, tick_major_size=None, tick_minor_size=None, axes_linewidth=None, star_size=None, legend_frame_linewidth=None, errorbar_linewidth=None):
     '''
     设置线宽/标记大小/刻度线宽度与长度等全局参数.
     与set_font_size类似: 输入基础line_width后,其余参数可选覆盖,不输入时按默认比例自动生成.
     '''
     global LINE_WIDTH, MARKER_SIZE, AXES_LINEWIDTH
     global TICK_MAJOR_WIDTH, TICK_MINOR_WIDTH, TICK_MAJOR_SIZE, TICK_MINOR_SIZE
-    global STAR_SIZE, ARROW_PROPS
+    global STAR_SIZE, ARROW_PROPS, LEGEND_FRAME_LINEWIDTH, ERRORBAR_LINEWIDTH
+    global PLT_CAP_SIZE, PLT_CAP_SIZE_RATIO
 
     if marker_size is None:
         marker_size = line_width * 2
@@ -311,6 +314,10 @@ def set_line_style(line_width=3., marker_size=None, tick_major_width=None, tick_
         axes_linewidth = line_width
     if star_size is None:
         star_size = line_width * 5
+    if legend_frame_linewidth is None:
+        legend_frame_linewidth = line_width / 3
+    if errorbar_linewidth is None:
+        errorbar_linewidth = line_width
 
     LINE_WIDTH = line_width
     MARKER_SIZE = marker_size
@@ -320,12 +327,16 @@ def set_line_style(line_width=3., marker_size=None, tick_major_width=None, tick_
     TICK_MAJOR_SIZE = tick_major_size
     TICK_MINOR_SIZE = tick_minor_size
     STAR_SIZE = star_size
+    PLT_CAP_SIZE = line_width * PLT_CAP_SIZE_RATIO
+    LEGEND_FRAME_LINEWIDTH = legend_frame_linewidth
+    ERRORBAR_LINEWIDTH = errorbar_linewidth
     ARROW_PROPS['linewidth'] = LINE_WIDTH
 
     plt.rcParams.update({
         'axes.linewidth': AXES_LINEWIDTH,
         'lines.linewidth': LINE_WIDTH,
         'lines.markersize': MARKER_SIZE,
+        'patch.linewidth': LEGEND_FRAME_LINEWIDTH,
         'xtick.major.width': TICK_MAJOR_WIDTH,
         'xtick.minor.width': TICK_MINOR_WIDTH,
         'ytick.major.width': TICK_MAJOR_WIDTH,
@@ -368,6 +379,7 @@ plt.rcParams['axes.spines.bottom'] = BOTTOM_SPINE    # 设定下方的轴脊柱
 plt.rcParams['axes.linewidth'] = AXES_LINEWIDTH    # 设置坐标轴线宽
 plt.rcParams['lines.linewidth'] = LINE_WIDTH    # 线宽
 plt.rcParams['lines.markersize'] = MARKER_SIZE    # 标记大小
+plt.rcParams['patch.linewidth'] = LEGEND_FRAME_LINEWIDTH    # patch线宽(含legend外框)
 plt.rcParams['savefig.format'] = SAVEFIG_FORMAT    # 保存图形的格式
 plt.rcParams['figure.dpi'] = FIG_DPI      # 图形的分辨率
 plt.rcParams['savefig.dpi'] = SAVEFIG_DPI      # 保存图像的分辨率
@@ -424,8 +436,8 @@ YTICK_ROTATION = 0
 STAR = '*'
 STAR_SIZE = LINE_WIDTH*5
 AUXILIARY_LINE_STYLE = '--'
-PLT_CAP_SIZE = 5
-SNS_CAP_SIZE = 0.1
+PLT_CAP_SIZE_RATIO = 1.
+PLT_CAP_SIZE = LINE_WIDTH * PLT_CAP_SIZE_RATIO
 ARROW_STYLE = '-|>'
 ARROW_HEAD_WIDTH = 0.3
 ARROW_HEAD_LENGTH = 0.5
@@ -11882,17 +11894,25 @@ def plt_bar(ax, x, y, label=None, color=BLUE, vert=True, equal_space=False, err=
         # 将x的每个元素变为字符串
         x = [str(i) for i in x]
 
-    # 添加elabel
+    error_kw = kwargs.pop('error_kw', None)
     if err is not None:
+        if error_kw is None:
+            error_kw = {}
+        if 'elinewidth' not in error_kw:
+            error_kw['elinewidth'] = ERRORBAR_LINEWIDTH
+        if 'capthick' not in error_kw:
+            error_kw['capthick'] = ERRORBAR_LINEWIDTH
+
+        # 添加elabel
         add_errorbar(ax, x, y, err, vert=vert, label=elabel,
                      color=ecolor, capsize=capsize, **kwargs)
     
     if vert:
         # 绘制垂直柱状图
-        return ax.bar(x, y, label=label, color=color, yerr=err, capsize=capsize, ecolor=ecolor, width=width, **kwargs)
+        return ax.bar(x, y, label=label, color=color, yerr=err, capsize=capsize, ecolor=ecolor, width=width, error_kw=error_kw, **kwargs)
     else:
         # 绘制水平柱状图
-        return ax.barh(x, y, label=label, color=color, xerr=err, capsize=capsize, ecolor=ecolor, height=width, **kwargs)
+        return ax.barh(x, y, label=label, color=color, xerr=err, capsize=capsize, ecolor=ecolor, height=width, error_kw=error_kw, **kwargs)
 
 
 def plt_stair(ax, x, y, label=None, color=BLUE, **kwargs):
@@ -12537,249 +12557,6 @@ def plt_stem_3d(ax, x, y, z, label=None, linefmt='-', markerfmt='o', basefmt='k-
 # endregion
 
 
-# region 初级作图函数(sns系列,输入向量使用)
-def sns_scatter(ax, x, y, label=None, color=BLUE, linewidth=0, **kwargs):
-    '''
-    使用x和y绘制散点图,可以接受sns.scatterplot的其他参数
-    :param ax: matplotlib的轴对象,用于绘制图形
-    :param x: x轴的数据
-    :param y: y轴的数据
-    :param label: 图例标签,默认为None
-    :param color: 散点图的颜色,默认为BLUE
-    :param kwargs: 其他sns.scatterplot支持的参数
-    '''
-    # 画图
-    sns.scatterplot(x=x, y=y, ax=ax, label=label, color=color,
-                    linewidth=linewidth, **kwargs)
-
-
-def sns_line(ax, x, y, label=None, color=BLUE, **kwargs):
-    '''
-    使用x和y绘制折线图,可以接受sns.lineplot的其他参数
-    :param ax: matplotlib的轴对象,用于绘制图形
-    :param x: x轴的数据
-    :param y: y轴的数据
-    :param label: 图例标签,默认为None
-    :param color: 折线图的颜色,默认为BLUE
-    :param kwargs: 其他sns.lineplot支持的参数
-    '''
-    # 画图
-    sns.lineplot(x=x, y=y, ax=ax, label=label, color=color, **kwargs)
-
-
-def sns_bar(ax, x, y, label=None, bar_width=BAR_WIDTH, color=BLUE, orient='v', **kwargs):
-    '''
-    使用x和y绘制柱状图,可以接受sns.barplot的其他参数,特别注意,如果x需要展现出数字大小而不是等距,需要使用plt_bar函数
-    :param ax: matplotlib的轴对象,用于绘制图形
-    :param x: x轴的数据
-    :param y: y轴的数据
-    :param label: 图例标签,默认为None
-    :param bar_width: 柱状图的宽度,默认为0.4
-    :param color: 柱状图的颜色,默认为BLUE
-    :param orient: 柱状图的方向,默认为'v',即纵向
-    :param kwargs: 其他sns.barplot支持的参数
-    '''
-
-    # 画图
-    if orient == 'v':
-        sns.barplot(x=x, y=y, ax=ax, label=label, width=bar_width,
-                    color=color, orient=orient, **kwargs)
-    if orient == 'h':
-        sns.barplot(y=x, x=y, ax=ax, label=label, width=bar_width,
-                    color=color, orient=orient, **kwargs)
-
-
-def sns_box(ax, x, y, label=None, color=BLUE, **kwargs):
-    '''
-    使用x和y绘制箱形图,可以接受sns.boxplot的其他参数(和plt_box的输入方式完全不同,请注意并参考示例)
-    :param ax: matplotlib的轴对象,用于绘制图形
-    :param x: x轴的数据,应为一个列表或数组,其长度与y中的数据集合数量相匹配.示例:x = ['A', 'A', 'B', 'B', 'C', 'C', 'C']
-    :param y: y轴的数据,每个位置的数据应该是一个列表或数组.示例:y = [1, 2, 1, 2, 1, 2, 3]
-    :param label: 图例标签,默认为None
-    :param color: 箱形图的颜色,默认为BLUE
-    :param kwargs: 其他sns.boxplot支持的参数
-    '''
-    sns.boxplot(x=x, y=y, ax=ax, color=color, **kwargs)
-    if label:
-        # 添加一个高度为0的bar,用于添加图例
-        ax.bar(x[0], 0, width=0, bottom=np.nanmean(y[0]),
-               color=color, linewidth=0, label=label, **kwargs)
-
-
-def sns_hist(ax, data, bins=BIN_NUM, label=None, color=BLUE, log_scale=False, stat='probability', vert=True, **kwargs):
-    '''
-    使用数据绘制直方图,可以接受sns.histplot的其他参数(推荐使用)
-    :param ax: matplotlib的轴对象,用于绘制图形
-    :param data: 用于绘制直方图的数据(一维数组或列表)
-    :param bins: 直方图的箱数,默认为None,自动确定箱数
-    :param label: 图例标签,默认为None
-    :param color: 直方图的颜色,默认为BLUE
-    :param log_scale: 是否使用对数刻度,默认为False
-    :param stat: 统计类型,默认为'probability'.'count': show the number of observations in each bin;'frequency': show the number of observations divided by the bin width;'probability' or 'proportion': normalize such that bar heights sum to 1;'percent': normalize such that bar heights sum to 100;'density': normalize such that the total area of the histogram equals 1
-    :param vert: 是否垂直显示,默认为True
-    :param kwargs: 其他sns.histplot支持的参数
-    '''
-    # 画图
-    if vert:
-        sns.histplot(data, bins=bins, label=label, color=color, ax=ax, log_scale=log_scale, stat=stat, **kwargs)
-    else:
-        local_data = pd.DataFrame({'temp': data})
-        original_ylabel = ax.get_ylabel()
-        sns.histplot(local_data, y='temp', bins=bins, label=label, color=color, ax=ax, log_scale=log_scale, stat=stat, **kwargs)
-        ax.set_ylabel(original_ylabel)
-# endregion
-
-
-# region 初级作图函数(sns系列,输入pd dataframe或series使用)
-def sns_scatter_pd(ax, data, x=None, y=None, label=None, color=BLUE, **kwargs):
-    '''
-    使用data的x和y列绘制散点图,可以接受sns.scatterplot的其他参数;当x为'index'时,使用DataFrame的索引作为x轴;对于Series,使用索引作为x轴,值作为y轴;当x列有重复,则会自动合并重复的x列并在对应位置绘制多个散点图.
-    :param ax: matplotlib的轴对象,用于绘制图形
-    :param data: 用于绘制散点图的数据集
-    :param x: x轴的列名
-    :param y: y轴的列名
-    :param label: 图例标签,默认为None
-    :param color: 散点图的颜色,默认为BLUE
-    :param kwargs: 其他sns.scatterplot支持的参数
-    '''
-    # 画图
-    if isinstance(data, pd.Series):
-        # 对于Series,使用索引作为x轴,值作为y轴
-        sns.scatterplot(x=data.index, y=data.values, ax=ax,
-                        label=label, color=color, **kwargs)
-        ax.set_xlabel(data.index.name)
-        ax.set_ylabel(data.name)
-    elif isinstance(data, pd.DataFrame):
-        if x == 'index':
-            # 将索引作为一个列用于绘图
-            sns.scatterplot(data=data.reset_index(), x='index',
-                            y=y, ax=ax, label=label, color=color, **kwargs)
-            ax.set_xlabel(data.index.name)
-        else:
-            sns.scatterplot(data=data, x=x, y=y, ax=ax,
-                            label=label, color=color, **kwargs)
-
-
-def sns_line_pd(ax, data, x=None, y=None, label=None, color=BLUE, **kwargs):
-    '''
-    使用data的x和y列绘制折线图,可以接受sns.lineplot的其他参数;当x为'index'时,使用DataFrame的索引作为x轴;对于Series,使用索引作为x轴,值作为y轴;当x列有重复,则会自动合并重复的x列并计算y的均值和标准误差,作为折线图的值和误差线.
-    :param ax: matplotlib的轴对象,用于绘制图形.
-    :param data: 用于绘制折线图的数据集,可以是pd.Series或pd.DataFrame.
-    :param x: x轴的列名或'index',对于pd.DataFrame有效.
-    :param y: y轴的列名,对于pd.DataFrame有效.
-    :param label: 图例标签,默认为None.
-    :param color: 折线图的颜色,默认为BLUE.
-    :param kwargs: 其他sns.lineplot支持的参数.
-    '''
-    if isinstance(data, pd.Series):
-        # 对于Series,使用索引作为x轴,值作为y轴
-        sns.lineplot(x=data.index, y=data.values, ax=ax,
-                     label=label, color=color, **kwargs)
-        ax.set_xlabel(data.index.name)
-        ax.set_ylabel(data.name)
-    elif isinstance(data, pd.DataFrame):
-        if x == 'index':
-            # 将索引作为一个列用于绘图
-            sns.lineplot(data=data.reset_index(), x='index', y=y,
-                         ax=ax, label=label, color=color, **kwargs)
-            ax.set_xlabel(data.index.name)
-        else:
-            sns.lineplot(data=data, x=x, y=y, ax=ax,
-                         label=label, color=color, **kwargs)
-
-
-def sns_bar_pd(ax, data, x=None, y=None, label=None, bar_width=BAR_WIDTH, color=BLUE, capsize=SNS_CAP_SIZE, err_kws=None, orient='v', **kwargs):
-    '''
-    使用data的x和y列或索引和值绘制柱状图,可以接受sns.barplot的其他参数,现支持DataFrame和Series.对于dataframe,假如x列都不重复,则会自动变成等距离排列,假设x列有重复,则会自动合并重复的x列并计算y的均值和标准误差,作为柱状图的值和误差线.假如x为index,则会使用DataFrame的索引作为x轴,由于index是不重复的,所以会自动变成等距离排列.对于Series,自动使用series的index和值作图
-    :param ax: matplotlib的轴对象,用于绘制图形
-    :param data: 用于绘制柱状图的DataFrame或Series
-    :param x: x轴的列名或为'index'时使用DataFrame的索引;对于Series,保持为None
-    :param y: y轴的列名;对于Series,此参数不使用
-    :param label: 图例标签,默认为None
-    :param bar_width: 柱状图的宽度,默认为BAR_WIDTH
-    :param color: 柱状图的颜色,默认为BLUE
-    :param capsize: 误差线帽大小,默认为SNS_CAP_SIZE
-    :param err_kws: 误差线的属性,默认为{'color': BLACK}
-    :param kwargs: 其他sns.barplot支持的参数
-    '''
-    if err_kws is None:
-        err_kws = {'color': BLACK}
-
-    if isinstance(data, pd.Series):
-        plot_data = data.reset_index()
-        plot_data.columns = ['index', data.name or 'value']
-        if orient == 'v':
-            sns.barplot(x='index', y=data.name or 'value', ax=ax, data=plot_data, width=bar_width,
-                        color=color, label=label, capsize=capsize, err_kws=err_kws, **kwargs)
-            ax.set_xlabel(data.index.name)
-            ax.set_ylabel(data.name)
-        else:
-            sns.barplot(x=data.name or 'value', y='index', ax=ax, data=plot_data, width=bar_width,
-                        color=color, label=label, orient=orient, capsize=capsize, err_kws=err_kws, **kwargs)
-            ax.set_ylabel(data.index.name)
-            ax.set_xlabel(data.name)
-    elif isinstance(data, pd.DataFrame):
-        if x == 'index':
-            plot_data = data.reset_index()
-            if orient == 'v':
-                sns.barplot(x='index', y=y, ax=ax, data=plot_data, width=bar_width,
-                            color=color, label=label, capsize=capsize, err_kws=err_kws, **kwargs)
-                ax.set_xticks(range(len(plot_data['index'])))
-                ax.set_xticklabels(plot_data['index'])
-                # 重置x轴标签
-                ax.set_xlabel('')
-            else:
-                sns.barplot(x=y, y='index', ax=ax, data=plot_data, width=bar_width, color=color,
-                            label=label, orient=orient, capsize=capsize, err_kws=err_kws, **kwargs)
-                ax.set_yticks(range(len(plot_data['index'])))
-                ax.set_yticklabels(plot_data['index'])
-                # 重置y轴标签
-                ax.set_ylabel('')
-        else:
-            if orient == 'v':
-                sns.barplot(x=x, y=y, ax=ax, data=data, width=bar_width, color=color,
-                            label=label, capsize=capsize, err_kws=err_kws, **kwargs)
-            else:
-                sns.barplot(x=y, y=x, ax=ax, data=data, width=bar_width, color=color,
-                            label=label, orient=orient, capsize=capsize, err_kws=err_kws, **kwargs)
-
-
-def sns_hist_pd(ax, data, x=None, bins=BIN_NUM, label=None, color=BLUE, **kwargs):
-    '''
-    使用data的x列绘制直方图,可以接受sns.histplot的其他参数,此函数自动兼容DataFrame和Series,但是series状态需要保证x为None
-    :param ax: matplotlib的轴对象,用于绘制图形
-    :param data: 用于绘制直方图的数据集
-    :param x: x轴的列名
-    :param bins: 直方图的箱数,默认为None,自动确定箱数
-    :param label: 图例标签,默认为None
-    :param color: 直方图的颜色,默认为BLUE
-    :param kwargs: 其他sns.histplot支持的参数
-    '''
-    # 画图
-    sns.histplot(data=data, x=x, bins=bins, label=label,
-                 color=color, ax=ax, **kwargs)
-    if isinstance(data, pd.Series):
-        ax.set_xlabel('')
-
-
-def sns_box_pd(ax, data, x, y, color=BLUE, orient='v', **kwargs):
-    '''
-    使用data的x和y列绘制箱形图,可以接受sns.boxplot的其他参数
-    :param ax: matplotlib的轴对象,用于绘制图形
-    :param data: 用于绘制箱形图的数据集
-    :param x: x轴的列名
-    :param y: y轴的列名
-    :param color: 箱形图的颜色,默认为BLUE
-    :param kwargs: 其他sns.boxplot支持的参数
-    '''
-    # 画图
-    if orient == 'v':
-        sns.boxplot(data=data, x=x, y=y, ax=ax, color=color, **kwargs)
-    if orient == 'h':
-        sns.boxplot(data=data, x=y, y=x, ax=ax, color=color, **kwargs)
-# endregion
-
-
 # region 初级作图函数(sns系列,可同时接受矩阵和dataframe)
 def sns_heatmap(ax, data, cmap=HEATMAP_CMAP, square=True, cbar=True, cbar_position=None, cbar_label=None, discrete_label=None, xtick_rotation=XTICK_ROTATION, ytick_rotation=YTICK_ROTATION, show_xtick=True, show_ytick=True, show_all_xtick=True, show_all_ytick=True, xtick_fontsize=None, ytick_fontsize=None, mask=None, mask_color=MASK_COLOR, mask_tick='mask', norm_mode='linear', vmin=None, vmax=None, norm_kwargs=None, text_process=None, heatmap_kwargs=None, cbar_kwargs=None):
     '''
@@ -12924,6 +12701,9 @@ def add_errorbar(ax, x, y, err, label=None, color=BLACK, linestyle='None', capsi
     :param equal_space: 是否将x的值作为字符串处理,这将使得柱子等距排列,默认为False
     :param kwargs: 传递给`ax.errorbar`的额外关键字参数.
     '''
+    if 'elinewidth' not in kwargs:
+        kwargs['elinewidth'] = ERRORBAR_LINEWIDTH
+
     # 检查x中元素是否包含字符串
     if isinstance(x, (list, np.ndarray)):
         x = list(x)
@@ -17290,35 +17070,6 @@ def plt_split_violine_df(ax, df, group_by='columns', colors=None, **kwargs):
     '''
     print('需要加入横纵选项')
     pass
-
-
-def read_sns():
-    print('please see sns gallery and add new function')
-# endregion
-
-
-# region 复杂作图函数(sns系列,输入向量使用)
-def sns_band_line(ax, x, y, band_width, label=None, color=BLUE, alpha=FAINT_ALPHA, **kwargs):
-    '''
-    使用x和y绘制折线图,并添加一个表示误差带的区域
-    :param ax: matplotlib的轴对象,用于绘制图形
-    :param x: x轴的数据
-    :param y: y轴的数据
-    :param band_width: 误差带宽度
-    :param label: 图例标签,默认为None
-    :param color: 折线图的颜色,默认为蓝色
-    :param alpha: 误差带的透明度
-    :param kwargs: 其他sns.lineplot支持的参数
-    '''
-    # 绘制基础折线图
-    sns_line(ax, x, y, label=label, color=color, **kwargs)
-
-    # 计算误差带的上下界
-    y_upper = np.array(y) + np.array(band_width)
-    y_lower = np.array(y) - np.array(band_width)
-
-    # 绘制误差带
-    ax.fill_between(x, y_lower, y_upper, color=color, alpha=alpha)
 # endregion
 
 
@@ -18946,7 +18697,7 @@ def rm_ax_legend(ax):
         legend.remove()
 
 @iterate_over_axs
-def set_ax_legend(ax, loc=LEGEND_LOC, fontsize=None, bbox_to_anchor=None, text_process=None, rm_exist_legend=True, ncols=1, facecolor='inherit', edgecolor='0.8', labelcolor=None, **kwargs):
+def set_ax_legend(ax, loc=LEGEND_LOC, fontsize=None, bbox_to_anchor=None, text_process=None, rm_exist_legend=True, ncols=1, facecolor='inherit', edgecolor='0.8', labelcolor=None, frame_linewidth=None, **kwargs):
     '''
     facecolor: 图例框的颜色,默认为'inherit';如果想要不设置,可以设置为'none'或者'None'(注意这个是字符串)
     edgecolor: 图例框的边框颜色,默认为'0.8';如果想要不设置,可以设置为'none'或者'None'(注意这个是字符串)
@@ -18963,8 +18714,11 @@ def set_ax_legend(ax, loc=LEGEND_LOC, fontsize=None, bbox_to_anchor=None, text_p
     handles, labels = dict(zip(labels, handles)).values(), dict(zip(labels, handles)).keys()
     if labels:
         labels = [format_text(label, text_process) for label in labels]
-        ax.legend(handles, labels, loc=loc,
-                fontsize=fontsize, bbox_to_anchor=bbox_to_anchor, ncols=ncols, facecolor=facecolor, edgecolor=edgecolor, labelcolor=labelcolor, **kwargs)
+        legend = ax.legend(handles, labels, loc=loc,
+            fontsize=fontsize, bbox_to_anchor=bbox_to_anchor, ncols=ncols, facecolor=facecolor, edgecolor=edgecolor, labelcolor=labelcolor, **kwargs)
+        if frame_linewidth is None:
+            frame_linewidth = LEGEND_FRAME_LINEWIDTH
+        legend.get_frame().set_linewidth(frame_linewidth)
 # endregion
 
 
