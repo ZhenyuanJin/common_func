@@ -19239,6 +19239,38 @@ def get_fig_ax(nrows=1, ncols=1, ax_width=AX_WIDTH, ax_height=AX_HEIGHT, fig_wid
     return fig, ax
 
 
+def get_fig_ax_by_fig_width_mm(nrows=1, ncols=1, ax_width=AX_WIDTH, ax_height=AX_HEIGHT, fig_width='single', sharex=False, sharey=False, rm_repeat_tick_label_when_share=RM_REPEAT_TICK_LABEL_WHEN_SHARE, subplots_params=None, squeeze=True, margin=None, label='ax'):
+    '''
+    创建一个图形和轴对象,并以fig宽度(mm)作为主控制量自动推导fig高度.
+
+    参数:
+    - fig_width: 可以是字符串或数值.
+      字符串仅支持 'single'(89 mm) 和 'double'(183 mm).
+      数值按 mm 解释.
+    - ax_width, ax_height: 用于确定布局比例,不会直接决定最终fig宽度.
+    '''
+    subplots_params = update_dict({}, subplots_params)
+    margin = update_dict(MARGIN, margin)
+
+    # 先基于ax尺寸和margin得到基准宽高,再按目标宽度进行等比缩放
+    base_fig_width, base_fig_height = get_suitable_fig_size(nrows=nrows, ncols=ncols, ax_width=ax_width, ax_height=ax_height, margin=margin, which='margin')
+
+    if isinstance(fig_width, str):
+        if fig_width.lower() not in ['single', 'double']:
+            raise ValueError("fig_width string must be 'single' or 'double'.")
+        fig_width_mm = {'single': 89.0, 'double': 183.0}[fig_width.lower()]
+    else:
+        fig_width_mm = fig_width
+
+    fig_width_inch = float(fig_width_mm) / 25.4
+    scale = fig_width_inch / base_fig_width
+    fig_height_inch = base_fig_height * scale
+
+    fig = get_fig(width=fig_width_inch, height=fig_height_inch)
+    ax = get_ax(fig=fig, nrows=nrows, ncols=ncols, sharex=sharex, sharey=sharey, rm_repeat_tick_label_when_share=rm_repeat_tick_label_when_share, margin=margin, squeeze=squeeze, label=label, subplots_params=subplots_params)
+    return fig, ax
+
+
 def gfa(nrows=1, ncols=1, ax_width=AX_WIDTH, ax_height=AX_HEIGHT, fig_width=None, fig_height=None, sharex=False, sharey=False, rm_repeat_tick_label_when_share=RM_REPEAT_TICK_LABEL_WHEN_SHARE, subplots_params=None, squeeze=True, margin=None, label='ax'):
     '''
     get_fig_ax的缩写
