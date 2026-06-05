@@ -97,3 +97,9 @@ Figure 级标题用 `set_fig_title`。子图标签用 `add_ax_tag`、`add_axes_l
 先完成数据含义，再调整外观。样式定制集中放在 `set_ax`、`set_fig_title`、保存函数和少数必要的绘图参数里，避免在代码中散落大量 matplotlib 原生设置。
 
 需要新绘图函数时，遵循现有模式：第一个参数是 `ax`，默认参数优先使用 `common_functions.py` 里的全局常量，内部操作传入的 `ax` 并返回 matplotlib 对象。
+
+## 图中文字标注
+
+在图中添加指标、拟合参数、统计量、说明文字或面板内文本时，优先使用 common_functions.py 中的文本接口，例如 cf.add_text 和 cf.add_text_by_dict。不要直接调用 Matplotlib 原生 ax.text()，除非 cf 的文本接口无法满足需求。
+
+如果文字属于某个子图的解释或拟合结果，应该在对应子图的绘图函数内部添加，而不是在外层 summary 函数里集中添加，确保单独保存该子图和组合成多子图时文字都能对应正确内容。
