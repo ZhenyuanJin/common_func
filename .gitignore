@@ -12,3 +12,9 @@ font/
 
 # 忽略.DS_Store文件(macOS系统生成的隐藏文件)
 .DS_Store
+
+# 本机 ncc_toolbox 路径配置，不进入 git
+/ncc_toolbox_path.txt
+
+# 忽略AGENTS.md
+/AGENTS.md

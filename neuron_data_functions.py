@@ -602,251 +602,6 @@ def get_average_size_per_duration(sizes, durations, n_bins):
     return np.array(valid_centers), np.array(avg_sizes)
 
 
-def fit_scaling_law_weighted(sizes, durations, min_duration, max_duration):
-    """
-    Fits the scaling relation S(T) ~ T^(1/sigma*nu*z) using a weighted 
-    least squares method for avalanches with durations in the specified range.
-    
-    The weights are based on the number of samples for each duration.
-
-    Parameters
-    ----------
-    sizes : array_like
-        Array of avalanche sizes.
-    durations : array_like
-        Array of avalanche durations (corresponding to sizes).
-    min_duration : float
-        Lower bound of the truncated duration range.
-    max_duration : float
-        Upper bound of the truncated duration range.
-
-    Returns
-    -------
-    float
-        The estimated scaling exponent (gamma).
-    """
-    sizes = np.asarray(sizes)
-    durations = np.asarray(durations)
-
-    mask = (durations >= min_duration) & (durations <= max_duration)
-    sizes = sizes[mask]
-    durations = durations[mask]
-
-    unique_durations = np.unique(durations)
-
-    mean_sizes = []
-    counts = []
-
-    for T in unique_durations:
-        s_T = sizes[durations == T]
-        mean_sizes.append(np.mean(s_T))
-        counts.append(len(s_T))
-
-    mean_sizes = np.asarray(mean_sizes)
-    counts = np.asarray(counts)
-
-    log_T = np.log(unique_durations)
-    log_mean_S = np.log(mean_sizes)
-
-    weights = counts
-
-    coeffs = np.polyfit(log_T, log_mean_S, 1, w=weights)
-    gamma = coeffs[0]
-    gamma_C = np.exp(coeffs[1])
-    return gamma, gamma_C
-
-
-def check_criticality(tau, alpha, gamma):
-    '''
-    tau: avalanche size exponent (from P(S) ~ S^(-tau))
-    alpha: avalanche duration exponent (from P(T) ~ T^(-alpha))
-    gamma: scaling exponent relating size and duration (from <S> ~ T^gamma)
-    '''
-    if tau < 0:
-        raise ValueError('tau should be positive.')
-    if alpha < 0:
-        raise ValueError('alpha should be positive.')
-    if gamma < 0:
-        raise ValueError('gamma should be positive.')
-    predicted_gamma = (alpha - 1) / (tau - 1)
-    difference = abs(predicted_gamma - gamma)
-    ratio = gamma / predicted_gamma if predicted_gamma != 0 else np.nan
-    return predicted_gamma, difference, ratio
-
-
-class AvalancheToolbox:
-    def __init__(self, spikes, dt, n_bins, neuron_idx=None, get_avalanche_kwargs=None, use_ISI_bin_size=True, doubly_truncate=True, step=1, fit_scaling_law_by_weight=False, truncate_min_prop=None, truncate_max_prop=None, use_injected_truncate=False):
-        '''
-        use_ISI_bin_size: if float, use int(ISI_mean * use_ISI_bin_size) as bin size; if True, use ISI_mean as bin size; if False, use get_avalanche_kwargs['bin_size'] as bin size
-        '''
-        if get_avalanche_kwargs is None:
-            local_get_avalanche_kwargs = {}
-        else:
-            local_get_avalanche_kwargs = get_avalanche_kwargs.copy()
-        
-        spikes_sum = np.sum(neuron_idx_data(spikes, neuron_idx, keep_size=True), axis=1, keepdims=True)
-        ISI_mean = get_ISI_mean(spikes_sum, dt)
-        if use_ISI_bin_size is False:
-            bin_size = local_get_avalanche_kwargs.pop('bin_size')
-        else:
-            local_get_avalanche_kwargs.pop('bin_size', None) # remove bin_size if exists, to avoid confusion
-            bin_size = int(ISI_mean[0] / dt)
-            if isinstance(use_ISI_bin_size, bool):
-                pass
-            elif isinstance(use_ISI_bin_size, (int, float)):
-                bin_size = int(bin_size * use_ISI_bin_size)
-            else:
-                raise ValueError('use_ISI_bin_size should be bool or float.')
-        self.avalanche_results = get_avalanche(spikes, dt, bin_size=bin_size, neuron_idx=neuron_idx, **local_get_avalanche_kwargs)
-    
-        size_bin_centers, size_pdf = math_functions.get_log_bin_pdf(self.avalanche_results['avalanche_size'], n_bins=n_bins)
-        if doubly_truncate:
-            if use_injected_truncate:
-                size_truncate_min, size_truncate_max = self.log_shrink(min_val=np.min(size_bin_centers), max_val=np.max(size_bin_centers), left_prop=truncate_min_prop, right_prop=truncate_max_prop)
-                tau, tau_C = math_functions.fit_powerlaw_scatter(
-                    size_bin_centers[(size_bin_centers >= size_truncate_min) & (size_bin_centers <= size_truncate_max)],
-                    size_pdf[(size_bin_centers >= size_truncate_min) & (size_bin_centers <= size_truncate_max)]
-                )
-            else:
-                # size_truncate_result = math_functions.find_optimal_powerlaw_truncated_range(self.avalanche_results['avalanche_size'], n_sims=100, mode='discrete', step=step)
-                # size_truncate_min = size_truncate_result['xmin']
-                # size_truncate_max = size_truncate_result['xmax']
-                # tau = size_truncate_result['alpha']
-                # tau_C = size_truncate_result['C']
-                r = math_functions.plparams(self.avalanche_results['avalanche_size'])
-                size_truncate_min = r['xmin']
-                size_truncate_max = r['xmax']
-                tau, tau_C = math_functions.fit_powerlaw_scatter(
-                    size_bin_centers[(size_bin_centers >= size_truncate_min) & (size_bin_centers <= size_truncate_max)],
-                    size_pdf[(size_bin_centers >= size_truncate_min) & (size_bin_centers <= size_truncate_max)]
-                )
-        else:
-            size_truncate_min = np.min(self.avalanche_results['avalanche_size'])
-            size_truncate_max = np.max(self.avalanche_results['avalanche_size'])
-            tau, tau_C = math_functions.fit_powerlaw_scatter(size_bin_centers, size_pdf)
-        
-        duration_bin_centers, duration_pdf = math_functions.get_log_bin_pdf(self.avalanche_results['avalanche_duration'], n_bins=n_bins)
-        if doubly_truncate:
-            if use_injected_truncate:
-                duration_truncate_min, duration_truncate_max = self.log_shrink(min_val=np.min(duration_bin_centers), max_val=np.max(duration_bin_centers), left_prop=truncate_min_prop, right_prop=truncate_max_prop)
-                alpha, alpha_C = math_functions.fit_powerlaw_scatter(
-                    duration_bin_centers[(duration_bin_centers >= duration_truncate_min) & (duration_bin_centers <= duration_truncate_max)],
-                    duration_pdf[(duration_bin_centers >= duration_truncate_min) & (duration_bin_centers <= duration_truncate_max)]
-                )
-            else:
-                # duration_truncate_result = math_functions.find_optimal_powerlaw_truncated_range(self.avalanche_results['avalanche_duration'], n_sims=100, mode='continuous', step=step)
-                # duration_truncate_min = duration_truncate_result['xmin']
-                # duration_truncate_max = duration_truncate_result['xmax']
-                # alpha = duration_truncate_result['alpha']
-                # alpha_C = duration_truncate_result['C']
-                r = math_functions.plparams(self.avalanche_results['avalanche_duration'])
-                duration_truncate_min = r['xmin']
-                duration_truncate_max = r['xmax']
-                alpha, alpha_C = math_functions.fit_powerlaw_scatter(
-                    duration_bin_centers[(duration_bin_centers >= duration_truncate_min) & (duration_bin_centers <= duration_truncate_max)],
-                    duration_pdf[(duration_bin_centers >= duration_truncate_min) & (duration_bin_centers <= duration_truncate_max)]
-                )
-        else:
-            duration_truncate_min = np.min(self.avalanche_results['avalanche_duration'])
-            duration_truncate_max = np.max(self.avalanche_results['avalanche_duration'])
-            alpha, alpha_C = math_functions.fit_powerlaw_scatter(duration_bin_centers, duration_pdf)
-        
-        # for not doubly_truncate case, the truncate min and max are set above as the data min and max, thus we do not need to do if else here
-        if fit_scaling_law_by_weight:
-            gamma, gamma_C = fit_scaling_law_weighted(
-                self.avalanche_results['avalanche_size'],
-                self.avalanche_results['avalanche_duration'],
-                duration_truncate_min,
-                duration_truncate_max
-            )
-        else:
-            duration_centers_for_size_duration_relation, size_centers_for_size_duration_relation = get_average_size_per_duration(
-                self.avalanche_results['avalanche_size'],
-                self.avalanche_results['avalanche_duration'],
-                n_bins
-            )
-            mask = (duration_centers_for_size_duration_relation >= duration_truncate_min) & (duration_centers_for_size_duration_relation <= duration_truncate_max)
-            filtered_duration_centers = duration_centers_for_size_duration_relation[mask]
-            filtered_size_centers = size_centers_for_size_duration_relation[mask]
-            gamma, gamma_C = math_functions.fit_powerlaw_scatter(filtered_duration_centers, filtered_size_centers)
-        gamma = -gamma
-        
-        predicted_gamma, difference, ratio = check_criticality(tau, alpha, gamma)
-
-        self.collected_results = {
-            'size_truncate_min': size_truncate_min,
-            'size_truncate_max': size_truncate_max,
-            'size_bin_centers': size_bin_centers,
-            'size_pdf': size_pdf,
-            'tau': tau,
-            'tau_C': tau_C,
-            'duration_truncate_min': duration_truncate_min,
-            'duration_truncate_max': duration_truncate_max,
-            'duration_bin_centers': duration_bin_centers,
-            'duration_pdf': duration_pdf,
-            'alpha': alpha,
-            'alpha_C': alpha_C,
-            'duration_centers_for_size_duration_relation': duration_centers_for_size_duration_relation,
-            'size_centers_for_size_duration_relation': size_centers_for_size_duration_relation,
-            'gamma': gamma,
-            'gamma_C': gamma_C,
-            'predicted_gamma': predicted_gamma,
-            'difference': difference,
-            'ratio': ratio,
-            'bin_size': bin_size
-        }
-
-    def log_shrink(self, min_val, max_val, left_prop, right_prop):
-        lmin = np.log(min_val)
-        lmax = np.log(max_val)
-        span = lmax - lmin
-        new_min = np.exp(lmin + left_prop * span)
-        new_max = np.exp(lmax - right_prop * span)
-        return new_min, new_max
-
-    def visualize(self, fig=None, axes=None, unit='ms'):
-        if fig is None or axes is None:
-            fig, axes = cf.gfa(ncols=3)
-        
-        size_truncate_min = self.collected_results['size_truncate_min']
-        size_truncate_max = self.collected_results['size_truncate_max']
-        size_bin_centers = self.collected_results['size_bin_centers']
-        size_pdf = self.collected_results['size_pdf']
-        tau = self.collected_results['tau']
-        tau_C = self.collected_results['tau_C']
-        duration_truncate_min = self.collected_results['duration_truncate_min']
-        duration_truncate_max = self.collected_results['duration_truncate_max']
-        duration_bin_centers = self.collected_results['duration_bin_centers']
-        duration_pdf = self.collected_results['duration_pdf']
-        alpha = self.collected_results['alpha']
-        alpha_C = self.collected_results['alpha_C']
-        duration_centers_for_size_duration_relation = self.collected_results['duration_centers_for_size_duration_relation']
-        size_centers_for_size_duration_relation = self.collected_results['size_centers_for_size_duration_relation']
-        gamma = self.collected_results['gamma']
-        gamma_C = self.collected_results['gamma_C']
-        ratio = self.collected_results['ratio']
-
-        ax = axes[0]
-        ax.plot(size_bin_centers, size_pdf)
-        math_functions.plot_powerlaw_pdf_line(ax, tau, size_truncate_min, size_truncate_max, C=tau_C)
-        cf.set_ax(ax, xlog=True, ylog=True, xlabel='Avalanche Size')
-        
-        ax = axes[1]
-        ax.plot(duration_bin_centers, duration_pdf)
-        math_functions.plot_powerlaw_pdf_line(ax, alpha, duration_truncate_min, duration_truncate_max, C=alpha_C)
-        cf.set_ax(ax, xlog=True, ylog=True, xlabel=f'Avalanche Duration ({unit})')
-        
-        ax = axes[2]
-        ax.scatter(duration_centers_for_size_duration_relation, size_centers_for_size_duration_relation, s=50)
-        if not np.isnan(gamma):
-            y_fit = gamma_C * (duration_centers_for_size_duration_relation ** gamma)
-            ax.plot(duration_centers_for_size_duration_relation, y_fit, 'k--', label=f'slope={gamma:.2f}')
-        cf.set_ax(ax, xlog=True, ylog=True, xlabel='Duration', ylabel='Avg Size')
-
-        cf.add_axes_title(axes, f"Scaling relation value = {ratio:.2f} (theory: 1)")
-        return fig, axes
-
-
 def single_exp(x, amp, tau):
     return amp * np.exp(-x / tau)
 
@@ -1020,6 +775,45 @@ def get_ISI_from_spike_times(spike_times):
         else:
             ISI_list.append([])
     return ISI_list
+
+
+def get_avalanche_from_spike_times(spike_times, time_bin_duration, start_time=None, end_time=None, neuron_idx=None):
+    partial_spike_times = spike_times if neuron_idx is None else [spike_times[i] for i in np.asarray(neuron_idx, dtype=int).reshape(-1)]
+    spike_time = np.asarray(get_combined_spike_times(partial_spike_times), dtype=float)
+    if spike_time.size == 0:
+        raise ValueError("spike_times contains no spikes.")
+    if start_time is None:
+        start_time = np.min(spike_time)
+    if end_time is None:
+        end_time = np.max(spike_time) + time_bin_duration
+
+    n_bin = int(np.ceil((end_time - start_time) / time_bin_duration))
+    if n_bin <= 0:
+        raise ValueError("end_time must be larger than start_time.")
+    spike_time = spike_time[(spike_time >= start_time) & (spike_time < end_time)]
+    bin_idx = np.floor((spike_time - start_time) / time_bin_duration).astype(int)
+    bin_timeseries = np.bincount(bin_idx, minlength=n_bin)
+
+    is_active = bin_timeseries > 0
+    is_active_padded = np.pad(is_active, (1, 1), mode='constant', constant_values=False)
+    diff_active = np.diff(is_active_padded.astype(int))
+
+    non_zero_starts = np.where(diff_active == 1)[0]
+    non_zero_ends = np.where(diff_active == -1)[0] - 1
+
+    avalanche_size = []
+    avalanche_duration = []
+    avalanche_duration_bin = []
+    for start, end in zip(non_zero_starts, non_zero_ends):
+        avalanche_size.append(np.sum(bin_timeseries[start:end+1]))
+        avalanche_duration.append((end - start + 1) * time_bin_duration)
+        avalanche_duration_bin.append(end - start + 1)
+
+    results = {}
+    results['avalanche_size'] = np.array(avalanche_size)
+    results['avalanche_duration'] = np.array(avalanche_duration)
+    results['avalanche_duration_bin'] = np.array(avalanche_duration_bin)
+    return results
 # endregion
 
 
