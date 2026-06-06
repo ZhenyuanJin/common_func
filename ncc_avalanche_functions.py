@@ -267,8 +267,16 @@ def get_ncc_criticality(tau, alpha, gamma):
     return predicted_gamma, difference, ratio
 
 
+def _get_duration_xlabel(results):
+    """Return the duration label matching the fitted duration unit."""
+    return "duration (bins)"
+
+
 def get_ncc_avalanche_results(spike_times, start_time=None, end_time=None, time_bin_duration=None, neuron_idx=None, time_bin_estimation="mean_population_isi", plparams_kwargs=None, size_duration_kwargs=None, bin_density=50, unique_bins="on", seed=None):
-    """Bin spikes, fit NCC avalanche exponents, and package diagnostics."""
+    """Bin spikes, fit NCC avalanche exponents, and package diagnostics.
+
+    NCC duration fits use integer duration bin counts, not duration in time units.
+    """
     if time_bin_duration is None:
         time_bin_duration = get_time_bin_duration_from_spike_times(
             spike_times,
@@ -287,6 +295,7 @@ def get_ncc_avalanche_results(spike_times, start_time=None, end_time=None, time_
         time_bin_duration=time_bin_duration,
         neuron_idx=neuron_idx,
     )
+    duration_fit_values = np.asarray(avalanche_results["avalanche_duration_bin"], dtype=int)
     selected_spike_times, selected_idx = _get_selected_spike_times(spike_times, neuron_idx=neuron_idx)
     flat_spike_times = _get_flat_spike_times(selected_spike_times)
     local_start_time = float(np.min(flat_spike_times)) if start_time is None else float(start_time)
@@ -302,7 +311,7 @@ def get_ncc_avalanche_results(spike_times, start_time=None, end_time=None, time_
         unique_bins=unique_bins,
     )
     duration_fit = get_ncc_powerlaw_fit(
-        avalanche_results["avalanche_duration"],
+        duration_fit_values,
         plparams_kwargs=plparams_kwargs,
         bin_density=bin_density,
         seed=duration_seed,
@@ -310,7 +319,7 @@ def get_ncc_avalanche_results(spike_times, start_time=None, end_time=None, time_
     )
     size_duration_fit = get_ncc_size_duration_fit(
         avalanche_results["avalanche_size"],
-        avalanche_results["avalanche_duration"],
+        duration_fit_values,
         size_duration_kwargs=size_duration_kwargs,
     )
     tau = size_fit["tau"]
@@ -333,6 +342,8 @@ def get_ncc_avalanche_results(spike_times, start_time=None, end_time=None, time_
         "time_bin_duration": time_bin_duration,
         "time_bin_source": time_bin_source,
         "duration_bin_count": avalanche_results["avalanche_duration_bin"],
+        "duration_fit_values": duration_fit_values,
+        "duration_fit_unit": "bin",
         "size_fit": size_fit,
         "duration_fit": duration_fit,
         "size_duration_fit": size_duration_fit,
@@ -411,10 +422,10 @@ def plot_ncc_powerlaw_distribution(ax, results, property_name="size", show_info=
         xlabel = "avalanche size"
         exponent_name = r"$\tau$"
     elif property_name == "duration":
-        values = results["avalanche_duration"]
+        values = results["duration_fit_values"]
         fit = results["duration_fit"]
         title = "Duration distribution"
-        xlabel = "duration"
+        xlabel = _get_duration_xlabel(results)
         exponent_name = r"$\alpha$"
     else:
         raise ValueError("property_name must be size or duration.")
@@ -472,9 +483,8 @@ def plot_ncc_size_duration_relation(ax, results, show_info=True, data_color=cf.B
             r"$\frac{\alpha - 1}{\tau - 1}$ = " + cf.round_float(float(results.get("predicted_gamma", np.nan)), digits=3, format_type="general"),
         ]
         _add_fit_text(ax, lines, text_x=0.96, text_y=0.04, ha="right", va="bottom")
-    xlabel = "duration"
     local_set_ax_kwargs = {
-        "xlabel": xlabel,
+        "xlabel": _get_duration_xlabel(results),
         "ylabel": "mean size",
         "title": "Size-duration relation",
         "xlog": True,

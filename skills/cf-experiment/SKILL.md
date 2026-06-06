@@ -5,7 +5,7 @@ description: 在 common_func 项目中需要组织可复现实验流程、编写
 
 # CF Experiment 约定
 
-这个 skill 用于在项目中使用 `/data/zyjin/common_func/common_functions.py` 的 `AbstractTool`、`Experiment` 和 `ComposedExperiment` 组织实验。它适合把计算、分析、作图、保存和复用结果纳入统一目录结构，而不是在脚本里手写一串无状态函数。
+这个 skill 用于在项目中使用 common_func 根目录下 `common_functions.py` 的 `AbstractTool`、`Experiment` 和 `ComposedExperiment` 组织实验。它适合把计算、分析、作图、保存和复用结果纳入统一目录结构，而不是在脚本里手写一串无状态函数。
 
 ## 核心结构
 
@@ -13,7 +13,7 @@ description: 在 common_func 项目中需要组织可复现实验流程、编写
 
 ```python
 import sys
-sys.path.append('/data/zyjin/common_func')
+sys.path.append('<common_func_root>')
 import numpy as np
 import common_functions as cf
 
@@ -223,4 +223,4 @@ value = composed_experiment.fit.trainer.data_keeper.get_value('weight')
 
 `set_code_file_list([cf.current_file(), ...])` 应包含当前脚本和项目内关键依赖文件，便于之后追溯结果对应的代码。
 
-如果发现框架接口不适合当前项目，在项目内写薄 wrapper 或子类适配；不要直接修改 `/data/zyjin/common_func/common_functions.py`，除非 doctor 明确要求维护 common functions 本身。
+如果发现框架接口不适合当前项目，在项目内写薄 wrapper 或子类适配；不要直接修改 common_func 根目录下的 `common_functions.py`，除非当前任务明确要求维护 common functions 本身。
