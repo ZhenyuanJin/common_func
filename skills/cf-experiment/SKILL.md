@@ -293,6 +293,43 @@ cf.re_run_tool_in_composed_experiment(
 )
 ```
 
+## 批量管理和 InstanceContainer
+
+`ExperimentContainer(experiment_class, dir_before_timedir, dir_after_timedir=None)` 会从 `dir_before_timedir` 下的多个时间目录批量创建 `experiment_class` 并调用 `load(timedir)`。如果时间目录后还有参数子目录，用 `dir_after_timedir` 拼接到每个时间目录之后。它兼容普通 `Experiment` 和 `ComposedExperiment`。
+
+```python
+container = cf.ExperimentContainer(
+    experiment_class=MyExperiment,
+    dir_before_timedir='../../results/my_project/demo',
+    dir_after_timedir='seed_0',
+)
+
+count = container.count_params_by_key('scale')
+close_items = container.get_close_items_info_by_func(
+    func=lambda experiment: experiment.analyzer.data_keeper.get_value(key='summary')['mean'],
+    target_value=0.0,
+    num=5,
+)
+```
+
+`count_params_by_key(key, tool_name=None, experiment_name=None)` 统计 tool params 中某个 key 的取值次数。普通 `Experiment` 默认取第一个 tool；`ComposedExperiment` 默认取第一个 experiment 的第一个 tool。需要指定 composed 中的 experiment 时传 `experiment_name`，需要指定 tool 时传 `tool_name`。
+
+`get_close_items_info_by_func(func, target_value, num=5)` 继承自 `InstanceContainer` 的 closest 查询逻辑，并在结果字典中附加 `timedir`：普通 experiment 是单个 `timedir`，composed experiment 是各子 experiment 的 `timedir` 列表。`func` 返回值可以是标量、`list` / `tuple` 或 `np.ndarray`，距离分别按绝对值或向量范数计算。
+
+`re_run_tool_in_experiment_container(experiment_container, tool_name, task_list, tool_params, experiment_name=None, process_num=1)` 用于对 container 中的多个 experiment 批量重跑 analyzer / visualizer 等 tool。普通 experiment 可不传 `experiment_name`；composed experiment 必须指定 `experiment_name`，否则无法定位子 experiment。
+
+`ExperimentContainer` 继承 `InstanceContainer`，因此可直接使用以下通用能力：
+
+- `len(container)`、iteration、indexing：读取容器大小、遍历和按下标取 experiment。
+- `append(item)`、`extend(items)`：追加单个或多个实例。
+- `get_filtered_by_func(func)`、`get_filtered_by_attr(**attributes)`：返回新的基础 `InstanceContainer`，不修改原容器。
+- `inplace_filter_by_func(func)`、`inplace_filter_by_attr(**attributes)`、`inplace_sort_by_func(key_func, reverse=False)`、`inplace_sort_by_attr(attr, reverse=False)`：原地修改并返回自身，支持链式调用。
+- `get_info_by_attr(attribute)`、`get_info_by_func(func)`：从每个实例提取信息列表。
+- `get_grouped_container_list_by_func(func)`：按字符串或数字 key 分组，返回排序后的 key 列表和对应 `InstanceContainer` 列表。
+- `get_close_items_by_func(func, target_value, num=5)`、`get_close_items_info_by_func(func, target_value, num=5)`：找最接近目标值的实例及其信息。
+- `get_one_param_and_property(...)`、`get_two_property(...)`、`get_two_param_and_property(...)`：做参数-指标或指标-指标统计，可传 `save_dir` 保存结果。
+- `visualize_one_param_and_property(ax, ...)`、`visualize_two_property_scatter(ax, ...)`、`visualize_two_param_and_property_heatmap(ax, ...)`、`visualize_two_param_and_property_fix_one(ax, ...)`：绘图函数均传入 `ax`，内部使用 common plotting 风格函数。
+
 ## 测试边界
 
 `cf-experiment` 的测试目标不是验证核心计算数学正确性。核心函数如 `get_simulation_results(...)`、`get_analysis_results(...)` 的单元测试应放在对应计算模块或项目测试中。

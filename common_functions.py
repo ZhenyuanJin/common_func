@@ -5812,6 +5812,14 @@ class InstanceContainer:
     '''
     def __init__(self, items=None):
         self._instances = list(items) if items else []
+
+    @property
+    def instance_list(self):
+        return self._instances
+
+    @instance_list.setter
+    def instance_list(self, value):
+        self._instances = list(value)
     
     def append(self, item):
         self._instances.append(item)
