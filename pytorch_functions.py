@@ -49,11 +49,6 @@ def to_device(obj, device, non_blocking=False):
         return tuple(to_device(value, device, non_blocking=non_blocking) for value in obj)
 
     return obj
-
-
-def batch_to_device(batch, device, non_blocking=False):
-    """to_device 的语义别名, 用在 DataLoader batch 上更直观."""
-    return to_device(batch, device=device, non_blocking=non_blocking)
 # endregion
 
 

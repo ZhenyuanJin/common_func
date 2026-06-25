@@ -17,7 +17,7 @@ import pytorch_functions as ptf
 
 如果当前脚本已经统一用 `sys.path.append('<common_func_root>')` 引入 common functions，则保持项目现有导入风格即可。
 
-## 设备和 batch 搬运
+## 设备和数据搬运
 
 获取设备优先用 `get_device`。未指定设备时，它会优先选择 CUDA，其次在 `prefer_mps=True` 时选择 MPS，最后回退 CPU：
 
@@ -26,15 +26,15 @@ device = ptf.get_device(device=None)
 model = ptf.to_device(model, device)
 ```
 
-DataLoader 返回的 batch 优先用 `batch_to_device`。它会递归处理 `dict`、`list`、`tuple` 里的 tensor，非 tensor 对象原样保留：
+模型、tensor、训练 batch 都统一用 `to_device` 搬到目标设备。它会递归处理 `dict`、`list`、`tuple` 里的 tensor，非 tensor 对象原样保留：
 
 ```python
 for batch in loader:
-    batch = ptf.batch_to_device(batch, device, non_blocking=True)
+    batch = ptf.to_device(batch, device, non_blocking=True)
     output = model(batch["x"])
 ```
 
-`to_device` 支持 `torch.Tensor` 和 `torch.nn.Module`。如果 batch 里有自定义对象，需要在项目代码中先转成普通容器，或写薄 wrapper 再调用 `batch_to_device`。
+如果 batch 里有自定义对象，需要在项目代码中先转成普通容器，或写薄 wrapper 再调用 `to_device`。
 
 ## 局部随机数
 
@@ -192,7 +192,7 @@ if ptf.should_step(global_step, accumulation_steps):
 outputs = []
 with ptf.no_grad_eval(model):
     for batch in loader:
-        batch = ptf.batch_to_device(batch, device)
+        batch = ptf.to_device(batch, device)
         outputs.append(model(batch["x"]))
 
 outputs = ptf.concat_outputs(outputs, dim=0)
@@ -236,7 +236,7 @@ optimizer = torch.optim.AdamW(model.parameters(), lr=1e-3)
 for epoch in range(num_epochs):
     model.train()
     for step, batch in enumerate(train_loader, start=1):
-        batch = ptf.batch_to_device(batch, device, non_blocking=True)
+        batch = ptf.to_device(batch, device, non_blocking=True)
         output = model(batch["x"])
         loss = loss_fn(output, batch["y"])
         ptf.check_tensor_finite(loss, name="loss", raise_error=True)
@@ -249,7 +249,7 @@ for epoch in range(num_epochs):
     val_outputs = []
     with ptf.no_grad_eval(model):
         for batch in val_loader:
-            batch = ptf.batch_to_device(batch, device, non_blocking=True)
+            batch = ptf.to_device(batch, device, non_blocking=True)
             val_outputs.append(model(batch["x"]))
     val_outputs = ptf.concat_outputs(val_outputs)
 ```
