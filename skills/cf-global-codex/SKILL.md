@@ -31,7 +31,7 @@ description: Global Codex instructions for doctor projects. Use when the user re
   - `git reset`
   - `git checkout`
   - `git stash`
-- 如确实需要 Git 操作，可以提出建议，经过批准后进行，或者在doctor的主动要求下可以git。
+- 如确实需要上述 Git 操作，应先说明目的、影响范围和风险；只有在 doctor 明确批准，或 doctor 主动明确要求执行该具体 Git 操作时，才可以执行。
 - 创建或修改 `.gitignore`、查看文件内容、说明 Git 状态不属于上述 Git 操作限制。
 
 ## Running and Validation

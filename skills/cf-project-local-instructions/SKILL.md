@@ -76,6 +76,10 @@ results/
 5. 重要输出必须记录到 `storage.md`。
 6. 如果使用cf的metamodel或者experiment等工具，其会自动配置路径。
 
+- 每次重要运行使用时间戳目录或参数目录，避免覆盖旧结果。
+- 单次任务目录下可继续拆成 `simulation_results/`、`analysis_results/`、`figs/`、`logs/`、`params/`。
+- 每个重要结果文件应包含运行参数 `params` 或旁边保存参数文件，以便追溯。
+- 如果某个结果是中间缓存，应在文件名、目录名或 `storage.md` 中说明其用途和可否删除。
 
 
 ## README 最小内容
