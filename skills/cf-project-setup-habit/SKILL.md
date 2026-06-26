@@ -118,7 +118,7 @@ DATA_ROOT = data/
 RAW_DATA_DIR = data/raw_data/
 PROCESSED_DATA_DIR = data/processed_data/
 RESULTS_ROOT = results/
-CONDA_ENV_NAME = [如有，填写项目指定 conda 环境名称]
+CONDA_ENV_NAME = [如有，填写项目指定 conda 环境名称，如果没有指定请咨询后明确]
 ```
 
 脚本中只读取配置，不要在多个脚本中重复硬编码路径。如果配置缺失，应先报告缺失项；在不影响安全性和可追溯性的情况下，可以给出合理默认方案。
