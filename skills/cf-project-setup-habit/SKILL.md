@@ -32,8 +32,8 @@ project_root/
 
 - `README.md`: 简短说明项目目的、主要入口脚本、关键依赖版本、如何复现实验结果。
 - `.gitignore`: 至少忽略 `results/` 和不应进入版本控制的大型中间文件、缓存文件。
-- `memory.md`: 记录已完成事项、关键参数、验证命令、发现的问题和后续事项。
-- `storage.md`: 记录稳定数据路径、结果路径、图路径、日志路径和重要子目录大小。
+- `memory.md`: 记录已完成事项、关键参数、验证命令、发现的问题和后续事项。每次对话结束时追加一条简短记录，新增内容不超过约 100 个中文字符。
+- `storage.md`: 记录稳定数据路径、结果路径、图路径、日志路径和重要子目录大小。它维护当前最新状态，不按日期写流水账；结果目录本身仍可使用时间戳或参数目录。
 - `data/raw_data/`: 原始输入、外部数据或不可变输入。
 - `data/processed_data/`: 处理后的可复用数据。可继续按数据来源或任务分子目录，例如 `data/processed_data/example_dataset/`。
 - `code/`: 所有项目代码。不要把核心脚本散放在项目根目录。
@@ -64,7 +64,7 @@ code/
 ```
 
 - `pre_process/`: 随机对象预生成、任务表生成、数据预处理、可复用中间对象生成等代码。
-- `simulation/`: 可直接运行的仿真入口脚本，例如 `run_simulation.py`、`run_parameter_sweep.py`。
+- `simulation/`: 可直接运行的仿真入口脚本，例如 `run_simulation.py`、`run_parameter_sweep.py`。入口脚本不使用 `argparse` 或其他命令行参数；参数写在脚本顶部、可以从`*_parameter.py`导入并按需修改。
 - `analysis/`: 后处理和统计分析入口脚本。若项目较小，可以先由 simulation 脚本串联分析，再逐步拆出。
 - `visualization/`: 独立绘图入口脚本。绘图函数本身仍应与计算逻辑分离。
 - `utils_function/`: 当前项目专用 wrapper、领域模型函数、I/O helper、第三方库适配层。
@@ -85,8 +85,8 @@ run_plot_[figure_name].py
 
 项目内工具函数通常按层次拆开：
 
-- `project_helpers.py`: 项目局部常用的小工具、路径、保存读取、绘图基础 helper。
-- `utils_function.py`: 项目领域逻辑，包括模型或流程构建、仿真 wrapper、分析函数、可视化调度函数。
+- `{...}_function.py`: 可以按照数据预处理、计算核心、分析结果、绘图等职责分文件；`code/utils_function/` 下这类项目函数文件总数通常不超过 10 个，超过时检查是否拆分过细。
+- `{...}_parameter.py`: 记录参数，供入口脚本调用具体函数时读取。参数可以分为计算相关和实验相关：计算相关包括 CPU/GPU、GPU id、进程数量等；实验相关包括随机种子和具体实验参数等。
 - `{library_or_framework}_functions.py` 或类似文件: 第三方框架适配层，例如运行环境设置、模型组件封装、外部 API 适配。
 
 `code/utils_function/` 只放项目内可复用函数、项目局部 wrapper、配置读取函数等。不要在这个文件夹里运行主流程。小项目可以先用少量文件承载，避免过早拆成太多模块；大型项目再按职责继续拆分。
@@ -108,12 +108,6 @@ run_plot_[figure_name].py
 
 ```text
 code/utils_function/config.py
-```
-
-或：
-
-```text
-config.toml
 ```
 
 基础配置项：
