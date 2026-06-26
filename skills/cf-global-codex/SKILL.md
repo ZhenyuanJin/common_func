@@ -47,6 +47,21 @@ description: Global Codex instructions for doctor projects. Use when the user re
 - 对绘图模块，应优先尽可能产出图；同时把可疑问题、异常数据或未完全满足的绘图要求记录下来。
 - 非致命绘图问题不应导致整轮绘图完全失败，但必须在最终回复或日志中说明。
 
+## Validation and Running
+
+正式长任务前先做小规模 smoke test：
+
+- 缩短仿真时间、减少数据规模、减少 seed 或 task 数。
+- 检查 import、路径、shape、dtype、保存路径和最小输出图。
+- 检查脚本是否可以从项目根目录启动。
+- 如果新增结果文件，检查文件是否实际生成、是否能重新读取、关键数组 shape 是否符合预期。
+- 如果新增 task table 或批量任务配置，检查 task id 是否唯一、参数是否完整、输出路径是否不会互相覆盖。
+- smoke test 通过后再运行完整参数。
+
+耗时任务应估计时间、CPU、内存和存储需求。多进程任务要避免多个 worker 同时写同一个文件，结果汇总应按 task id 排序，保证 single process 和 multiprocessing 的结果一致。
+
+对于需要多次运行的流程，应优先写成可重复执行的脚本，而不是只写一次性 notebook 逻辑。对于参数扫描、批量仿真、批量分析，应优先建立 task table 或明确任务列表，保证后续可追踪、可恢复、可并行。
+
 ## Common Functions and Skills
 
 - 优先使用 doctor 的 common functions：`/data/zyjin/common_func`。
@@ -216,3 +231,14 @@ sklearn.decomposition.PCA(...)
 - 模块内私有辅助函数可以使用 `_` 前缀，不强制使用 `get_`。
 - 所有核心函数应有 docstring，说明输入、输出、shape、dtype 和随机性假设。
 - docstring 不应冗长；优秀函数应主要通过命名和结构自明。
+
+## README
+
+README 写清：
+
+- 主要入口脚本及其对应结果，例如运行 `run_simulation.py` 得到 simulation 结果。
+- 关键 helper 文件职责。
+- 关键依赖版本（根据使用的虚拟环境填写）。
+- 数据位置和必要外部文件说明。
+
+README 保持短而可执行，不需要写为长文档。随着项目进行，及时更新README。
