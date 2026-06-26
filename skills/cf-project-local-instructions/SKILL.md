@@ -76,22 +76,6 @@ results/
 5. 重要输出必须记录到 `storage.md`。
 6. 如果使用cf的metamodel或者experiment等工具，其会自动配置路径。
 
-## Storage Notes
-
-`storage.md`：
-
-1. `results/` 下各主要子目录的用途及大小。
-2. 若结果目录结构发生变化，应同步更新 `storage.md`。
-
-## Validation Focus
-
-除全局 validation 要求外，本项目额外强调：
-
-1. 如果新增或修改脚本，应至少运行最小参数版本，确认脚本可以从项目根目录启动。
-2. 如果新增结果文件，应检查文件是否实际生成、是否能重新读取、关键数组 shape 是否符合预期。
-3. 如果新增图文件，应检查图文件是否实际生成、文件大小是否合理、是否保存到 `results/figures/` 或其子目录。
-4. 如果新增 task table 或批量任务配置，应检查 task id 是否唯一、参数是否完整、输出路径是否不会互相覆盖。
-
 ## Project-Specific Notes
 
 本项目的额外约定、特殊参数、数据说明或临时注意事项写在这里：
