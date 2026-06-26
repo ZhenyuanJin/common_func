@@ -79,6 +79,7 @@ description: Global Codex instructions for doctor projects. Use when the user re
 ## Plotting
 
 - 每一轮任务中，若涉及分析、仿真、模型验证或结果展示，应尽量产出图。图是最重要的输出之一。
+- 如果是较为重要的图，请阅读cf-draw-rules中的skill提升绘图审美质量。如果只是smoke test，可以美化跳过这一步。
 - 绘图应该和计算分析模块分离；绘图函数内部可以进行轻量的数据整理，但不应承担昂贵计算、主要统计分析或核心模型逻辑。
 - 绘图必须优先使用 common functions 中已有接口，尤其是创建 figure、布局 axes、设置风格和保存图片的接口。
 例如：

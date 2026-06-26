@@ -1,6 +1,6 @@
 ---
 name: cf-skill-router
-description: 在 common_func 项目中需要判断用户需求应触发哪个 cf-* skill、需要在多个 cf skill 之间分工、整理 skill 使用边界，或用户直接询问“该用哪个 skill/路由/分流/分类”时触发。优先把常见 common_func 请求路由到 cf-plotting、cf-multiprocess、cf-object-io、cf-neuron-data、cf-ncc-avalanche 等局部或领域技能，并说明主 skill 与辅助 skill 的组合关系。除非用户明确提及或现有代码已经使用 Experiment/ComposedExperiment、MetaModel/ModelContainer、DataKeeper，否则不要主动路由到 cf-experiment、cf-metamodel 或 cf-data-keeper。
+description: 在 common_func 项目中需要判断用户需求应触发哪个 cf-* skill、需要在多个 cf skill 之间分工、整理 skill 使用边界，或用户直接询问“该用哪个 skill/路由/分流/分类”时触发。优先把常见 common_func 请求路由到 cf-plotting、cf-draw-rules、cf-multiprocess、cf-object-io、cf-neuron-data、cf-ncc-avalanche 等局部或领域技能，并说明主 skill 与辅助 skill 的组合关系。除非用户明确提及或现有代码已经使用 Experiment/ComposedExperiment、MetaModel/ModelContainer、DataKeeper，否则不要主动路由到 cf-experiment、cf-metamodel 或 cf-data-keeper。
 ---
 
 # CF Skill Router
@@ -11,7 +11,7 @@ description: 在 common_func 项目中需要判断用户需求应触发哪个 cf
 
 默认优先选择局部、轻量的 skill。除非用户明确要求框架化实验管理、旧模型容器、结果容器配置，或当前代码上下文已经在使用这些对象，否则不要主动引入 `cf-experiment`、`cf-metamodel`、`cf-data-keeper`。
 
-不要因为任务包含“实验”“仿真”“分析”“保存结果”等普通词，就推断需要 Experiment、MetaModel、ModelContainer 或 DataKeeper。普通绘图、普通并行任务、普通对象读写和常规领域分析，分别路由到 `cf-plotting`、`cf-multiprocess`、`cf-object-io` 或领域 skill。
+不要因为任务包含“实验”“仿真”“分析”“保存结果”等普通词，就推断需要 Experiment、MetaModel、ModelContainer 或 DataKeeper。普通绘图、绘图审美规范、普通并行任务、普通对象读写和常规领域分析，分别路由到 `cf-plotting`、`cf-draw-rules`、`cf-multiprocess`、`cf-object-io` 或领域 skill。
 
 优先选择最贴近用户表面需求的 skill 作为主 skill。只有当用户直接要求重构整体 workflow、复用 timedir、组织 tool pipeline、读取旧 MetaModel 目录，或配置 DataKeeper 后端时，框架类 skill 才能成为主 skill。
 
@@ -29,6 +29,14 @@ description: 在 common_func 项目中需要判断用户需求应触发哪个 cf
 - 创建 `fig/ax`、调用 `cf.plt_*`、`cf.set_ax`、`cf.save_fig`。
 - 处理多子图、3D 图、colorbar、paper mode、图内文字标注。
 - 给已有分析结果补图或检查图像保存流程。
+
+使用 `cf-draw-rules`：
+
+- 检查或优化科研图、论文图的视觉效果。
+- 判断文字、线条、点、tick、spine、legend、留白和对齐是否适合正文展示。
+- 统一颜色编码、避免彩虹 colormap、选择符合数据语义的对比型或渐进型 colormap。
+- 设计多子图布局、图形类型变化、重点突出方式和图内直接标注。
+- 通常与 `cf-plotting` 一起使用：`cf-plotting` 负责怎么调用 common functions 画图，`cf-draw-rules` 负责画出来是否清楚美观。
 
 使用 `cf-multiprocess`：
 
