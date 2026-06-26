@@ -126,6 +126,13 @@ def get_x(x):
 - 不要为了速度牺牲可重复性、可审计性和结果可追溯性。
 - 不要写重复的代码。Do not repeat yourself。
 
+## Script Style
+
+- 项目入口脚本默认不使用 `argparse` 或其他命令行参数。
+- 入口脚本的参数应写在脚本顶部，或从 `*_parameter.py` 等明确参数文件导入。
+- 若已有项目已经使用命令行参数，不要在未检查调用方式、README、脚本依赖和批处理流程前改动现有接口。
+- 若 doctor 明确要求提供 CLI，或项目局部指令要求 CLI，可以使用 `argparse`，比如利用 `argparse` 修改运行使用的gpu_id。
+
 ## Randomness and Reproducibility
 
 - 不要依赖全局随机状态。
