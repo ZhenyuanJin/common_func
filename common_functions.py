@@ -8530,11 +8530,17 @@ def get_pca(data, n_components=2):
     执行主成分分析 (PCA) 并返回降维后的数据
     自动处理NaN值,通过删除含有NaN的行
 
-    :param data: DataFrame或二维数组,原始数据
+    :param data: DataFrame或二维array-like,原始数据
     :param n_components: int, 保留的主成分数量
     :return: PCA转换后的DataFrame
     '''
-    data_clean = data.dropna()
+    data_df = pd.DataFrame(data).copy(deep=True)
+    nan_mask = data_df.isna()
+    nan_count = int(nan_mask.sum().sum())
+    if nan_count:
+        nan_row_count = int(nan_mask.any(axis=1).sum())
+        print(f"get_pca: detected {nan_count} NaN value(s) in {nan_row_count} row(s); affected rows will be dropped.")
+    data_clean = data_df.dropna()
     pca = PCA(n_components=n_components)
     principal_components = pca.fit_transform(data_clean)
     principal_df = pd.DataFrame(data=principal_components,
@@ -9042,6 +9048,8 @@ def _pre_process_for_acf(timeseries, T=None, sample_rate=None, nlags=None, nan_p
         raise ValueError("Either T or sample_rate must be provided")
     if T is None:
         T = 1 / sample_rate
+    if nlags is None:
+        nlags = len(timeseries) - 1
     if nlags > len(timeseries) - 1:
         if nlags_policy == 'clip':
             nlags = len(timeseries) - 1
@@ -10819,6 +10827,8 @@ class Visualizer(FlexibleTool):
         自动按照调用者的函数名保存fig
         mode: 'flat' or 'nest'
         '''
+        add_to_filename_flat = ''
+        add_to_filename_nest = ''
         if add_to_filename_dict is not None:
             _, add_to_filename_flat = pop_dict_get_dir_flat(add_to_filename_dict, value_dir_key=[], both_dir_key=add_to_filename_dict.keys(), basedir='')
             _, add_to_filename_nest = pop_dict_get_dir(add_to_filename_dict, value_dir_key=[], both_dir_key=add_to_filename_dict.keys(), basedir='')
@@ -10838,6 +10848,8 @@ class Visualizer(FlexibleTool):
         不关闭图片,以便后面添加标签等操作后继续保存
         mode: 'flat' or 'nest'
         '''
+        add_to_filename_flat = ''
+        add_to_filename_nest = ''
         if add_to_filename_dict is not None:
             _, add_to_filename_flat = pop_dict_get_dir_flat(add_to_filename_dict, value_dir_key=[], both_dir_key=add_to_filename_dict.keys(), basedir='')
             _, add_to_filename_nest = pop_dict_get_dir(add_to_filename_dict, value_dir_key=[], both_dir_key=add_to_filename_dict.keys(), basedir='')
@@ -12259,9 +12271,9 @@ def plt_hist_2d(ax, x, y, x_bins=BIN_NUM, y_bins=BIN_NUM, cmap=DENSITY_CMAP, lab
 
     h, x_edges, y_edges, x_midpoints, y_midpoints = get_hist_2d(x, y, x_bins, y_bins, stat=stat)
 
-    if vmin is not None:
+    if vmin is None:
         vmin = np.nanmin(h)
-    if vmax is not None:
+    if vmax is None:
         vmax = np.nanmax(h)
 
     ax.set_xlim(x_edges[0], x_edges[-1])
