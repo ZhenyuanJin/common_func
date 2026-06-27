@@ -42,7 +42,6 @@ import lmdb
 from pympler import asizeof
 import traceback
 import tqdm
-import threading
 import natsort
 import psutil
 import gc
@@ -1770,8 +1769,28 @@ def flex_func_printer(func, print_func=print, lite=True, multi_result=False):
         flex_print_title(print_func, 'Arguments')
         sig = inspect.signature(func)
         params = list(sig.parameters.values())
+        positional_params = [
+            param for param in params
+            if param.kind in (
+                inspect.Parameter.POSITIONAL_ONLY,
+                inspect.Parameter.POSITIONAL_OR_KEYWORD,
+            )
+        ]
+        var_positional_param = next(
+            (
+                param for param in params
+                if param.kind == inspect.Parameter.VAR_POSITIONAL
+            ),
+            None,
+        )
         for i, arg in enumerate(args):
-            flex_better_print(print_func, arg, name=params[i].name, lite=lite, print_title=False)
+            if i < len(positional_params):
+                arg_name = positional_params[i].name
+            elif var_positional_param is not None:
+                arg_name = f'{var_positional_param.name}[{i - len(positional_params)}]'
+            else:
+                arg_name = f'arg_{i}'
+            flex_better_print(print_func, arg, name=arg_name, lite=lite, print_title=False)
         
         # 打印 kwargs 及其变量名
         flex_print_title(print_func, 'Keyword Arguments')
@@ -2042,29 +2061,30 @@ def func_memory_tracer(func):
         original_tracing = tracemalloc.is_tracing()
         if not original_tracing:
             tracemalloc.start()  # 若未启用,则启动跟踪
-        
-        # 拍摄执行前的内存快照
-        snapshot_before = tracemalloc.take_snapshot()
-        
-        # 执行被装饰的函数
-        result = func(*args, **kwargs)
-        
-        # 拍摄执行后的内存快照
-        snapshot_after = tracemalloc.take_snapshot()
-        
-        # 对比快照,按内存占用排序
-        top_stats = snapshot_after.compare_to(snapshot_before, 'lineno')
-        
-        # 打印内存分析结果
-        print(f"\nMemory usage analysis for {func.__name__}:")
-        for stat in top_stats[:5]:  # 显示前5个内存分配点
-            print(f"  {stat}")
-        
-        # 如果装饰器自己启用了跟踪,则停止
-        if not original_tracing:
-            tracemalloc.stop()
-        
-        return result
+
+        try:
+            # 拍摄执行前的内存快照
+            snapshot_before = tracemalloc.take_snapshot()
+
+            # 执行被装饰的函数
+            result = func(*args, **kwargs)
+
+            # 拍摄执行后的内存快照
+            snapshot_after = tracemalloc.take_snapshot()
+
+            # 对比快照,按内存占用排序
+            top_stats = snapshot_after.compare_to(snapshot_before, 'lineno')
+
+            # 打印内存分析结果
+            print(f"\nMemory usage analysis for {func.__name__}:")
+            for stat in top_stats[:5]:  # 显示前5个内存分配点
+                print(f"  {stat}")
+
+            return result
+        finally:
+            # 仅恢复由该装饰器启动的全局追踪状态
+            if not original_tracing and tracemalloc.is_tracing():
+                tracemalloc.stop()
     return wrapper
 
 
@@ -2178,41 +2198,6 @@ def flexible_try(enable_try=True, print_info=True):
     return decorator
 
 
-def timeout_skip(seconds, default_return=None):
-    """
-    超时直接跳过,返回默认值
-    
-    使用示例:
-    @timeout_skip(5, default_return=None)
-    def my_function(...):
-        ...
-    """
-    def decorator(func):
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            result = [default_return]  # 使用列表以便在内部函数中修改
-            finished = [False]         # 完成标志
-            
-            def worker():
-                try:
-                    result[0] = func(*args, **kwargs)
-                except Exception as e:
-                    result[0] = e  # 或者你可以选择记录日志但继续返回默认值
-                finally:
-                    finished[0] = True
-            
-            thread = threading.Thread(target=worker)
-            thread.daemon = True
-            thread.start()
-            thread.join(seconds)  # 等待指定时间
-            
-            if not finished[0]:
-                print(f"函数 {func.__name__} 执行超时,已跳过")
-                return default_return
-            
-            return result[0]
-        return wrapper
-    return decorator
 # endregion
 
 
@@ -2467,7 +2452,7 @@ def cp_file(src, dst, overwrite=False):
 
     :param src: 源文件路径
     :param dst: 目标文件路径或目标文件夹路径
-    :param overwrite: 是否覆盖目标文件,默认为 True
+    :param overwrite: 是否覆盖目标文件,默认为 False
     """
     # 如果 dst 是文件夹,将其转化为完整路径
     if os.path.isdir(dst):
@@ -2582,7 +2567,7 @@ def mvdir_cp_like(src, dst, dirs_exist_ok=True, overwrite=False, rm_src=True):
         dst_path = os.path.join(dst, rel_path)
 
         if not os.path.exists(dst_path):
-            os.mkdir(dst_path)
+            os.makedirs(dst_path)
 
         for file in files:
             src_file_path = os.path.join(root, file)
@@ -2758,8 +2743,11 @@ def find_fig(filename, order=None):
             return filename, True
         elif os.path.exists(filename+ext):
             return filename+ext, True
-        elif os.path.exists(filename[-4:]+ext):
-            return filename[-4:]+ext, True
+        else:
+            filename_without_ext = os.path.splitext(filename)[0]
+            candidate = filename_without_ext + ext
+            if os.path.exists(candidate):
+                return candidate, True
     return '', False
 
 
@@ -5214,8 +5202,11 @@ class DataContainer(dict):
 
     def set_value(self, value, **kwargs):
         key = self.build_key(**kwargs)
-        self[key] = value  # 这里没有copy,因为value可能要在内部和外部同时变动
-        self['_config']['param_map'][key] = kwargs.copy()  # 保存参数信息
+        param_map = self['_config']['param_map']
+        if key in self and param_map.get(key) != kwargs:
+            raise ValueError(f"Key collision for '{key}': existing parameters {param_map.get(key)!r} differ from new parameters {kwargs!r}")
+        self[key] = value  # value可能需要在容器内外同步变化,因此不复制
+        param_map[key] = kwargs.copy()
     
     def get_value(self, **kwargs):
         key = self.build_key(**kwargs)
@@ -5310,9 +5301,7 @@ class DataContainer(dict):
         for key, value in other_dict.items():
             param = {dict_key_name: key}
             new_param = update_dict(param, kwargs)
-            new_key = self.build_key(**new_param)
-            self[new_key] = value
-            self['_config']['param_map'][new_key] = new_param.copy()  # 保存参数信息
+            self.set_value(value, **new_param)
 
     def absorb_with_new_params(self, other_container, **kwargs):
         '''
@@ -5332,9 +5321,7 @@ class DataContainer(dict):
                 params_from_other = other_container['_config']['param_map'][key]
             # 生成新键并存储
             new_params_from_other = update_dict(params_from_other, kwargs)
-            new_key = self.build_key(**new_params_from_other)
-            self[new_key] = other_container[key]
-            self['_config']['param_map'][new_key] = new_params_from_other.copy()  # 保存参数信息
+            self.set_value(other_container[key], **new_params_from_other)
 
     def copy_with_adjusted_params(self, original_params, adjustments):
         '''
@@ -5425,16 +5412,22 @@ def _dict_to_data_container(d):
     示例:
     读取了一个字典,并将其转换为DataContainer对象
     '''
-    config = d.pop('_config')
+    config = d['_config'].copy()
     param_order = config.pop('param_order', None)
-    param_map = config.pop('param_map')
+    param_map = {key: params.copy() for key, params in config.pop('param_map').items()}
     included_name_list = config.pop('included_name_list', None)
+    if param_order is not None:
+        param_order = param_order.copy()
+    if included_name_list is not None:
+        included_name_list = included_name_list.copy()
     if param_order is None:
         data_container = DataContainer(included_name_list=included_name_list)
     else:
         data_container = OrderedDataContainer(param_order=param_order, included_name_list=included_name_list)
     data_container['_config']['param_map'] = param_map
     for key, value in d.items():
+        if key == '_config':
+            continue
         data_container[key] = value
     return data_container
 # endregion
@@ -5618,8 +5611,7 @@ class DataKeeper:
         默认行为:
         保留配置键'_config'
         """
-        if keys_to_keep is None:
-            keys_to_keep = []
+        keys_to_keep = list(keys_to_keep or [])
         if keys_to_release is None:
             keys_to_release = list(self.data.keys())  # 默认释放所有键
         if '_config' not in keys_to_keep:

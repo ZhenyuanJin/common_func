@@ -371,10 +371,6 @@
 {"file":"common_functions.py","qualname":"flexible_try","line_no":2018,"end_line_no":2056,"signature":"flexible_try(enable_try=True, print_info=True)"}
 {"file":"common_functions.py","qualname":"flexible_try.decorator","line_no":2040,"end_line_no":2055,"signature":"decorator(func)"}
 {"file":"common_functions.py","qualname":"flexible_try.decorator.wrapper","line_no":2042,"end_line_no":2054,"signature":"wrapper(*args, **kwargs)"}
-{"file":"common_functions.py","qualname":"timeout_skip","line_no":2059,"end_line_no":2093,"signature":"timeout_skip(seconds, default_return=None)"}
-{"file":"common_functions.py","qualname":"timeout_skip.decorator","line_no":2068,"end_line_no":2092,"signature":"decorator(func)"}
-{"file":"common_functions.py","qualname":"timeout_skip.decorator.wrapper","line_no":2070,"end_line_no":2091,"signature":"wrapper(*args, **kwargs)"}
-{"file":"common_functions.py","qualname":"timeout_skip.decorator.wrapper.worker","line_no":2074,"end_line_no":2080,"signature":"worker()"}
 {"file":"common_functions.py","qualname":"current_file_py","line_no":2099,"end_line_no":2101,"signature":"current_file_py()"}
 {"file":"common_functions.py","qualname":"caller_filename","line_no":2104,"end_line_no":2118,"signature":"caller_filename()"}
 {"file":"common_functions.py","qualname":"current_file_ipynb","line_no":2121,"end_line_no":2128,"signature":"current_file_ipynb()"}
