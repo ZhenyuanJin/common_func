@@ -8144,11 +8144,23 @@ def split_num_proportionally(total_num, proportion_dict, mode):
     返回:
     num_dict (dict): 一个字典,值是分配的数字.
     '''
-    if not np.allclose(sum(proportion_dict.values()), 1):
+    if not isinstance(total_num, (int, np.integer)) or isinstance(total_num, (bool, np.bool_)) or total_num < 0:
+        raise ValueError("total_num必须是非负整数")
+    if not isinstance(proportion_dict, dict) or not proportion_dict:
+        raise ValueError("proportion_dict必须是非空字典")
+    proportions = np.asarray(list(proportion_dict.values()), dtype=float)
+    if not np.all(np.isfinite(proportions)) or np.any(proportions < 0):
+        raise ValueError("比例必须是有限的非负数")
+    if not np.allclose(proportions.sum(), 1):
         raise ValueError("比例的总和必须为1")
+    if mode not in ('optimal', 'positive_prop_positive'):
+        raise ValueError("mode必须是'optimal'或'positive_prop_positive'")
 
     # 计算理想中每个key应得的数量
-    ideal_counts = {key: total_num * proportion for key, proportion in proportion_dict.items()}
+    ideal_counts = {
+        key: total_num * proportion
+        for key, proportion in zip(proportion_dict, proportions)
+    }
     num_dict = {key: 0 for key in proportion_dict.keys()}
     remaining_num = total_num
 
@@ -8169,10 +8181,13 @@ def split_num_proportionally(total_num, proportion_dict, mode):
                     break
 
     elif mode == 'positive_prop_positive':
-        # 确保所有有正比例的区域至少分配到1,前提是总数允许
+        positive_count = np.count_nonzero(proportions > 0)
+        can_assign_minimum = total_num >= positive_count
+
+        # 总数足够时保证每个正比例区域至少为1;否则退化为普通比例分配.
         for key, ideal_count in sorted(ideal_counts.items(), key=lambda item: item[1]):
             if ideal_count > 0:
-                count = max(1, round(ideal_count))
+                count = max(1, round(ideal_count)) if can_assign_minimum else int(ideal_count)
             else:
                 count = 0
             num_dict[key] = count
@@ -8198,6 +8213,8 @@ def split_num_proportionally(total_num, proportion_dict, mode):
                 else:
                     break
 
+    else:
+        raise ValueError("mode必须是'optimal'或'positive_prop_positive'")
     return num_dict
 
 
