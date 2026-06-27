@@ -4893,10 +4893,22 @@ def update_dict_kwargs(d, **kwargs):
 
 def fill_missing_key(d, key_list, fill_value=None):
     '''
-    处理d
-    如果d为None,则返回一个key_list的字典,值为fill_value
-    如果d是字典,如果d缺少了key_list中的key,则将key, fill_value添加到d中
+    已弃用: 为字典补充缺失键,后续版本将删除此函数.
+
+    如果d为None,返回包含key_list中所有键的新字典;否则浅拷贝d,
+    再为其中的缺失键填入fill_value.
+
+    警告:
+    每个缺失键会直接引用同一个fill_value.当fill_value是dict、list等
+    可变对象时,修改一个键的值会影响其他缺失键.需要为多个键分别创建
+    空字典时,请使用fill_dict_kwargs.
     '''
+    warnings.warn(
+        'fill_missing_key已弃用,并将在后续版本删除;'
+        '需要为多个键创建独立空字典时请使用fill_dict_kwargs.',
+        FutureWarning,
+        stacklevel=2,
+    )
     if d is None:
         return {k: fill_value for k in key_list}
     new_d = d.copy()
@@ -4908,9 +4920,20 @@ def fill_missing_key(d, key_list, fill_value=None):
 
 def fill_dict_kwargs(d, key_list):
     '''
-    处理复杂的kwargs输入
+    为key_list中的每个缺失键创建彼此独立的空字典.
+
+    如果d为None,从空字典开始创建;否则先浅拷贝d,保留其中已有的键和值,
+    再补充缺失键.本函数不会修改输入字典d,但已有的可变值仍与d共享引用.
+
+    适用于批量准备按名称组织的kwargs字典,例如:
+    fill_dict_kwargs(None, ['plot', 'errorbar'])
+    返回 {'plot': {}, 'errorbar': {}},且两个空字典不是同一个对象.
     '''
-    return fill_missing_key(d, key_list, fill_value={})
+    new_d = {} if d is None else d.copy()
+    for key in key_list:
+        if key not in new_d:
+            new_d[key] = {}
+    return new_d
 
 
 @not_recommend
@@ -6856,17 +6879,25 @@ def assign_nearby_value(arr, index, value, nearby_index):
 
 
 def step_linspace(start, stop, step, endpoint=True):
-    '''等差数列'''
-    arr = np.arange(start, stop, step)
-    if endpoint:
-        # 判断step是否能整除(start, stop)
-        num = int((stop - start) / step)
-        if np.allclose(start + num * step, stop) or np.allclose(start + num * step, stop - step):
-            return arr
-        else:
-            raise ValueError('step不能整除(start, stop)')
-    else:
-        return arr
+    '''按照指定步长生成等差数列,endpoint=True时包含终点'''
+    if not endpoint:
+        return np.arange(start, stop, step)
+
+    if step == 0:
+        raise ValueError('step不能为0')
+    if start == stop:
+        return np.asarray([start])
+    if (stop - start) * step < 0:
+        raise ValueError('step的方向必须与start到stop的方向一致')
+
+    step_num = (stop - start) / step
+    rounded_step_num = round(step_num)
+    if not np.isclose(step_num, rounded_step_num):
+        raise ValueError('step不能整除(start, stop)')
+
+    arr = start + np.arange(rounded_step_num + 1) * step
+    arr[-1] = stop  # 避免浮点数累计误差导致终点存在微小偏差
+    return arr
 
 
 def gradient_step_linspace(start, end, num, endpoint=True, gradient='center'):
