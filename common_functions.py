@@ -8670,12 +8670,21 @@ def get_angle_3d(source, target, angle_type='rad', azim_range='0:360', elev_rang
     target - 终点(3D),支持同时输入多个点,形状为(N, 3)或者(3,)
     angle_type - 角度类型,支持'rad'和'deg'
     azim_range - 水平角范围,支持'0:360'和'-180:180'
-    elev_range - 垂直角范围,支持'0:180'和'-90:90'
+    elev_range - 垂直角范围,支持'0:180'和'-90:90';
+                 '-90:90'表示相对x-y平面的仰角(向上为正),
+                 '0:180'表示从+z轴向下量取的天顶角
 
     返回:
     azim - 水平角度,如果输入是多个点,返回形状为(N,),如果输入是单个点,返回标量
-    elev - 垂直角度,如果输入是多个点,返回形状为(N,),如果输入是单个点,返回标量(数学中的垂直角是从z轴开始算起的,范围是0:180,如果从x-y平面开始算起,范围是-90:90)
+    elev - 垂直角度,如果输入是多个点,返回形状为(N,),如果输入是单个点,返回标量
     '''
+    if angle_type not in ('rad', 'deg'):
+        raise ValueError("angle_type must be 'rad' or 'deg'")
+    if azim_range not in ('0:360', '-180:180'):
+        raise ValueError("azim_range must be '0:360' or '-180:180'")
+    if elev_range not in ('0:180', '-90:90'):
+        raise ValueError("elev_range must be '0:180' or '-90:90'")
+
     source = np.array(source)
     target = np.array(target)
     if len(source.shape) == 1:
@@ -8700,13 +8709,13 @@ def get_angle_3d(source, target, angle_type='rad', azim_range='0:360', elev_rang
     if azim_range == '0:360':
         if angle_type == 'deg':
             azim = np.where(azim < 0, azim + 360, azim)
-        if angle_type == 'rad':
+        else:
             azim = np.where(azim < 0, azim + 2 * np.pi, azim)
     if elev_range == '0:180':
         if angle_type == 'deg':
-            azim = np.where(azim < 0, azim + 180, azim)
-        if angle_type == 'rad':
-            azim = np.where(azim < 0, azim + np.pi, azim)
+            elev = 90 - elev
+        else:
+            elev = np.pi / 2 - elev
 
     if len(azim) == 1:
         azim = azim[0]
