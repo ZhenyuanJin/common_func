@@ -2956,7 +2956,7 @@ def save_dict_merge_to_saved(dict_data, filename, format_list=None, key_to_save=
     # 合并字典
     dict_data_to_save = {k: dict_data[k] for k in key_to_save}
     merged_dict = {**previous_dict, **dict_data_to_save}
-    save_dict(merged_dict, filename, format_list=format_list, key_to_save=key_to_save)
+    save_dict(merged_dict, filename, format_list=format_list)
 
 
 def get_load_function(format):
@@ -3127,10 +3127,10 @@ def check_saved_dict_completeness(save_dir):
 
     # 检查子文件是否存在
     metadata = load_pkl(os.path.join(save_dir, 'metadata'))
-    for k, v in metadata.items():
-        if not check_all_file_exist_with_any_extension(os.path.join(save_dir, v)):
+    for saved_filename, original_key in metadata.items():
+        if not check_all_file_exist_with_any_extension(os.path.join(save_dir, saved_filename)):
             completeness = False
-            print(f"File {k} not found in {save_dir}")
+            print(f"File {saved_filename} for key {original_key!r} not found in {save_dir}")
             return completeness
     return completeness
 
@@ -10060,7 +10060,7 @@ class MetaModel(abc.ABC, MetaAnalyzerMixin):
         return self._get_results_value(results_prefix='simulation', key=key, **kwargs)
 
     def get_simulation_subcontainer(self, remove_matched_params=True, **kwargs):
-        return self._get_results_subcontainer(results_type='simulation', remove_matched_params=remove_matched_params, **kwargs)
+        return self._get_results_subcontainer(results_prefix='simulation', remove_matched_params=remove_matched_params, **kwargs)
 
     def load_info_container(self):
         '''
@@ -16485,8 +16485,8 @@ def plt_vector_input_bar(ax, x, y, label=None, color=BLUE, vert=True, equal_spac
     if equal_space:
         # 将x的每个元素变为字符串
         xtick_label = [str(i) for i in x]
-        xtick = np.arange(len(xtick))
-        ax.set_xticklabels(xtick_label)
+        xtick = np.arange(len(x))
+        ax.set_xticks(xtick, labels=xtick_label)
     else:
         xtick = x.copy()
 
