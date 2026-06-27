@@ -7618,13 +7618,40 @@ def process_special_value(data, nan_policy=NAN_POLICY, fill_value=0, inf_policy=
 
 def sync_special_value(*args, inf_policy=INF_POLICY):
     '''
-    同步多个输入数据中的NaN和inf值
+    同步多个输入数据中相同位置的NaN和inf值.
+
+    所有输入必须类型和形状一致,支持list、numpy.ndarray、pd.Series和
+    pd.DataFrame。Series还必须具有相同索引,DataFrame必须具有相同索引和列.
+    本函数按位置同步特殊值,不会修改原始输入.
     '''
-    # Verify that all inputs have the same shape
-    shapes = [a.shape if isinstance(
-        a, (np.ndarray, pd.Series, pd.DataFrame)) else len(a) for a in args]
+    if not args:
+        raise ValueError('At least one input is required')
+
+    supported_types = (list, np.ndarray, pd.Series, pd.DataFrame)
+    if not all(isinstance(a, supported_types) for a in args):
+        raise TypeError('All inputs must be lists, numpy arrays, pandas Series, or pandas DataFrames')
+
+    input_type = type(args[0])
+    if any(type(a) is not input_type for a in args[1:]):
+        raise TypeError('All inputs must have the same type')
+
+    # 统一通过numpy获取形状,从而正确检查一维和多维list
+    shapes = [np.asarray(a).shape for a in args]
     if len(set(shapes)) > 1:
         raise ValueError("All inputs must have the same shape")
+
+    if input_type is pd.Series:
+        reference_index = args[0].index
+        if any(not a.index.equals(reference_index) for a in args[1:]):
+            raise ValueError('All pandas Series inputs must have the same index')
+    elif input_type is pd.DataFrame:
+        reference_index = args[0].index
+        reference_columns = args[0].columns
+        if any(
+            not a.index.equals(reference_index) or not a.columns.equals(reference_columns)
+            for a in args[1:]
+        ):
+            raise ValueError('All pandas DataFrame inputs must have the same index and columns')
 
     args = [process_inf(a, inf_policy=inf_policy)
             for a in args]  # Process inf values first
