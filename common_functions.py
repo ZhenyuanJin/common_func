@@ -7187,16 +7187,11 @@ def sort_series(s, sort_by='value', reverse=False, ignore_capitalize=True):
     - A new sorted Series.
     '''
     if ignore_capitalize and sort_by == 'index':
-        # Convert index to lowercase for case-insensitive sorting
-        temp_series = s.copy()
-        temp_series.index = s.index.str.lower()
-        sorted_series = temp_series.sort_index(ascending=not reverse)
-        # Restore original index order based on sorted lower case index
-        # This step involves matching the lowercase sorted index with the original index
-        # and arranging the original Series according to this order
-        original_order_index = dict(zip(temp_series.index, s.index))
-        final_index_order = [original_order_index[i] for i in sorted_series.index]
-        return s.loc[final_index_order]
+        return s.sort_index(
+            ascending=not reverse,
+            key=lambda index: index.str.lower(),
+            kind='stable',
+        )
     elif sort_by == 'index':
         return s.sort_index(ascending=not reverse)
     elif sort_by == 'value':
@@ -7798,15 +7793,6 @@ def get_z_score_series(data):
     return pd.Series(get_z_score_arr(data.values), index=data.index)
 
 
-def get_z_score_on_column(data, column_name):
-    '''
-    使用Z分数对数据集的df的指定列进行缩放.
-    '''
-    new_data = data.copy()
-    new_data[column_name] = get_z_score_arr(data[column_name].values)
-    return new_data
-
-
 def get_z_score_on_column(df, column_name):
     '''
     使用Z分数对数据集的指定列进行缩放.
@@ -8207,27 +8193,28 @@ def get_bin_idx(data, bins, right=False, left_most=True, right_most=True):
     '''
     if isinstance(data, (np.ndarray, list)):
         # 处理多个输入
-        idx = np.digitize(data, bins, right=right) - 1
+        data_array = np.array(data, copy=True)
+        idx = np.digitize(data_array, bins, right=right) - 1
         # 初始化掩码数组为False
-        mask = np.zeros_like(data, dtype=bool)
+        mask = np.zeros_like(data_array, dtype=bool)
 
         if left_most and right_most:
-            mask = (data < bins[0]) | (data > bins[-1])
+            mask = (data_array < bins[0]) | (data_array > bins[-1])
         elif left_most and not right_most:
-            mask = (data < bins[0]) | (data >= bins[-1])
+            mask = (data_array < bins[0]) | (data_array >= bins[-1])
         elif not left_most and right_most:
-            mask = (data <= bins[0]) | (data > bins[-1])
+            mask = (data_array <= bins[0]) | (data_array > bins[-1])
         elif not left_most and not right_most:
-            mask = (data <= bins[0]) | (data >= bins[-1])
+            mask = (data_array <= bins[0]) | (data_array >= bins[-1])
         
         # 将掩码位置的索引设置为np.nan
         idx = np.where(mask, np.nan, idx)
 
         # 处理最左和最右的区间
         if left_most:
-            idx[data == bins[0]] = 0
+            idx[data_array == bins[0]] = 0
         if right_most:
-            idx[data == bins[-1]] = len(bins) - 2
+            idx[data_array == bins[-1]] = len(bins) - 2
     else:
         # 处理单个输入
         idx = np.digitize(data, bins, right=right) - 1
