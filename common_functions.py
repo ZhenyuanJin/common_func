@@ -4191,6 +4191,11 @@ def basic_multi_process(process_num, func_list, args_list=None, kwargs_list=None
     用户必须确保args_list,kwargs_list,func_list的长度相同
     process_num必须等于len(func_list)或者1
     '''
+    if args_list is None:
+        args_list = [()] * len(func_list)
+    if kwargs_list is None:
+        kwargs_list = [{} for _ in func_list]
+
     _check_process_num_func_args_kwargs(process_num, func_list, args_list, kwargs_list)
 
     if process_num > 1 and check_if_multiprocessing():
@@ -4235,8 +4240,12 @@ def _prepare_for_multi_process(process_num, func_list, args_list, kwargs_list):
     # 处理None(args_list和kwargs_list本身为None)
     if args_list is None:
         args_list = [()]
+    else:
+        args_list = args_list.copy()
     if kwargs_list is None:
         kwargs_list = [{}]
+    else:
+        kwargs_list = kwargs_list.copy()
 
     # 处理长度不一致的情况
     max_length = max(len(func_list), len(args_list), len(kwargs_list))
@@ -4365,6 +4374,8 @@ def multi_process_list_for(process_num, func, args=None, kwargs=None, for_list=N
         args = ()
     if kwargs is None:
         kwargs = {}
+    if for_list is None:
+        raise ValueError("for_list must not be None")
     for_list = list(for_list)   # 防止for_list是生成器,比如range(10)
 
     if process_num > len(for_list):
@@ -4475,14 +4486,13 @@ def multi_process_items_for(process_num, func, args=None, kwargs=None, for_dict=
 
 # region 生成字母序列
 def get_tag(n, case=TAG_CASE, parentheses=TAG_PARENTHESES):
-    if case == 'lower':
-        # 生成小写字母标签
-        tags = [chr(i) for i in range(ord('a'), ord('a') + n)]
-    elif case == 'upper':
-        # 生成大写字母标签
-        tags = [chr(i) for i in range(ord('A'), ord('A') + n)]
-    else:
+    if case not in ('lower', 'upper'):
         raise ValueError('Unknown case: ' + case)
+    if n > 26:
+        raise ValueError('n must not exceed 26')
+
+    start = ord('a') if case == 'lower' else ord('A')
+    tags = [chr(start + i) for i in range(n)]
 
     if parentheses:
         # 在每个标签前后添加括号
@@ -4553,7 +4563,9 @@ def camel_to_snake(name):
 
 def format_text(text, text_process=None):
     '''
-    格式化文本(主要是为了画图美观)
+    格式化文本(主要是为了画图美观).
+
+    当 ignore_equation_underscore=True 时, 按 Matplotlib Mathtext 的$...$ 规则保留公式内的下划线. 如果未转义的 $ 数量为奇数, 整个字符串按普通文本处理.
     '''
     text_process = update_dict(TEXT_PROCESS, text_process)
 
@@ -4564,32 +4576,34 @@ def format_text(text, text_process=None):
     if text is None:
         return None
     else:
-        # 分割字符串,保留$$之间的内容
-        parts = []
         if ignore_equation_underscore:
-            # 使用标志位记录是否在$$内
-            in_math = False
-            temp_str = ""
-            for char in text:
-                if char == "$" and not in_math:  # 开始$$
-                    in_math = True
-                    if temp_str:  # 保存$$之前的内容
-                        parts.append(temp_str)
-                        temp_str = ""
-                    parts.append(char)
-                elif char == "$" and in_math:  # 结束$$
-                    in_math = False
-                    parts.append(temp_str + char)
-                    temp_str = ""
-                elif in_math:  # $$内的内容直接添加
-                    temp_str += char
-                else:  # $$外的内容
-                    if char == "_":
-                        temp_str += replace_underscore if replace_underscore else "_"
+            dollar_positions = []
+            for index, char in enumerate(text):
+                if char != '$':
+                    continue
+                backslash_count = 0
+                previous = index - 1
+                while previous >= 0 and text[previous] == '\\':
+                    backslash_count += 1
+                    previous -= 1
+                if backslash_count % 2 == 0:
+                    dollar_positions.append(index)
+
+            if len(dollar_positions) % 2 == 0:
+                dollar_positions = set(dollar_positions)
+                in_math = False
+                processed_chars = []
+                for index, char in enumerate(text):
+                    if index in dollar_positions:
+                        in_math = not in_math
+                    if char == '_' and not in_math and replace_underscore:
+                        processed_chars.append(replace_underscore)
                     else:
-                        temp_str += char
-            if temp_str:  # 添加最后一部分
-                parts.append(temp_str)
+                        processed_chars.append(char)
+                parts = [''.join(processed_chars)]
+            else:
+                parts = [text.replace('_', replace_underscore)
+                         if replace_underscore else text]
         else:
             parts = [text.replace('_', replace_underscore)
                      if replace_underscore else text]
@@ -4669,7 +4683,10 @@ def round_float_auto(number, format_type=ROUND_FORMAT, latex=False, **kwargs):
     注意:
     general的情形下,不会采取科学记数法,默认采取标准记数法(因为这个函数的特性在于自动确定小数位数,general无法判断采用哪种记数法)
     '''
-    if format_type == 'scientific':
+    if format_type == 'scientific' and number == 0:
+        # 0 没有可用于计算数量级的非零系数，直接使用 0 位小数。
+        decimal_count = 0
+    elif format_type == 'scientific':
         coefficient, _ = get_coefficient_exponent(number)
         decimal_count = get_decimal_num(coefficient, **kwargs)
     else:
@@ -7416,8 +7433,8 @@ class RunAllMixin:
         运行所有公共方法
         exclude: 要排除的方法名列表
         '''
-        if exclude is None:
-            exclude = ['run_all']
+        exclude = set(exclude or ())
+        exclude.add('run_all')
         
         for method_name in dir(self):
             # 排除特殊方法和私有方法
@@ -20066,7 +20083,12 @@ class MultiVisualizer(SingleVisualizer):
         示例:
         new_multi_visualizer = MultiVisualizer.from_multi_visualizer_instance(multi_visualizer)
         '''
-        return cls(copy.deepcopy(multi_visualizer_instance.single_visualizer_list), copy.deepcopy(multi_visualizer_instance.save_fig_kwargs), copy.deepcopy(multi_visualizer_instance.fig_title_list))
+        return cls(
+            copy.deepcopy(multi_visualizer_instance.single_visualizer_list),
+            copy.deepcopy(multi_visualizer_instance.save_fig_kwargs),
+            copy.deepcopy(multi_visualizer_instance.fig_title_list),
+            copy.deepcopy(multi_visualizer_instance.title),
+        )
 
     def get_fig_subfig_ax(self, subfig_nrows='auto', subfig_ncols='auto', separate=False, get_suitable_fig_size_kwargs=None, get_fig_subfig_kwargs=None, get_ax_kwargs=None):
         '''
@@ -20080,9 +20102,9 @@ class MultiVisualizer(SingleVisualizer):
             raise ValueError('subfig_nrows and subfig_ncols cannot be both auto.')
 
         if subfig_nrows == 'auto':
-            subfig_nrows = round(self.num / subfig_ncols)
+            subfig_nrows = int(np.ceil(self.num / subfig_ncols))
         if subfig_ncols == 'auto':
-            subfig_ncols = round(self.num / subfig_nrows)
+            subfig_ncols = int(np.ceil(self.num / subfig_nrows))
 
         self.subfig_nrows = subfig_nrows
         self.subfig_ncols = subfig_ncols
