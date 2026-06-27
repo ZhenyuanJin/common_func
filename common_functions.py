@@ -8923,20 +8923,42 @@ def get_entropy(p, base=None, **kwargs):
     return st.entropy(p, base=base, **kwargs)
 
 
-def get_mutual_information(p, q, joint_pq):
+def get_mutual_information(joint_pq):
     '''
-    计算两个概率分布的互信息
-    两个概率分布的长度必须相同
+    根据二维联合分布计算互信息.
 
     参数:
-    p - 第一个概率分布
-    q - 第二个概率分布
-    joint_pq - 联合概率分布
+    joint_pq - 二维联合概率或非负权重
 
     返回:
-    mutual_information - 两个概率分布的互信息
+    mutual_information - 标量互信息,单位为nat
+
+    注意:
+    输入会在函数内部归一化,边缘分布由联合分布直接计算.
     '''
-    return get_entropy(p) + get_entropy(q) - get_entropy(joint_pq)
+    joint_pq = np.asarray(joint_pq, dtype=float)
+
+    if joint_pq.ndim != 2 or 0 in joint_pq.shape:
+        raise ValueError('joint_pq must be a non-empty two-dimensional distribution')
+    if not np.all(np.isfinite(joint_pq)):
+        raise ValueError('joint_pq must contain only finite values')
+    if np.any(joint_pq < 0):
+        raise ValueError('joint_pq must not contain negative values')
+    total = joint_pq.sum()
+    if not np.isfinite(total) or total <= 0:
+        raise ValueError('joint_pq must have a finite positive sum')
+
+    joint_probability = joint_pq / total
+    independent_probability = np.outer(
+        joint_probability.sum(axis=1),
+        joint_probability.sum(axis=0),
+    )
+    return float(
+        get_kl_divergence(
+            joint_probability.ravel(),
+            independent_probability.ravel(),
+        )
+    )
 
 
 def get_jsd(p, q, base=None, **kwargs):
