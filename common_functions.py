@@ -12881,7 +12881,7 @@ def add_errorbar(ax, x, y, err, label=None, color=BLACK, linestyle='None', capsi
         kwargs['elinewidth'] = ERRORBAR_LINEWIDTH
 
     # 检查x中元素是否包含字符串
-    if isinstance(x, (list, np.ndarray)):
+    if isinstance(x, (list, tuple, np.ndarray)):
         x = list(x)
         if any(isinstance(item, str) for item in x) or equal_space:
             # 如果x中包含字符串,则将其全部转换为字符串
@@ -12936,7 +12936,14 @@ def inset_ax(ax, left, right, bottom, top, label='inset', inset_mode='fig', **kw
     在指定位置添加一个新的inset ax;位置坐标是相对于原ax的坐标
 
     注意:
-    如果使用inset_mode='ax',则获得的ax和普通的ax不同:比如,随着原ax的移动,内嵌ax的位置也会移动;不能单独移动内嵌的ax;从fig中获取axes时,内嵌的ax不会被获取到;随着原ax的删除,内嵌的ax也会被删除;内嵌ax的删除不能通过fig.delaxes()来删除,而是通过ax.remove()来删除;内嵌的ax无法作为reparent_ax的parent_ax(当然这有可能是我实现reparent_ax的不足导致的);对于原ax,set_visible(False)会同时隐藏内嵌的ax
+    如果使用 inset_mode='ax',则获得的 ax 和普通 ax 不同:
+    - 内嵌 ax 会随原 ax 移动,不能单独移动.
+    - fig.axes 不包含内嵌 ax.
+    - 删除原 ax 时,内嵌 ax 也会随之不再显示.
+    - 不论删除普通 ax 还是内嵌 ax,都应统一调用 rm_ax;rm_ax 会正确处理两种情况.
+    - 内嵌 ax 无法作为 reparent_ax 的 parent_ax
+      (这也可能是 reparent_ax 当前实现的限制).
+    - 对原 ax 调用 set_visible(False) 时,内嵌 ax 也会被隐藏.
     '''
     valid_inset_modes = ('fig', 'ax')
     if inset_mode not in valid_inset_modes:
@@ -13178,7 +13185,7 @@ def zoom_in_xrange(ax, zoom_in_ax, xmin, xmax, color=GREEN, alpha=FAINT_ALPHA, c
     xmax (float): 缩放区域的最大 x 值.
     color (str): 缩放框的颜色.默认为绿色.
     alpha (float): 缩放框的透明度.默认为淡色.
-    connection_mode (str): 连接线的方向.可以是 'up' 或 'down'.
+    connection_mode (str): 连接线的方向.可以是 'up' 或 'down'.为 None 时根据两个 Axes 的位置自动推断.
     """
     zoom_in_xrange_partial(ax, zoom_in_ax, xmin, xmax, xmin, xmax, color, alpha, connection_mode)
 
@@ -13196,17 +13203,18 @@ def zoom_in_xrange_partial(ax, zoom_in_ax, xmin, xmax, zoom_xmin, zoom_xmax, col
     zoom_xmax (float): zoom_in_ax的最大 x 值.
     color (str): 缩放框的颜色.默认为绿色.
     alpha (float): 缩放框的透明度.默认为淡色.
-    connection_mode (str): 连接线的方向.可以是 'up' 或 'down'.
+    connection_mode (str): 连接线的方向.可以是 'up' 或 'down'.为 None 时根据两个 Axes 的位置自动推断.
     """
     # 获取ax和zoom_in_ax的position
     ax_pos = ax.get_position()
     zoom_in_ax_pos = zoom_in_ax.get_position()
     
-    # 判断缩放图的位置
-    if zoom_in_ax_pos.y0 > ax_pos.y0:
-        connection_mode = 'up'
-    elif zoom_in_ax_pos.y0 < ax_pos.y0:
-        connection_mode = 'down'
+    # 未显式指定连接方向时，根据缩放图的位置自动推断
+    if connection_mode is None:
+        if zoom_in_ax_pos.y0 > ax_pos.y0:
+            connection_mode = 'up'
+        elif zoom_in_ax_pos.y0 < ax_pos.y0:
+            connection_mode = 'down'
 
     # 设置缩放图的 x 轴和 y 轴范围
     zoom_in_ax.set_xlim(zoom_xmin, zoom_xmax)
@@ -13239,7 +13247,7 @@ def zoom_in_yrange(ax, zoom_in_ax, ymin, ymax, color=GREEN, alpha=FAINT_ALPHA, c
     ymax (float): 缩放区域的最大 y 值.
     color (str): 缩放框的颜色.默认为绿色.
     alpha (float): 缩放框的透明度.默认为淡色.
-    connection_mode (str): 连接线的方向.可以是 'left' 或 'right'.
+    connection_mode (str): 连接线的方向.可以是 'left' 或 'right'.为 None 时根据两个 Axes 的位置自动推断.
     """
     zoom_in_yrange_partial(ax, zoom_in_ax, ymin, ymax, ymin, ymax, color, alpha, connection_mode)
 
@@ -13257,17 +13265,18 @@ def zoom_in_yrange_partial(ax, zoom_in_ax, ymin, ymax, zoom_ymin, zoom_ymax, col
     zoom_ymax (float): zoom_in_ax的最大 y 值.
     color (str): 缩放框的颜色.默认为绿色.
     alpha (float): 缩放框的透明度.默认为淡色.
-    connection_mode (str): 连接线的方向.可以是 'left' 或 'right'.
+    connection_mode (str): 连接线的方向.可以是 'left' 或 'right'.为 None 时根据两个 Axes 的位置自动推断.
     """
     # 获取ax和zoom_in_ax的position
     ax_pos = ax.get_position()
     zoom_in_ax_pos = zoom_in_ax.get_position()
     
-    # 判断缩放图的位置
-    if zoom_in_ax_pos.x0 > ax_pos.x0:
-        connection_mode = 'right'
-    elif zoom_in_ax_pos.x0 < ax_pos.x0:
-        connection_mode = 'left'
+    # 未显式指定连接方向时，根据缩放图的位置自动推断
+    if connection_mode is None:
+        if zoom_in_ax_pos.x0 > ax_pos.x0:
+            connection_mode = 'right'
+        elif zoom_in_ax_pos.x0 < ax_pos.x0:
+            connection_mode = 'left'
 
     # 设置缩放图的 x 轴和 y 轴范围
     zoom_in_ax.set_ylim(zoom_ymin, zoom_ymax)
@@ -13330,11 +13339,7 @@ def add_twin_ax(ax, axis, color='black', label='twin', inset_mode='fig'):
 @iterate_over_axs
 def rm_ax(ax):
     """删除指定的Axes对象"""
-    try:
-        fig = ax.figure  # 获取 Axes 所属的 Figure
-        fig.delaxes(ax)  # 从 Figure 中删除 Axes
-    except:
-        ax.remove()  # 移除 Axes 对象
+    ax.remove()
 
 @iterate_over_axs
 def set_ax_invisible(ax):
@@ -17913,6 +17918,8 @@ def show_zorder(ax, include_axes=False, font_size=None, color=RED, alpha=FAINT_A
     if font_size is None:
         font_size = FONT_SIZE
     zorder_dict = get_zorder_dict(ax, include_axes)
+    if not zorder_dict:
+        return
     max_zorder = np.max(list(zorder_dict.values())) + 1
     
     for (obj, obj_type), zorder in zorder_dict.items():
@@ -17965,6 +17972,8 @@ def ax_proportion_to_inch(ax, proportion, axis='x'):
         return ax_width * proportion
     elif axis == 'y':
         return ax_height * proportion
+    else:
+        raise ValueError(f"Unsupported axis={axis!r}; expected 'x' or 'y'")
 
 
 def inch_to_ax_proportion(ax, inch, axis='x'):
@@ -17976,6 +17985,8 @@ def inch_to_ax_proportion(ax, inch, axis='x'):
         return inch / ax_width
     elif axis == 'y':
         return inch / ax_height
+    else:
+        raise ValueError(f"Unsupported axis={axis!r}; expected 'x' or 'y'")
 
 
 def ax_proportion_to_point(ax, proportion, axis='x'):
@@ -18637,6 +18648,11 @@ def set_symlog_scale(ax, axis, linthresh, linscale=1, **kwargs):
     - linscale (float, optional): 线性区域的缩放因子(默认为1,意为线性区域从-linthresh到linthresh的视觉上等于对数区域的一格)
     - **kwargs: 传递给set_xscale/set_yscale/set_zscale的其他参数
     '''
+    if axis not in ('x', 'y', 'z'):
+        raise ValueError(
+            f"Unsupported axis={axis!r}; expected 'x', 'y', or 'z'"
+        )
+
     if axis == 'x':
         ax.set_xscale('symlog', linthresh=linthresh, linscale=linscale, **kwargs)
     elif axis == 'y':
@@ -18810,8 +18826,13 @@ def add_axes_xylabel(axes, xlabel=None, ylabel=None, text_process=None, label_si
 
 
 def get_tick_size(ax):
-    x_tick_size = ax.xaxis.get_ticklabels()[0].get_fontsize()
-    y_tick_size = ax.yaxis.get_ticklabels()[0].get_fontsize()
+    x_ticklabels = ax.xaxis.get_ticklabels()
+    y_ticklabels = ax.yaxis.get_ticklabels()
+    if not x_ticklabels or not y_ticklabels:
+        raise ValueError("No tick labels found for one or both axes")
+
+    x_tick_size = x_ticklabels[0].get_fontsize()
+    y_tick_size = y_ticklabels[0].get_fontsize()
     return x_tick_size, y_tick_size
 
 
@@ -18883,6 +18904,13 @@ def format_axis_ticklabel(ax, axis='both', tick_source='ticklabel', func=round_f
     - axis: 要设置的轴 ('x', 'y' 或 'both')
     - tick_source: 用于生成标签的来源 ('tick' 使用刻度值, 'ticklabel' 使用现有标签)
     """
+    valid_tick_sources = ('tick', 'ticklabel')
+    if tick_source not in valid_tick_sources:
+        raise ValueError(
+            f"Unsupported tick_source={tick_source!r}; "
+            f"expected one of {valid_tick_sources}"
+        )
+
     kwargs = update_dict({}, kwargs)
     
     def _process_axis(axis_type):
@@ -19246,6 +19274,12 @@ def get_suitable_fig_size(nrows=1, ncols=1, ax_width=AX_WIDTH, ax_height=AX_HEIG
 
         adjust_params_custom 含义: 此处left, right, top, bottom的值相对于ax, 而不是fig
     '''
+    valid_modes = ('auto', 'adjust_params_custom', 'adjust_params', 'margin')
+    if which not in valid_modes:
+        raise ValueError(
+            f"Unsupported which={which!r}; expected one of {valid_modes}"
+        )
+
     margin = update_dict(MARGIN, margin)
     adjust_params_custom = update_dict(ADJUST_PARAMS_CUSTOM, adjust_params_custom)
     if adjust_params_custom and which in ['adjust_params_custom', 'auto']:
