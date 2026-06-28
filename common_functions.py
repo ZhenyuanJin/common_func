@@ -6011,9 +6011,12 @@ class InstanceContainer:
         
         # 排序
         sorted_pairs = sorted(zip(keys, containers), key=lambda x: x[0])
+        if not sorted_pairs:
+            return [], []
+
         keys, containers = zip(*sorted_pairs)
 
-        return keys, containers
+        return list(keys), list(containers)
 
     def __len__(self):
         return len(self._instances)
@@ -12776,35 +12779,77 @@ def plt_stem_3d(ax, x, y, z, label=None, linefmt='-', markerfmt='o', basefmt='k-
 # region 初级作图函数(sns系列,可同时接受矩阵和dataframe)
 def sns_heatmap(ax, data, cmap=HEATMAP_CMAP, square=True, cbar=True, cbar_position=None, cbar_label=None, discrete_label=None, xtick_rotation=XTICK_ROTATION, ytick_rotation=YTICK_ROTATION, show_xtick=True, show_ytick=True, show_all_xtick=True, show_all_ytick=True, xtick_fontsize=None, ytick_fontsize=None, mask=None, mask_color=MASK_COLOR, mask_tick='mask', norm_mode='linear', vmin=None, vmax=None, norm_kwargs=None, text_process=None, heatmap_kwargs=None, cbar_kwargs=None):
     '''
-    使用数据绘制热图,可以接受sns.heatmap的其他参数;注意,如果要让heatmap按照ax的框架显示,需要将square设置为False(如果想要mask是透明的,需要将mask_color设置为None)
-    :param ax: matplotlib的轴对象,用于绘制图形
-    :param data: 用于绘制热图的数据矩阵
-    :param cmap: 热图的颜色映射,默认为CMAP.可以是离散的或连续的,须与discrete参数相符合.
-    :param square: 是否以正方形显示每个cell,默认为True
-    :param cbar: 是否显示颜色条,默认为True
-    :param cbar_position: 颜色条的位置,默认为None,即使用默认位置;position参数可选'left', 'right', 'top', 'bottom'
-    :param discrete: 是否离散显示,默认为False
-    :param discrete_num: 离散显示的颜色数,默认为None,即使用默认颜色数
-    :param discrete_label: 离散显示的标签,默认为None
-    :param xtick_rotation: x轴刻度标签的旋转角度
-    :param ytick_rotation: y轴刻度标签的旋转角度
-    :param show_xtick: 是否显示x轴的刻度标签
-    :param show_ytick: 是否显示y轴的刻度标签
-    :param show_all_xtick: 是否显示所有x轴的刻度标签
-    :param show_all_ytick: 是否显示所有y轴的刻度标签
-    :param xtick_fontsize: x轴刻度标签的字体大小
-    :param ytick_fontsize: y轴刻度标签的字体大小
-    :param mask: 用于遮盖的矩阵,默认为None
-    :param mask_color: 遮盖矩阵的颜色,默认为MASK_COLOR
-    :param mask_tick: 遮盖矩阵颜色条的标签,默认为'mask'
-    :param vmin: 热图的最小值,默认为None,即使用数据的最小值
-    :param vmax: 热图的最大值,默认为None,即使用数据的最大值
-    :param text_process: 是否对颜色条标签进行文本处理,默认为TEXT_PROCESS
-    :param heatmap_kwargs: 传递给sns.heatmap的其他参数
-    :param cbar_label_kwargs: 传递给颜色条标签的其他参数
+    使用DataFrame或二维NumPy数组绘制热图.颜色条由add_side_colorbar单独绘制,
+    而不是使用seaborn自带的颜色条.
 
-    注意:
-    此函数会将y轴的方向反转,即y轴的0位置在最上方
+    :param ax: matplotlib的轴对象.
+    :param data: 二维pandas.DataFrame或numpy.ndarray.使用DataFrame时,index和columns会用作刻度标签.
+    :param cmap: matplotlib Colormap.连续模式通常使用连续cmap;离散模式建议使用
+        get_cmap(colors, continuous=False)创建ListedColormap.
+    :param square: 是否令每个cell为正方形,默认为True.若希望热图填满ax的现有长宽比例,设为False.
+    :param cbar: 是否通过add_side_colorbar在ax旁边添加颜色条.为True时返回colorbar列表,
+        为False时不添加颜色条并返回None.
+    :param cbar_position: 颜色条位置参数字典.位置可选'left', 'right', 'top', 'bottom'.
+    :param cbar_label: 颜色条标题.
+    :param discrete_label: 离散区间的文字标签.此参数只设置颜色条标签,不会令热图离散化.
+        必须配合norm_mode='boundary'使用,标签数量应等于len(boundaries)-1.
+    :param xtick_rotation: x轴刻度标签旋转角度.
+    :param ytick_rotation: y轴刻度标签旋转角度.
+    :param show_xtick: 是否显示x轴刻度标签.
+    :param show_ytick: 是否显示y轴刻度标签.
+    :param show_all_xtick: 是否用DataFrame的全部columns重设x轴刻度.
+    :param show_all_ytick: 是否用DataFrame的全部index重设y轴刻度.
+    :param xtick_fontsize: x轴刻度标签字号.
+    :param ytick_fontsize: y轴刻度标签字号.
+    :param mask: 与data形状一致的布尔矩阵.True表示该位置被遮盖.
+    :param mask_color: mask区域的填充颜色.设为None时仍应用mask,但被遮盖的cell不绘制,
+        因而露出ax背景;这不等同于禁用mask.
+    :param mask_tick: 使用有色mask和颜色条时,mask附加颜色条的文字标签.
+    :param norm_mode: 颜色归一化模式.可选'linear', 'log', 'symlog', 'two_slope',
+        'boundary'.离散热图必须使用'boundary'.
+    :param vmin: 显示范围下限.None时取应用mask后的可见数据最小值.
+    :param vmax: 显示范围上限.None时取应用mask后的可见数据最大值.
+    :param norm_kwargs: 传给get_norm的参数.常用参数为:symlog的linthresh,
+        two_slope的vcenter,以及boundary的boundaries和ncolors.
+    :param text_process: 颜色条文字处理配置.
+    :param heatmap_kwargs: 传给sns.heatmap的其他参数,例如
+        {'annot': True, 'fmt': '.2f', 'linewidths': 0.5}.不要在这里重复传入
+        ax, cmap, square, cbar或norm,这些参数由本函数管理.
+    :param cbar_kwargs: 传给add_side_colorbar的其他参数,例如
+        {'display_edge_ticks': False}.不要重复传入本函数已经传递给颜色条的参数.
+
+    连续模式示例::
+
+        sns_heatmap(ax, data, norm_mode='linear', vmin=0, vmax=1)
+
+    离散模式示例.区间为[0, 1), [1, 2), [2, 3],三个标签对应三个区间::
+
+        colors = ['#d9f0ff', '#73b3d8', '#08306b']
+        discrete_cmap = get_cmap(colors, continuous=False)
+        sns_heatmap(
+            ax,
+            data,
+            cmap=discrete_cmap,
+            norm_mode='boundary',
+            norm_kwargs={'boundaries': [0, 1, 2, 3], 'ncolors': 3},
+            vmin=0,
+            vmax=3,
+            discrete_label=['low', 'medium', 'high'],
+            cbar_kwargs={'display_edge_ticks': False},
+        )
+
+    推荐用法与约束:
+    1. 连续热图:使用连续cmap,并根据数据选择linear、log、symlog或two_slope模式;
+       不设置discrete_label.
+    2. 离散热图:使用get_cmap(colors, continuous=False)创建离散cmap,同时使用
+       boundary模式,并在norm_kwargs中提供boundaries和ncolors.
+    3. 离散模式下,boundaries必须单调递增;ncolors应与离散cmap的颜色数一致,
+       discrete_label数量必须等于len(boundaries)-1.建议将vmin和vmax分别设为
+       boundaries的首值和末值.
+    4. 不建议混用连续cmap与boundary模式,或离散cmap与非boundary模式;
+       这些组合不保证热图区间、颜色和颜色条标签正确对应.
+
+    seaborn热图默认令第0行显示在最上方.
     '''
     text_process = update_dict(TEXT_PROCESS, text_process)
     cbar_kwargs = update_dict({}, cbar_kwargs)
@@ -12822,9 +12867,8 @@ def sns_heatmap(ax, data, cmap=HEATMAP_CMAP, square=True, cbar=True, cbar_positi
         mask = pd.DataFrame(mask)
     elif mask is not None:
         mask = mask.copy()
-    if mask_color is None:
-        local_data = np.where(mask, np.nan, data)
-        print('mask color is none need to be imporved')
+    if mask is not None:
+        local_data = local_data.mask(mask)
     if vmin is None:
         vmin = np.nanmin(local_data.values)
     elif vmin > np.nanmin(local_data.values):
@@ -20138,7 +20182,8 @@ def convert_fig(input_file_path, output_format):
                                     'PDF', resolution=SAVEFIG_DPI)
 
     elif input_format == 'png' and output_format == 'eps':
-        print('png to eps is not supported')
+        with Image.open(input_file_path) as img:
+            img.save(output_file_path, 'EPS')
 
     elif input_format == 'eps' and output_format == 'png':
         # # EPS to PNG conversion
