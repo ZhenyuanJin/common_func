@@ -7587,29 +7587,50 @@ def argsort_array(arr, ascending=True, nan_policy='warn'):
 
 
 # region 数据清洗相关函数(nan,inf)
-def process_inf(data, inf_policy=INF_POLICY):
-    '''Processes inf values according to the specified policy.'''
+def process_inf(data, inf_policy=INF_POLICY, verbose=True):
+    '''
+    Processes inf values according to the specified policy.
+
+    When ``verbose`` is True, a message is printed only if one or more infinite
+    values are actually converted to NaN.
+    '''
     if inf_policy == 'to_nan':
         if isinstance(data, np.ndarray):
+            inf_count = int(np.count_nonzero(np.isinf(data)))
             data = np.where(np.isinf(data), np.nan, data)
         elif isinstance(data, list):
+            inf_count = int(np.count_nonzero(np.isinf(np.asarray(data))))
             data = np.where(np.isinf(data), np.nan, data).tolist()
         elif isinstance(data, (pd.Series, pd.DataFrame)):
+            inf_count = int(np.count_nonzero(np.asarray(data.isin([np.inf, -np.inf]))))
             data = data.replace([np.inf, -np.inf], np.nan)
+        else:
+            inf_count = 0
+        if verbose and inf_count:
+            print(
+                f"process_inf: processed {inf_count} Inf value(s) "
+                f"with inf_policy='{inf_policy}'."
+            )
     elif inf_policy == 'ignore':
         pass
     return data
 
 
-def process_nan(data, nan_policy=NAN_POLICY, fill_value=0):
+def process_nan(data, nan_policy=NAN_POLICY, fill_value=None, verbose=True):
     '''
     主要适用于一维数据,对于二维数据,drop interplate等操作不被允许,需要使用者分解为一维数据后再进行操作
 
     参数:
     - data: 输入的数据
     - nan_policy: 可选'propagate', 'fill', 'drop', 'interpolate'之一,默认为NAN_POLICY; propogate表示不处理NaN,fill表示用fill_value填充NaN,drop表示删除NaN,interpolate表示使用插值填充NaN
-    - fill_value: 用于填充NaN的值, 默认为0
+    - fill_value: 用于填充NaN的值;仅在nan_policy='fill'时需要
+    - verbose: 为True时,仅在实际处理了NaN后打印处理数量和策略
     '''
+    if nan_policy == 'fill' and fill_value is None:
+        raise ValueError("fill_value must be provided when nan_policy='fill'")
+
+    nan_count_before = int(np.count_nonzero(np.asarray(pd.isna(data))))
+
     def df_like_interpolate(data):
         if isinstance(data, np.ndarray):
             return pd.Series(data).interpolate().values
@@ -7628,9 +7649,9 @@ def process_nan(data, nan_policy=NAN_POLICY, fill_value=0):
         else:
             raise ValueError('nan_policy not supported')
 
-        return result.tolist()
+        result = result.tolist()
 
-    if isinstance(data, np.ndarray):
+    elif isinstance(data, np.ndarray):
         if nan_policy == 'propagate':
             result = data
         elif nan_policy == 'fill':
@@ -7646,9 +7667,7 @@ def process_nan(data, nan_policy=NAN_POLICY, fill_value=0):
         else:
             raise ValueError('nan_policy not supported')
 
-        return result
-
-    if isinstance(data, (pd.Series, pd.DataFrame)):
+    elif isinstance(data, (pd.Series, pd.DataFrame)):
         if nan_policy == 'propagate':
             result = data
         elif nan_policy == 'fill':
@@ -7666,26 +7685,39 @@ def process_nan(data, nan_policy=NAN_POLICY, fill_value=0):
         else:
             raise ValueError('nan_policy not supported')
 
-        return result
+    else:
+        return None
+
+    nan_count_after = int(np.count_nonzero(np.asarray(pd.isna(result))))
+    processed_count = nan_count_before - nan_count_after
+    if verbose and processed_count:
+        print(
+            f"process_nan: processed {processed_count} NaN value(s) "
+            f"with nan_policy='{nan_policy}'."
+        )
+    return result
 
 
-def process_special_value(data, nan_policy=NAN_POLICY, fill_value=0, inf_policy=INF_POLICY):
+def process_special_value(data, nan_policy=NAN_POLICY, fill_value=None, inf_policy=INF_POLICY, verbose=True):
     '''
-    处理数据中的NaN和inf值
+    处理数据中的NaN和inf值.
+
+    ``verbose=True``时,仅由基础处理函数报告实际发生的修改;本函数不重复汇总.
     '''
-    data = process_inf(data, inf_policy=inf_policy)  # Process inf values first
+    data = process_inf(data, inf_policy=inf_policy, verbose=verbose)  # Process inf values first
     data = process_nan(data, nan_policy=nan_policy,
-                       fill_value=fill_value)  # Process NaN values
+                       fill_value=fill_value, verbose=verbose)  # Process NaN values
     return data
 
 
-def sync_special_value(*args, inf_policy=INF_POLICY):
+def sync_special_value(*args, inf_policy=INF_POLICY, verbose=True):
     '''
     同步多个输入数据中相同位置的NaN和inf值.
 
     所有输入必须类型和形状一致,支持list、numpy.ndarray、pd.Series和
     pd.DataFrame。Series还必须具有相同索引,DataFrame必须具有相同索引和列.
     本函数按位置同步特殊值,不会修改原始输入.
+    ``verbose=True``时报告Inf转换和因同步新增的NaN单元数量.
     '''
     if not args:
         raise ValueError('At least one input is required')
@@ -7716,7 +7748,7 @@ def sync_special_value(*args, inf_policy=INF_POLICY):
         ):
             raise ValueError('All pandas DataFrame inputs must have the same index and columns')
 
-    args = [process_inf(a, inf_policy=inf_policy)
+    args = [process_inf(a, inf_policy=inf_policy, verbose=verbose)
             for a in args]  # Process inf values first
 
     # Convert all inputs to numpy arrays for processing
@@ -7725,9 +7757,18 @@ def sync_special_value(*args, inf_policy=INF_POLICY):
 
     # Find indices where any input has NaN
     nan_mask = np.any(np.isnan(args_np), axis=0)
+    synchronized_count = sum(
+        int(np.count_nonzero(nan_mask & ~np.isnan(arg)))
+        for arg in args_np
+    )
 
     # Apply NaN where any NaNs are found across corresponding elements
     args_np_synced = [np.where(nan_mask, np.nan, arg) for arg in args_np]
+    if verbose and synchronized_count:
+        print(
+            f"sync_special_value: synchronized {synchronized_count} "
+            "value(s) to NaN."
+        )
 
     # Convert back to original data types
     args_synced = []
@@ -7745,9 +7786,11 @@ def sync_special_value(*args, inf_policy=INF_POLICY):
     return args_synced if len(args_synced) > 1 else args_synced[0]
 
 
-def sync_special_value_along_axis(data, sync_axis=0, inf_policy=INF_POLICY):
+def sync_special_value_along_axis(data, sync_axis=0, inf_policy=INF_POLICY, verbose=True):
     '''
-    同步多维数据中的NaN和inf值沿着指定的轴
+    同步多维数据中的NaN和inf值沿着指定的轴.
+
+    ``verbose=True``时报告Inf转换和因同步新增的NaN单元数量.
     '''
     # Input verification
     if not isinstance(data, (np.ndarray, pd.DataFrame, list)):
@@ -7770,7 +7813,7 @@ def sync_special_value_along_axis(data, sync_axis=0, inf_policy=INF_POLICY):
         raise ValueError("Invalid sync_axis for the data shape")
     
     # Apply inf_policy
-    data_processed = process_inf(local_data, inf_policy=inf_policy)
+    data_processed = process_inf(local_data, inf_policy=inf_policy, verbose=verbose)
 
     # Sync nan and possibly inf values along the specified axis
     if local_data.ndim == 1:
@@ -7781,7 +7824,13 @@ def sync_special_value_along_axis(data, sync_axis=0, inf_policy=INF_POLICY):
         nan_mask = np.any(np.isnan(data_processed), axis=sync_axis, keepdims=True)
     
     # Apply the mask
+    synchronized_count = int(np.count_nonzero(nan_mask & ~np.isnan(data_processed)))
     data_synced = np.where(nan_mask, np.nan, data_processed)
+    if verbose and synchronized_count:
+        print(
+            f"sync_special_value_along_axis: synchronized "
+            f"{synchronized_count} value(s) to NaN."
+        )
 
     # Convert back to original data type if needed
     if isinstance(data, pd.DataFrame):
@@ -8827,13 +8876,13 @@ def get_angle_3d(source, target, angle_type='rad', azim_range='0:360', elev_rang
     return azim, elev
 
 
-def get_corr(x, y, nan_policy='drop', fill_value=0, inf_policy=INF_POLICY, sync=True):
+def get_corr(x, y, nan_policy='drop', fill_value=None, inf_policy=INF_POLICY, sync=True, verbose=True):
     '''
     计算两个数组的相关系数
     sync表示是否将两个数组的nan和inf位置同步处理(假如一个数据有nan,另一个没有,则将两个数据的nan位置都设置为nan)
     '''
-    x, y = sync_special_value(x, y, inf_policy=inf_policy) if sync else (x, y)
-    return np.corrcoef(process_special_value(x, nan_policy=nan_policy, fill_value=fill_value, inf_policy=inf_policy), process_special_value(y, nan_policy=nan_policy, fill_value=fill_value, inf_policy=inf_policy))[0, 1]
+    x, y = sync_special_value(x, y, inf_policy=inf_policy, verbose=verbose) if sync else (x, y)
+    return np.corrcoef(process_special_value(x, nan_policy=nan_policy, fill_value=fill_value, inf_policy=inf_policy, verbose=verbose), process_special_value(y, nan_policy=nan_policy, fill_value=fill_value, inf_policy=inf_policy, verbose=verbose))[0, 1]
 
 
 def get_matrix_corr(matrix_x, matrix_y, triangle_type=None, diagonal=True, get_corr_kwargs=None):
@@ -8896,23 +8945,23 @@ def get_pd_rectangle_corr(df_x, df_y, diagonal=True, get_corr_kwargs=None):
     return get_rectangle_matrix_corr(df_x_aligned.values, df_y_aligned.values, diagonal=diagonal, get_corr_kwargs=get_corr_kwargs)
 
 
-def get_CV(data, nan_policy='drop', fill_value=0, inf_policy=INF_POLICY):
+def get_CV(data, nan_policy='drop', fill_value=None, inf_policy=INF_POLICY, verbose=True):
     '''
     计算数据的变异系数(Coefficient of Variation, CV)
     '''
-    data = process_special_value(data, nan_policy=nan_policy, fill_value=fill_value, inf_policy=inf_policy)
+    data = process_special_value(data, nan_policy=nan_policy, fill_value=fill_value, inf_policy=inf_policy, verbose=verbose)
     return np.std(data) / np.mean(data)
 
 
-def get_FF(data, nan_policy='drop', fill_value=0, inf_policy=INF_POLICY):
+def get_FF(data, nan_policy='drop', fill_value=None, inf_policy=INF_POLICY, verbose=True):
     '''
     计算数据的Fano因子(Fano Factor, FF)
     '''
-    data = process_special_value(data, nan_policy=nan_policy, fill_value=fill_value, inf_policy=inf_policy)
+    data = process_special_value(data, nan_policy=nan_policy, fill_value=fill_value, inf_policy=inf_policy, verbose=verbose)
     return np.var(data) / np.mean(data)
 
 
-def get_linregress(x, y, nan_policy='drop', fill_value=0, inf_policy=INF_POLICY, sync=True):
+def get_linregress(x, y, nan_policy='drop', fill_value=None, inf_policy=INF_POLICY, sync=True, verbose=True):
     '''
     对给定的数据进行线性回归拟合
 
@@ -8928,11 +8977,11 @@ def get_linregress(x, y, nan_policy='drop', fill_value=0, inf_policy=INF_POLICY,
     std_err - 标准误差
     residual - 残差(y - y_pred)
     '''
-    x, y = sync_special_value(x, y, inf_policy=inf_policy) if sync else (x, y)
+    x, y = sync_special_value(x, y, inf_policy=inf_policy, verbose=verbose) if sync else (x, y)
     x = np.array(process_special_value(x, nan_policy=nan_policy,
-                 fill_value=fill_value, inf_policy=inf_policy))
+                 fill_value=fill_value, inf_policy=inf_policy, verbose=verbose))
     y = np.array(process_special_value(y, nan_policy=nan_policy,
-                 fill_value=fill_value, inf_policy=inf_policy))
+                 fill_value=fill_value, inf_policy=inf_policy, verbose=verbose))
 
     regress_dict = {}
 
@@ -8945,7 +8994,7 @@ def get_linregress(x, y, nan_policy='drop', fill_value=0, inf_policy=INF_POLICY,
     return regress_dict
 
 
-def get_curvefit(x, y, func, p0=None, bounds=(-np.inf, np.inf), maxfev=1000, nan_policy='drop', fill_value=0, inf_policy=INF_POLICY, sync=True):
+def get_curvefit(x, y, func, p0=None, bounds=(-np.inf, np.inf), maxfev=1000, nan_policy='drop', fill_value=None, inf_policy=INF_POLICY, sync=True, verbose=True):
     '''
     对给定的数据进行曲线拟合
 
@@ -8954,9 +9003,9 @@ def get_curvefit(x, y, func, p0=None, bounds=(-np.inf, np.inf), maxfev=1000, nan
     pcov - 参数协方差
     error - 残差平方和
     '''
-    x, y = sync_special_value(x, y, inf_policy=inf_policy) if sync else (x, y)
-    x = np.array(process_special_value(x, nan_policy=nan_policy, fill_value=fill_value, inf_policy=inf_policy))
-    y = np.array(process_special_value(y, nan_policy=nan_policy, fill_value=fill_value, inf_policy=inf_policy))
+    x, y = sync_special_value(x, y, inf_policy=inf_policy, verbose=verbose) if sync else (x, y)
+    x = np.array(process_special_value(x, nan_policy=nan_policy, fill_value=fill_value, inf_policy=inf_policy, verbose=verbose))
+    y = np.array(process_special_value(y, nan_policy=nan_policy, fill_value=fill_value, inf_policy=inf_policy, verbose=verbose))
 
     popt, pcov = scipy.optimize.curve_fit(func, x, y, p0=p0, bounds=bounds, maxfev=maxfev)
     error = []
@@ -8966,7 +9015,7 @@ def get_curvefit(x, y, func, p0=None, bounds=(-np.inf, np.inf), maxfev=1000, nan
     return popt, pcov, error
 
 
-def get_ks(x, y, nan_policy='drop', fill_value=0, inf_policy=INF_POLICY):
+def get_ks(x, y, nan_policy='drop', fill_value=None, inf_policy=INF_POLICY, verbose=True):
     '''
     计算两个数组的Kolmogorov-Smirnov距离
 
@@ -8977,10 +9026,10 @@ def get_ks(x, y, nan_policy='drop', fill_value=0, inf_policy=INF_POLICY):
     返回:
     ks_distance - 两个数组的KS距离
     '''
-    return get_ks_result(x, y, nan_policy=nan_policy, fill_value=fill_value, inf_policy=inf_policy)['ks']
+    return get_ks_result(x, y, nan_policy=nan_policy, fill_value=fill_value, inf_policy=inf_policy, verbose=verbose)['ks']
 
 
-def get_ks_result(x, y, nan_policy='drop', fill_value=0, inf_policy=INF_POLICY):
+def get_ks_result(x, y, nan_policy='drop', fill_value=None, inf_policy=INF_POLICY, verbose=True):
     '''
     计算两个数组的Kolmogorov-Smirnov距离及其P值,注意当分布一样时,KS距离为0,而P值为1
 
@@ -8993,14 +9042,14 @@ def get_ks_result(x, y, nan_policy='drop', fill_value=0, inf_policy=INF_POLICY):
     p_value - 对应的P值
     '''
     # 处理输入x的特殊值
-    x_clean = process_special_value(x, nan_policy=nan_policy, fill_value=fill_value, inf_policy=inf_policy)
+    x_clean = process_special_value(x, nan_policy=nan_policy, fill_value=fill_value, inf_policy=inf_policy, verbose=verbose)
     
     if callable(y):
         # 单样本检验：y是CDF函数
         ks_result = st.kstest(x_clean, y)
     else:
         # 双样本检验：处理y的特殊值后计算
-        y_clean = process_special_value(y, nan_policy=nan_policy, fill_value=fill_value, inf_policy=inf_policy)
+        y_clean = process_special_value(y, nan_policy=nan_policy, fill_value=fill_value, inf_policy=inf_policy, verbose=verbose)
         ks_result = st.ks_2samp(x_clean, y_clean)
     
     r = {'ks': ks_result.statistic, 'p': ks_result.pvalue}
@@ -9089,7 +9138,7 @@ def get_jsd(p, q, base=None, **kwargs):
     return (get_kl_divergence(p, m, base=base, **kwargs) + get_kl_divergence(q, m, base=base, **kwargs)) / 2
 
 
-def get_fft(timeseries, T=None, sample_rate=None, nan_policy='interpolate', fill_value=0, inf_policy=INF_POLICY):
+def get_fft(timeseries, T=None, sample_rate=None, nan_policy='interpolate', fill_value=None, inf_policy=INF_POLICY, verbose=True):
     '''
     执行快速傅里叶变换 (FFT) 并返回变换后的信号
     自动处理NaN值,通过线性插值填充NaN
@@ -9101,7 +9150,7 @@ def get_fft(timeseries, T=None, sample_rate=None, nan_policy='interpolate', fill
     if T is None:
         T = 1 / sample_rate
     clean_timeseries = process_special_value(
-        timeseries, nan_policy=nan_policy, fill_value=fill_value, inf_policy=inf_policy)
+        timeseries, nan_policy=nan_policy, fill_value=fill_value, inf_policy=inf_policy, verbose=verbose)
     n = len(clean_timeseries)
     yf = scipy.fft.fft(clean_timeseries)
     xf = scipy.fft.fftfreq(n, T)
@@ -9111,12 +9160,12 @@ def get_fft(timeseries, T=None, sample_rate=None, nan_policy='interpolate', fill
     return xf, yf
 
 
-def get_ifft(s, T=None, sample_rate=None, nan_policy='interpolate', fill_value=0, inf_policy=INF_POLICY):
+def get_ifft(s, T=None, sample_rate=None, nan_policy='interpolate', fill_value=None, inf_policy=INF_POLICY):
     ifft_s = scipy.fft.ifft(s)
     pass
 
 
-def get_power_spectrum(timeseries, T=None, sample_rate=None, nan_policy='interpolate', fill_value=0, inf_policy=INF_POLICY):
+def get_power_spectrum(timeseries, T=None, sample_rate=None, nan_policy='interpolate', fill_value=None, inf_policy=INF_POLICY, verbose=True):
     '''
     利用welch方法计算功率谱密度并返回结果
 
@@ -9127,20 +9176,20 @@ def get_power_spectrum(timeseries, T=None, sample_rate=None, nan_policy='interpo
     if T is None:
         T = 1 / sample_rate
     clean_timeseries = process_special_value(
-        timeseries, nan_policy=nan_policy, fill_value=fill_value, inf_policy=inf_policy)
+        timeseries, nan_policy=nan_policy, fill_value=fill_value, inf_policy=inf_policy, verbose=verbose)
     f, Pxx = scipy.signal.welch(clean_timeseries, fs=1/T)
     return f, Pxx
 
 
-def get_multi_power_spectrum(multi_timeseries, T=None, sample_rate=None, nan_policy='interpolate', fill_value=0, inf_policy=INF_POLICY, process_num=1):
+def get_multi_power_spectrum(multi_timeseries, T=None, sample_rate=None, nan_policy='interpolate', fill_value=None, inf_policy=INF_POLICY, process_num=1, verbose=True):
     r = multi_process_list_for(process_num=process_num, func=get_power_spectrum, for_list=multi_timeseries, kwargs={
-        'T': T, 'sample_rate': sample_rate, 'nan_policy': nan_policy, 'fill_value': fill_value, 'inf_policy': inf_policy}, for_idx_name='timeseries')
+        'T': T, 'sample_rate': sample_rate, 'nan_policy': nan_policy, 'fill_value': fill_value, 'inf_policy': inf_policy, 'verbose': verbose}, for_idx_name='timeseries')
     f = r[0][0]
     multi_Pxx = np.array([i[1] for i in r])
     return f, multi_Pxx
 
 
-def _pre_process_for_acf(timeseries, T=None, sample_rate=None, nlags=None, nan_policy='interpolate', fill_value=0, inf_policy=INF_POLICY, nlags_policy='raise'):
+def _pre_process_for_acf(timeseries, T=None, sample_rate=None, nlags=None, nan_policy='interpolate', fill_value=None, inf_policy=INF_POLICY, nlags_policy='raise', verbose=True):
     if T is None and sample_rate is None:
         raise ValueError("Either T or sample_rate must be provided")
     if T is None:
@@ -9153,11 +9202,11 @@ def _pre_process_for_acf(timeseries, T=None, sample_rate=None, nlags=None, nan_p
         elif nlags_policy == 'raise':
             raise ValueError("nlags must be less than the length of the timeseries")
     clean_timeseries = process_special_value(
-        timeseries, nan_policy=nan_policy, fill_value=fill_value, inf_policy=inf_policy)
+        timeseries, nan_policy=nan_policy, fill_value=fill_value, inf_policy=inf_policy, verbose=verbose)
     return T, nlags, clean_timeseries
 
 
-def get_acf(timeseries, T=None, sample_rate=None, nlags=None, fft=True, nan_policy='interpolate', fill_value=0, inf_policy=INF_POLICY, nlags_policy='raise', **kwargs):
+def get_acf(timeseries, T=None, sample_rate=None, nlags=None, fft=True, nan_policy='interpolate', fill_value=None, inf_policy=INF_POLICY, nlags_policy='raise', verbose=True, **kwargs):
     '''
     计算自相关函数 (ACF) 并返回结果
     自动处理NaN值,通过线性插值填充NaN
@@ -9166,11 +9215,11 @@ def get_acf(timeseries, T=None, sample_rate=None, nlags=None, fft=True, nan_poli
     timeseries: 一维数组,时间序列
     nlags_policy: 'raise'或'clip','raise'表示nlags超出时间序列长度时抛出异常,'clip'表示截断nlags到时间序列长度
     '''
-    T, nlags, clean_timeseries = _pre_process_for_acf(timeseries=timeseries, T=T, sample_rate=sample_rate, nlags=nlags, nan_policy=nan_policy, fill_value=fill_value, inf_policy=inf_policy, nlags_policy=nlags_policy)
+    T, nlags, clean_timeseries = _pre_process_for_acf(timeseries=timeseries, T=T, sample_rate=sample_rate, nlags=nlags, nan_policy=nan_policy, fill_value=fill_value, inf_policy=inf_policy, nlags_policy=nlags_policy, verbose=verbose)
     return np.arange(nlags+1)*T, acf(clean_timeseries, nlags=nlags, fft=fft, **kwargs)
 
 
-def get_acovf(timeseries, T=None, sample_rate=None, nlags=None, fft=True, nan_policy='interpolate', fill_value=0, inf_policy=INF_POLICY, nlags_policy='raise'):
+def get_acovf(timeseries, T=None, sample_rate=None, nlags=None, fft=True, nan_policy='interpolate', fill_value=None, inf_policy=INF_POLICY, nlags_policy='raise', verbose=True):
     '''
     计算自协方差函数 (ACOVF) 并返回结果
     自动处理NaN值,通过线性插值填充NaN
@@ -9179,19 +9228,19 @@ def get_acovf(timeseries, T=None, sample_rate=None, nlags=None, fft=True, nan_po
     timeseries: 一维数组,时间序列
     nlags_policy: 'raise'或'clip','raise'表示nlags超出时间序列长度时抛出异常,'clip'表示截断nlags到时间序列长度
     '''
-    T, nlags, clean_timeseries = _pre_process_for_acf(timeseries=timeseries, T=T, sample_rate=sample_rate, nlags=nlags, nan_policy=nan_policy, fill_value=fill_value, inf_policy=inf_policy, nlags_policy=nlags_policy)
+    T, nlags, clean_timeseries = _pre_process_for_acf(timeseries=timeseries, T=T, sample_rate=sample_rate, nlags=nlags, nan_policy=nan_policy, fill_value=fill_value, inf_policy=inf_policy, nlags_policy=nlags_policy, verbose=verbose)
     return np.arange(nlags+1)*T, acovf(clean_timeseries, nlag=nlags, fft=fft)
 
 
-def get_acovf_without_center(timeseries, T=None, sample_rate=None, nlags=None, fft=True, nan_policy='interpolate', fill_value=0, inf_policy=INF_POLICY, nlags_policy='raise'):
+def get_acovf_without_center(timeseries, T=None, sample_rate=None, nlags=None, fft=True, nan_policy='interpolate', fill_value=None, inf_policy=INF_POLICY, nlags_policy='raise', verbose=True):
     '''
     E[x(t)x(t+tau)], 即ACOVF没有中心化
     '''
-    T, nlags, clean_timeseries = _pre_process_for_acf(timeseries=timeseries, T=T, sample_rate=sample_rate, nlags=nlags, nan_policy=nan_policy, fill_value=fill_value, inf_policy=inf_policy, nlags_policy=nlags_policy)
+    T, nlags, clean_timeseries = _pre_process_for_acf(timeseries=timeseries, T=T, sample_rate=sample_rate, nlags=nlags, nan_policy=nan_policy, fill_value=fill_value, inf_policy=inf_policy, nlags_policy=nlags_policy, verbose=verbose)
     return np.arange(nlags+1)*T, acovf(clean_timeseries, nlag=nlags, fft=fft) + np.mean(clean_timeseries)**2
 
 
-def get_ccf(x, y, T=None, sample_rate=None, nlags=None, nan_policy='interpolate', fill_value=0, inf_policy=INF_POLICY, nlags_policy='raise'):
+def get_ccf(x, y, T=None, sample_rate=None, nlags=None, nan_policy='interpolate', fill_value=None, inf_policy=INF_POLICY, nlags_policy='raise', verbose=True):
     '''
     计算交叉相关函数 (CCF) 并返回结果
     自动处理NaN值,通过线性插值填充NaN
@@ -9217,13 +9266,13 @@ def get_ccf(x, y, T=None, sample_rate=None, nlags=None, nan_policy='interpolate'
         elif nlags_policy == 'raise':
             raise ValueError("nlags must be less than the length of the timeseries")
     local_nlags = nlags + 1
-    x, y = sync_special_value(x, y, inf_policy=inf_policy)
-    x = process_special_value(x, nan_policy=nan_policy, fill_value=fill_value, inf_policy=inf_policy)
-    y = process_special_value(y, nan_policy=nan_policy, fill_value=fill_value, inf_policy=inf_policy)
+    x, y = sync_special_value(x, y, inf_policy=inf_policy, verbose=verbose)
+    x = process_special_value(x, nan_policy=nan_policy, fill_value=fill_value, inf_policy=inf_policy, verbose=verbose)
+    y = process_special_value(y, nan_policy=nan_policy, fill_value=fill_value, inf_policy=inf_policy, verbose=verbose)
     return np.arange(0, local_nlags)*T, ccf(x, y, nlags=local_nlags)
 
 
-def get_ccovf(x, y, T=None, sample_rate=None, nlags=None, nan_policy='interpolate', fill_value=0, inf_policy=INF_POLICY, nlags_policy='raise'):
+def get_ccovf(x, y, T=None, sample_rate=None, nlags=None, nan_policy='interpolate', fill_value=None, inf_policy=INF_POLICY, nlags_policy='raise', verbose=True):
     '''
     计算交叉协方差函数 (CCOVF) 并返回结果
     自动处理NaN值,通过线性插值填充NaN
@@ -9237,38 +9286,38 @@ def get_ccovf(x, y, T=None, sample_rate=None, nlags=None, nan_policy='interpolat
     注意:
     这里输入nlags后输出的是nlags+1的值(与acf的用法一样,包含0)
     '''
-    lag_times, ccf_values = get_ccf(x, y, T=T, sample_rate=sample_rate, nlags=nlags, nan_policy=nan_policy, fill_value=fill_value, inf_policy=inf_policy, nlags_policy=nlags_policy)
+    lag_times, ccf_values = get_ccf(x, y, T=T, sample_rate=sample_rate, nlags=nlags, nan_policy=nan_policy, fill_value=fill_value, inf_policy=inf_policy, nlags_policy=nlags_policy, verbose=verbose)
     return lag_times, ccf_values * np.std(x) * np.std(y)
 
 
-def get_multi_acf(multi_timeseries, T=None, sample_rate=None, nlags=None, fft=True, nan_policy='interpolate', fill_value=0, inf_policy=INF_POLICY, process_num=1, use_tqdm=True, **kwargs):
+def get_multi_acf(multi_timeseries, T=None, sample_rate=None, nlags=None, fft=True, nan_policy='interpolate', fill_value=None, inf_policy=INF_POLICY, process_num=1, use_tqdm=True, verbose=True, **kwargs):
     '''
     处理多个时间序列的自相关函数 (ACF) 并返回结果,multi_timeseries的shape为(time_series_num, time_series_length)
     '''
-    r = multi_process_list_for(process_num=process_num, func=get_acf, for_list=multi_timeseries, kwargs={'T': T, 'sample_rate': sample_rate, 'nlags': nlags, 'fft': fft, 'nan_policy': nan_policy, 'fill_value': fill_value, 'inf_policy': inf_policy, **kwargs}, for_idx_name='timeseries', use_tqdm=use_tqdm)
+    r = multi_process_list_for(process_num=process_num, func=get_acf, for_list=multi_timeseries, kwargs={'T': T, 'sample_rate': sample_rate, 'nlags': nlags, 'fft': fft, 'nan_policy': nan_policy, 'fill_value': fill_value, 'inf_policy': inf_policy, 'verbose': verbose, **kwargs}, for_idx_name='timeseries', use_tqdm=use_tqdm)
     lag_times = r[0][0]
     multi_acf = np.array([i[1] for i in r])
     return lag_times, multi_acf
 
 
-def get_multi_acovf(multi_timeseries, T=None, sample_rate=None, nlags=None, fft=True, nan_policy='interpolate', fill_value=0, inf_policy=INF_POLICY, process_num=1):
+def get_multi_acovf(multi_timeseries, T=None, sample_rate=None, nlags=None, fft=True, nan_policy='interpolate', fill_value=None, inf_policy=INF_POLICY, process_num=1, verbose=True):
     '''
     处理多个时间序列的自协方差函数 (ACOVF) 并返回结果,multi_timeseries的shape为(time_series_num, time_series_length)
     '''
-    r = multi_process_list_for(process_num=process_num, func=get_acovf, for_list=multi_timeseries, kwargs={'T': T, 'sample_rate': sample_rate, 'nlags': nlags, 'fft': fft, 'nan_policy': nan_policy, 'fill_value': fill_value, 'inf_policy': inf_policy}, for_idx_name='timeseries')
+    r = multi_process_list_for(process_num=process_num, func=get_acovf, for_list=multi_timeseries, kwargs={'T': T, 'sample_rate': sample_rate, 'nlags': nlags, 'fft': fft, 'nan_policy': nan_policy, 'fill_value': fill_value, 'inf_policy': inf_policy, 'verbose': verbose}, for_idx_name='timeseries')
     lag_times = r[0][0]
     multi_acovf = np.array([i[1] for i in r])
     return lag_times, multi_acovf
 
 
-def get_multi_acovf_without_center(multi_timeseries, T=None, sample_rate=None, nlags=None, fft=True, nan_policy='interpolate', fill_value=0, inf_policy=INF_POLICY, process_num=1):
-    r = multi_process_list_for(process_num=process_num, func=get_acovf_without_center, for_list=multi_timeseries, kwargs={'T': T, 'sample_rate': sample_rate, 'nlags': nlags, 'fft': fft, 'nan_policy': nan_policy, 'fill_value': fill_value, 'inf_policy': inf_policy}, for_idx_name='timeseries')
+def get_multi_acovf_without_center(multi_timeseries, T=None, sample_rate=None, nlags=None, fft=True, nan_policy='interpolate', fill_value=None, inf_policy=INF_POLICY, process_num=1, verbose=True):
+    r = multi_process_list_for(process_num=process_num, func=get_acovf_without_center, for_list=multi_timeseries, kwargs={'T': T, 'sample_rate': sample_rate, 'nlags': nlags, 'fft': fft, 'nan_policy': nan_policy, 'fill_value': fill_value, 'inf_policy': inf_policy, 'verbose': verbose}, for_idx_name='timeseries')
     lag_times = r[0][0]
     multi_acovf = np.array([i[1] for i in r])
     return lag_times, multi_acovf
 
 
-def _get_multi_ccf_ccovf_single_process(i, x, multi_y, T=None, sample_rate=None, nlags=None, nan_policy='interpolate', fill_value=0, inf_policy=INF_POLICY, ccf_or_ccovf='ccf'):
+def _get_multi_ccf_ccovf_single_process(i, x, multi_y, T=None, sample_rate=None, nlags=None, nan_policy='interpolate', fill_value=None, inf_policy=INF_POLICY, ccf_or_ccovf='ccf', verbose=True):
     '''
     不使用multi_process的版本
 
@@ -9282,17 +9331,17 @@ def _get_multi_ccf_ccovf_single_process(i, x, multi_y, T=None, sample_rate=None,
         raise ValueError("ccf_or_ccovf must be 'ccf' or 'ccovf'")
     ccf_or_ccovf_dict = {}
     for j, y in enumerate(multi_y):
-        lag_times, ccf_or_ccovf_dict[(i, j)] = f(x, y, T=T, sample_rate=sample_rate, nlags=nlags, nan_policy=nan_policy, fill_value=fill_value, inf_policy=inf_policy)
+        lag_times, ccf_or_ccovf_dict[(i, j)] = f(x, y, T=T, sample_rate=sample_rate, nlags=nlags, nan_policy=nan_policy, fill_value=fill_value, inf_policy=inf_policy, verbose=verbose)
     return lag_times, ccf_or_ccovf_dict
 
 
-def _get_multi_ccf_ccovf(multi_x, multi_y, T=None, sample_rate=None, nlags=None, nan_policy='interpolate', fill_value=0, inf_policy=INF_POLICY, process_num=1, ccf_or_ccovf='ccf'):
+def _get_multi_ccf_ccovf(multi_x, multi_y, T=None, sample_rate=None, nlags=None, nan_policy='interpolate', fill_value=None, inf_policy=INF_POLICY, process_num=1, ccf_or_ccovf='ccf', verbose=True):
     '''
     multi_x和multi_y的shape为(time_series_num_x, time_series_length)和(time_series_num_y, time_series_length)
 
     返回的multi_ccf_or_ccovf为一个字典,键为(i, j),表示第i个时间序列和第j个时间序列的ccf或ccovf
     '''
-    r = multi_process_enumerate_for(process_num=process_num, func=_get_multi_ccf_ccovf_single_process, for_list=multi_x, kwargs={'multi_y': multi_y, 'T': T, 'sample_rate': sample_rate, 'nlags': nlags, 'nan_policy': nan_policy, 'fill_value': fill_value, 'inf_policy': inf_policy, 'ccf_or_ccovf': ccf_or_ccovf}, for_idx_name='i', for_item_name='x')
+    r = multi_process_enumerate_for(process_num=process_num, func=_get_multi_ccf_ccovf_single_process, for_list=multi_x, kwargs={'multi_y': multi_y, 'T': T, 'sample_rate': sample_rate, 'nlags': nlags, 'nan_policy': nan_policy, 'fill_value': fill_value, 'inf_policy': inf_policy, 'ccf_or_ccovf': ccf_or_ccovf, 'verbose': verbose}, for_idx_name='i', for_item_name='x')
     lag_times = r[0][0]
     multi_ccf_or_ccovf = {}
     for i in r:
@@ -9300,12 +9349,12 @@ def _get_multi_ccf_ccovf(multi_x, multi_y, T=None, sample_rate=None, nlags=None,
     return lag_times, multi_ccf_or_ccovf
 
 
-def get_multi_ccf(multi_x, multi_y, T=None, sample_rate=None, nlags=None, nan_policy='interpolate', fill_value=0, inf_policy=INF_POLICY, process_num=1):
-    return _get_multi_ccf_ccovf(multi_x, multi_y, T=T, sample_rate=sample_rate, nlags=nlags, nan_policy=nan_policy, fill_value=fill_value, inf_policy=inf_policy, process_num=process_num, ccf_or_ccovf='ccf')
+def get_multi_ccf(multi_x, multi_y, T=None, sample_rate=None, nlags=None, nan_policy='interpolate', fill_value=None, inf_policy=INF_POLICY, process_num=1, verbose=True):
+    return _get_multi_ccf_ccovf(multi_x, multi_y, T=T, sample_rate=sample_rate, nlags=nlags, nan_policy=nan_policy, fill_value=fill_value, inf_policy=inf_policy, process_num=process_num, ccf_or_ccovf='ccf', verbose=verbose)
 
 
-def get_multi_ccovf(multi_x, multi_y, T=None, sample_rate=None, nlags=None, nan_policy='interpolate', fill_value=0, inf_policy=INF_POLICY, process_num=1):
-    return _get_multi_ccf_ccovf(multi_x, multi_y, T=T, sample_rate=sample_rate, nlags=nlags, nan_policy=nan_policy, fill_value=fill_value, inf_policy=inf_policy, process_num=process_num, ccf_or_ccovf='ccovf')
+def get_multi_ccovf(multi_x, multi_y, T=None, sample_rate=None, nlags=None, nan_policy='interpolate', fill_value=None, inf_policy=INF_POLICY, process_num=1, verbose=True):
+    return _get_multi_ccf_ccovf(multi_x, multi_y, T=T, sample_rate=sample_rate, nlags=nlags, nan_policy=nan_policy, fill_value=fill_value, inf_policy=inf_policy, process_num=process_num, ccf_or_ccovf='ccovf', verbose=verbose)
 
 
 def split_auto_and_cross(multi_result):
@@ -9358,7 +9407,7 @@ def get_auto_and_cross_num(multi_timeseries):
     return auto_num, cross_num
 
 
-def get_hist(data, bins, stat='probability', nan_policy='drop', fill_value=0, inf_policy=INF_POLICY):
+def get_hist(data, bins, stat='probability', nan_policy='drop', fill_value=None, inf_policy=INF_POLICY, verbose=True):
     '''
     Generates a histogram with various normalization options.
 
@@ -9373,7 +9422,7 @@ def get_hist(data, bins, stat='probability', nan_policy='drop', fill_value=0, in
     - midpoints: array, the midpoints of the bins.
     '''
 
-    local_data = process_special_value(data, nan_policy=nan_policy, fill_value=fill_value, inf_policy=inf_policy)
+    local_data = process_special_value(data, nan_policy=nan_policy, fill_value=fill_value, inf_policy=inf_policy, verbose=verbose)
 
     hist, bin_edges = np.histogram(local_data, bins=bins)
 
@@ -9401,7 +9450,7 @@ def get_hist(data, bins, stat='probability', nan_policy='drop', fill_value=0, in
     return values, bin_edges, get_midpoint(bin_edges)
 
 
-def get_hist_2d(data_x, data_y, bins_x, bins_y, stat='probability', nan_policy='drop', fill_value=0, inf_policy=INF_POLICY, sync=True):
+def get_hist_2d(data_x, data_y, bins_x, bins_y, stat='probability', nan_policy='drop', fill_value=None, inf_policy=INF_POLICY, sync=True, verbose=True):
     '''
     Generates a 2D histogram with various normalization options for two-dimensional data,
     allowing separate bin specifications for each axis.
@@ -9422,11 +9471,11 @@ def get_hist_2d(data_x, data_y, bins_x, bins_y, stat='probability', nan_policy='
     '''
 
     if sync:
-        local_data_x, local_data_y = sync_special_value(data_x, data_y, inf_policy=inf_policy)
+        local_data_x, local_data_y = sync_special_value(data_x, data_y, inf_policy=inf_policy, verbose=verbose)
     else:
         local_data_x, local_data_y = data_x.copy(), data_y.copy()
-    local_data_x = process_special_value(local_data_x, nan_policy=nan_policy, fill_value=fill_value, inf_policy=inf_policy)
-    local_data_y = process_special_value(local_data_y, nan_policy=nan_policy, fill_value=fill_value, inf_policy=inf_policy)
+    local_data_x = process_special_value(local_data_x, nan_policy=nan_policy, fill_value=fill_value, inf_policy=inf_policy, verbose=verbose)
+    local_data_y = process_special_value(local_data_y, nan_policy=nan_policy, fill_value=fill_value, inf_policy=inf_policy, verbose=verbose)
 
     hist, bin_edges_x, bin_edges_y = np.histogram2d(
         local_data_x, local_data_y, bins=[bins_x, bins_y])
@@ -9452,13 +9501,13 @@ def get_hist_2d(data_x, data_y, bins_x, bins_y, stat='probability', nan_policy='
     return values, bin_edges_x, bin_edges_y, get_midpoint(bin_edges_x), get_midpoint(bin_edges_y)
 
 
-def get_kde(data, bw_method='scott', nan_policy='drop', fill_value=0, inf_policy=INF_POLICY, sync=True, **kwargs):
+def get_kde(data, bw_method='scott', nan_policy='drop', fill_value=None, inf_policy=INF_POLICY, sync=True, verbose=True, **kwargs):
     '''
     计算核密度估计 (KDE) 并返回结果
     :param data: array-like, shape (dims, points) or (points,), the input data.
     '''
     if sync:
-        local_data = sync_special_value_along_axis(data=data, sync_axis=0, inf_policy=inf_policy)
+        local_data = sync_special_value_along_axis(data=data, sync_axis=0, inf_policy=inf_policy, verbose=verbose)
     else:
         local_data = data.copy()
     local_data = pure_list(local_data)
@@ -9466,20 +9515,20 @@ def get_kde(data, bw_method='scott', nan_policy='drop', fill_value=0, inf_policy
     if len(shape) > 1:
         for i in range(shape[0]):
             local_data[i] = process_special_value(
-                local_data[i], nan_policy=nan_policy, fill_value=fill_value, inf_policy=inf_policy)
+                local_data[i], nan_policy=nan_policy, fill_value=fill_value, inf_policy=inf_policy, verbose=verbose)
     else:
         local_data = process_special_value(
-            local_data, nan_policy=nan_policy, fill_value=fill_value, inf_policy=inf_policy)
+            local_data, nan_policy=nan_policy, fill_value=fill_value, inf_policy=inf_policy, verbose=verbose)
     return st.gaussian_kde(local_data, bw_method=bw_method, **kwargs)
 
 
-def get_cdf(data, nan_policy='drop', fill_value=0, inf_policy=INF_POLICY, **kwargs):
+def get_cdf(data, nan_policy='drop', fill_value=None, inf_policy=INF_POLICY, verbose=True, **kwargs):
     '''
     计算累积分布函数 (CDF) 并返回结果
     :param data: 1-d array-like, the input data.
     '''
     clean_data = process_special_value(
-        data, nan_policy=nan_policy, fill_value=fill_value, inf_policy=inf_policy)
+        data, nan_policy=nan_policy, fill_value=fill_value, inf_policy=inf_policy, verbose=verbose)
     return ECDF(clean_data, **kwargs)
 
 
@@ -19288,8 +19337,8 @@ def set_ax_label(ax, label=None):
                 # 如果 label 为 None, 则设置默认标签
                 for i in range(length):
                     ax[i].set_label(f"index_{i}")
-            elif isinstance(label, list) and len(label) == length:
-                # 如果 label 是列表且长度与 ax 相同
+            elif isinstance(label, np.ndarray) and label.shape == ax.shape:
+                # 如果 label 是一维数组且形状与 ax 相同
                 for i in range(length):
                     ax[i].set_label(label[i])
     
