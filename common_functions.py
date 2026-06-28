@@ -12797,7 +12797,7 @@ def sns_heatmap(ax, data, cmap=HEATMAP_CMAP, square=True, cbar=True, cbar_positi
         local_heatmap_kwargs = heatmap_kwargs.copy()
         # auto annot fontsize setup
         if 'annot' in local_heatmap_kwargs:
-            annot_kws = local_heatmap_kwargs.get('annot_kws', {})
+            annot_kws = dict(local_heatmap_kwargs.get('annot_kws') or {})
             if 'fontsize' not in annot_kws:
                 ax_width, ax_height = get_ax_size(ax)
                 from_height = suitable_tick_size(data.shape[0], ax_height)
@@ -12938,6 +12938,10 @@ def inset_ax(ax, left, right, bottom, top, label='inset', inset_mode='fig', **kw
     注意:
     如果使用inset_mode='ax',则获得的ax和普通的ax不同:比如,随着原ax的移动,内嵌ax的位置也会移动;不能单独移动内嵌的ax;从fig中获取axes时,内嵌的ax不会被获取到;随着原ax的删除,内嵌的ax也会被删除;内嵌ax的删除不能通过fig.delaxes()来删除,而是通过ax.remove()来删除;内嵌的ax无法作为reparent_ax的parent_ax(当然这有可能是我实现reparent_ax的不足导致的);对于原ax,set_visible(False)会同时隐藏内嵌的ax
     '''
+    valid_inset_modes = ('fig', 'ax')
+    if inset_mode not in valid_inset_modes:
+        raise ValueError(f"inset_mode must be one of {valid_inset_modes}, got {inset_mode!r}.")
+
     if inset_mode == 'fig':
         ax_left, ax_bottom, ax_width, ax_height = ax.get_position().bounds
         new_left = ax_left + left * ax_width
@@ -13061,6 +13065,10 @@ def add_side_ax(ax, position='right', relative_size=SIDE_PAD*2, pad=SIDE_PAD, sh
     :param hide_repeat_yaxis: 如果共享y轴,是否隐藏重复的y轴标签,默认为True.
     :param kwargs: 传递给
     '''
+    valid_positions = ('right', 'left', 'top', 'bottom')
+    if position not in valid_positions:
+        raise ValueError(f"position must be one of {valid_positions}, got {position!r}.")
+
     if sharex is True:
         sharex = ax
     elif sharex is None or sharex is False:
@@ -13292,6 +13300,10 @@ def add_twin_ax(ax, axis, color='black', label='twin', inset_mode='fig'):
     axis为'x'时,share x轴,新轴的y轴在右边;axis为'y'时,share y轴,新轴的x轴在上边
     假如后续更改了原ax的位置,需要同步设置twin_ax的位置
     '''
+    valid_axes = ('x', 'y')
+    if axis not in valid_axes:
+        raise ValueError(f"axis must be one of {valid_axes}, got {axis!r}.")
+
     if axis == 'x':
         twin_ax = ax.twinx()
         twin_ax.set_position(ax.get_position())
@@ -18029,6 +18041,10 @@ def move_spine_to_origin(ax, axis='both', arrow=True):
     axis: str, 要移动的坐标轴, 可选 'x', 'y', 'both', 默认 'both'
     arrow: bool, 是否在坐标轴末端添加箭头, 默认 True
     '''
+    valid_axes = ('x', 'y', 'both')
+    if axis not in valid_axes:
+        raise ValueError(f"axis must be one of {valid_axes}, got {axis!r}.")
+
     if axis == 'x' or axis == 'both':
         ax.spines["bottom"].set_position(("data", 0))
         if arrow:
@@ -18095,6 +18111,10 @@ def add_nested_tick(ax, axis, ticks, labels, location=0, length=None, width=0):
     location (float, optional): 次要刻度线的位置.默认为0
     length (float, optional): 刻度线的长度.默认为 None.
     """
+    valid_axes = ('x', 'y')
+    if axis not in valid_axes:
+        raise ValueError(f"axis must be one of {valid_axes}, got {axis!r}.")
+
     if length is None:
         length = TICK_MAJOR_SIZE*4
 
@@ -18197,6 +18217,10 @@ def set_ax_tick(ax, ticks, labels, axis, which='major'):
     - 一般来说,major的情形就够用了,需要设置minor的情形可能是log刻度下想要减少刻度的数量
     - 也可以直接使用set_ax函数来设置刻度,它更加自动化,还可以调整ticklabel的fontsize等,但这个函数更加轻量级
     '''
+    valid_tick_types = ('major', 'minor')
+    if which not in valid_tick_types:
+        raise ValueError(f"which must be one of {valid_tick_types}, got {which!r}.")
+
     if which == 'major':
         minor = False
     elif which == 'minor':
@@ -18263,6 +18287,10 @@ def broken_axis(ax1, ax2, orientation, link_location='auto', share=True, offset=
     orientation: str, 连接的方向, 可选 'vertical', 'horizontal'
     link_location: str, 连接线的位置, 可选 'auto', 'top', 'bottom', 'left', 'right', 'both'
     '''
+    valid_orientations = ('vertical', 'horizontal')
+    if orientation not in valid_orientations:
+        raise ValueError(f"orientation must be one of {valid_orientations}, got {orientation!r}.")
+
     # 获取轴的位置信息
     ax1_pos = ax1.get_position()
     ax2_pos = ax2.get_position()
@@ -18985,6 +19013,9 @@ def set_ax(ax, xlabel=None, ylabel=None, zlabel=None, xlabel_pad=None, ylabel_pa
     # 尝试获取x_label和y_label
     xlabel = ax.get_xlabel() if xlabel is None else xlabel
     ylabel = ax.get_ylabel() if ylabel is None else ylabel
+    if title is None:
+        get_title = getattr(ax, 'get_title', None)
+        title = get_title() if callable(get_title) else getattr(ax, 'title', None)
     if is_3d:
         zlabel = ax.get_zlabel() if zlabel is None else zlabel
 
@@ -19513,9 +19544,9 @@ def get_fig_ax_3d(**kwargs):
     '''
     创建一个3D图形和轴对象,提供get_fig_ax的参数作为**kwargs
     '''
-    # Ensure 'subplots_params' exists in 'kwargs'
-    if 'subplots_params' not in kwargs:
-        kwargs['subplots_params'] = {}
+    # Copy nested parameters before adding the default projection, so the
+    # caller's dictionary is not modified.
+    kwargs['subplots_params'] = dict(kwargs.get('subplots_params') or {})
 
     # Ensure 'projection' is set to '3d'
     if 'projection' not in kwargs['subplots_params']:
@@ -19757,6 +19788,8 @@ def save_fig(fig, filename, formats=None, dpi=SAVEFIG_DPI, close=True, bbox_inch
     '''
     if formats is None:
         formats = [SAVEFIG_FORMAT]
+    else:
+        formats = list(formats)
     filename_process = update_dict(FILENAME_PROCESS, filename_process)
 
     # 对filename进行处理
@@ -19979,6 +20012,7 @@ def copy_ax_content(source_ax, target_ax):
 # region 通用函数(图片格式转换)
 def convert_fig(input_file_path, output_format):
     input_format = input_file_path.split('.')[-1].lower()
+    output_format = output_format.lower()
     output_file_path = input_file_path[:-len(input_format)] + output_format
 
     if input_format == 'png' and output_format == 'pdf':
@@ -20405,6 +20439,8 @@ def concat_fig(fig_paths_grid, filename, formats=None, background='transparent',
     '''
     if formats is None:
         formats = [SAVEFIG_RASTER_FORMAT]
+    else:
+        formats = list(formats)
     
     # 定义临时文件list
     temp_files = []
@@ -20489,6 +20525,8 @@ def concat_fig_with_tag(figs_grid, filename, tags=None, formats=None, background
     '''
     if formats is None:
         formats = [SAVEFIG_RASTER_FORMAT]
+    else:
+        formats = list(formats)
     if tag_kwargs is None:
         tag_kwargs = {}
     if auto_tag_params is None:
