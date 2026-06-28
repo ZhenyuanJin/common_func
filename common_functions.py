@@ -19435,6 +19435,7 @@ def get_adjust_params_from_custom(nrows=1, ncols=1, adjust_params_custom=None):
     '''
         adjust_params_custom 含义: 此处left, right, top, bottom的值相对于ax, 而不是fig
     '''
+    adjust_params_custom = update_dict(ADJUST_PARAMS_CUSTOM, adjust_params_custom)
     adjust_params = adjust_params_custom.copy()
     adjust_params['left'] = adjust_params_custom['left'] / (ncols + adjust_params_custom['wspace'] * (ncols - 1) + 1 - adjust_params_custom['right'] + adjust_params_custom['left'])
     adjust_params['right'] = 1 - (1 - adjust_params_custom['right']) / (ncols + adjust_params_custom['wspace'] * (ncols - 1) + 1 - adjust_params_custom['right'] + adjust_params_custom['left'])
@@ -19443,27 +19444,34 @@ def get_adjust_params_from_custom(nrows=1, ncols=1, adjust_params_custom=None):
     return adjust_params
 
 
-def get_suitable_fig_size(nrows=1, ncols=1, ax_width=AX_WIDTH, ax_height=AX_HEIGHT, margin=None, adjust_params=None, adjust_params_custom=None, which='auto'):
+def get_suitable_fig_size(nrows=1, ncols=1, ax_width=AX_WIDTH, ax_height=AX_HEIGHT, margin=None, adjust_params=None, adjust_params_custom=None, which=None):
     '''
-        adjust_params_custom 优先级高于 adjust_params 优先级高于 margin, 优先级高的参数会覆盖优先级低的参数(当which为auto时)
-
+        which必须显式指定为adjust_params_custom, adjust_params或margin
         adjust_params_custom 含义: 此处left, right, top, bottom的值相对于ax, 而不是fig
     '''
-    valid_modes = ('auto', 'adjust_params_custom', 'adjust_params', 'margin')
+    valid_modes = ('adjust_params_custom', 'adjust_params', 'margin')
+    if which is None:
+        raise ValueError(
+            f"which must be explicitly specified as one of {valid_modes}"
+        )
     if which not in valid_modes:
         raise ValueError(
             f"Unsupported which={which!r}; expected one of {valid_modes}"
         )
+    if which == 'adjust_params' and adjust_params is None:
+        raise ValueError(
+            "adjust_params must be provided when which='adjust_params'"
+        )
 
     margin = update_dict(MARGIN, margin)
     adjust_params_custom = update_dict(ADJUST_PARAMS_CUSTOM, adjust_params_custom)
-    if adjust_params_custom and which in ['adjust_params_custom', 'auto']:
+    if adjust_params_custom and which == 'adjust_params_custom':
         fig_width = ax_width * (ncols + adjust_params_custom['wspace'] * (ncols - 1)) + ax_width * (1 - adjust_params_custom['right'] + adjust_params_custom['left'])
         fig_height = ax_height * (nrows + adjust_params_custom['hspace'] * (nrows - 1)) + ax_height * (1 - adjust_params_custom['top'] + adjust_params_custom['bottom'])
-    elif adjust_params and which in ['adjust_params', 'auto']:
+    elif adjust_params and which == 'adjust_params':
         fig_width = (ax_width * (ncols + adjust_params['wspace'] * (ncols - 1))) / (adjust_params['right'] - adjust_params['left'])
         fig_height = (ax_height * (nrows + adjust_params['hspace'] * (nrows - 1))) / (adjust_params['top'] - adjust_params['bottom'])
-    elif margin and which in ['margin', 'auto']:
+    elif margin and which == 'margin':
         fig_width = ax_width / (margin['right'] - margin['left']) * ncols
         fig_height = ax_height / (margin['top'] - margin['bottom']) * nrows
     return fig_width, fig_height
@@ -19647,24 +19655,26 @@ def adjust_ax_custom(ax, ncols=None, nrows=None, adjust_params_custom=None):
 
 def get_fig_ax(nrows=1, ncols=1, ax_width=AX_WIDTH, ax_height=AX_HEIGHT, fig_width=None, fig_height=None, sharex=False, sharey=False, rm_repeat_tick_label_when_share=RM_REPEAT_TICK_LABEL_WHEN_SHARE, subplots_params=None, squeeze=True, margin=None, label='ax'):
     '''
-    创建一个图形和轴对象,并根据提供的参数调整布局和轴的方框边缘.
-    推荐的方式是设定ax_width和ax_height,而不是fig_width和fig_height.当设定ax_width和ax_height时,fig_width和fig_height会自动计算, 此时设定margin或adjust_params不会破坏ax框的比例
-    如果想要先把fig分成等分,然后在每个等分里设置框的位置,使用margin
-    如果想要最外层的图有自己单独的距离图像边框的范围,使用adjust_params和adjust_params_custom,并且使用get_fig_gs,再从gs获取ax;示例:adjust_params={'left': 0.2, 'right': 0.8, 'top': 0.8, 'bottom': 0.2, 'wspace': 0.5, 'hspace': 0.5},这里的left,right,top,bottom是相对于整个fig的位置(可以理解为最外围的pad),wspace和hspace是子图之间的间距(相对于average width和average height)
+    创建Figure和等大小的Axes.
 
-    注意:
-    本函数只支持等大的ax,如果需要不等大的,可以使用merge_ax,split_ax来获得;或者使用subfig来创建不等大的ax
+    默认根据nrows, ncols, ax_width, ax_height和margin计算Figure尺寸. 显式提供fig_width或fig_height时, 对应尺寸会覆盖自动计算结果. margin表示Axes在每个网格单元内的位置比例, 并传递给get_ax.
 
-    Parameters:
-    - figsize: 元组,指定图形的宽度和高度.
-    - nrows, ncols: 整数,指定子图的行数和列数.
-    - ax_width, ax_height: 浮点数,指定子图的宽度和高度.
-    - fig_width, fig_height: 浮点数,指定图形的宽度和高度.(优先级高于ax_width和ax_height,如果设置了则会覆盖ax_width和ax_height的设置)
-    - sharex, sharey: 布尔值或字符串,指定是否共享x轴和y轴.(可以是'all', 'none', 'row', 'col', True, False)
-    - rm_repeat_tick_label_when_share: 布尔值,指定是否移除多余的刻度标签(当sharex或者sharey时)
+    如果需要相对于整个Figure设置adjust_params, 请使用get_fig_gs_original. 如果需要相对于单个Axes设置adjust_params_custom, 请使用get_fig_gs_custom. 如果需要不等大小的Axes, 请使用GridSpec, subfigure, merge_ax或split_ax.
 
-    Returns:
-    - fig, ax: 创建的图形和轴对象.
+    参数:
+    - nrows, ncols: Axes的行数和列数.
+    - ax_width, ax_height: 自动计算Figure尺寸时使用的单个Axes宽度和高度.
+    - fig_width, fig_height: 可选的Figure宽度和高度, 单位为inch.
+    - sharex, sharey: Axes共享坐标轴的方式.
+    - rm_repeat_tick_label_when_share: 共享坐标轴时是否移除重复刻度标签.
+    - subplots_params: 传递给Figure.add_subplot的参数.
+    - squeeze: 是否压缩返回的Axes数组维度.
+    - margin: Axes在每个网格单元内的位置比例.
+    - label: Axes标签的前缀.
+
+    返回:
+    - fig: 创建的Figure.
+    - ax: 创建的Axes或Axes数组.
     '''
     subplots_params = update_dict({}, subplots_params)
     margin = update_dict(MARGIN, margin)
