@@ -7746,9 +7746,24 @@ def sync_special_value_along_axis(data, sync_axis=0, inf_policy=INF_POLICY):
     return data_synced
 
 
-@direct_use
-def npnan_in_list(lst):
-    return np.isnan(lst).any()
+def has_invalid_value(value):
+    if isinstance(value, (list, tuple)):
+        return any(has_invalid_value(item) for item in value)
+    array = np.asarray(value)
+    if array.dtype == object and array.ndim:
+        return any(has_invalid_value(item) for item in array.flat)
+    if np.asarray(pd.isna(value)).any():
+        return True
+    try:
+        return np.isinf(array).any()
+    except TypeError:
+        return False
+
+
+def _print_invalid_value_warning(func_name, **data):
+    invalid_args = [name for name, value in data.items() if value is not None and has_invalid_value(value)]
+    if invalid_args:
+        print(f"{func_name}: {', '.join(invalid_args)} contains NaN or Inf.")
 # endregion
 
 
@@ -11960,6 +11975,7 @@ def plt_scatter(ax, x, y, label=None, color=BLUE, vert=True, rasterized=False, r
     -s是marker_size的平方
     -s是圆的面积,radius按照points的单位
     '''
+    _print_invalid_value_warning('plt_scatter', x=x, y=y)
     x, y = filter_data_by_xylim(x, y, xlim=xlim, ylim=ylim)
 
     if not vert:
@@ -11995,6 +12011,7 @@ def plt_line(ax, x, y, label=None, color=BLUE, vert=True, xlim=None, ylim=None, 
     :param ylim: y轴的范围,默认为None
     :param kwargs: 其他plt.plot支持的参数
     '''
+    _print_invalid_value_warning('plt_line', x=x, y=y)
     x, y = filter_data_by_xylim(x, y, xlim=xlim, ylim=ylim)
     
     # 画图
@@ -12020,6 +12037,7 @@ def plt_bar(ax, x, y, label=None, color=BLUE, vert=True, equal_space=False, err=
     :param width: 柱子宽度,默认为None(当vert=False时,此参数将自动赋值给height)
     :param kwargs: 其他plt.bar或plt.barh支持的参数
     '''
+    _print_invalid_value_warning('plt_bar', x=x, y=y, err=err)
     if equal_space:
         # 将x的每个元素变为字符串
         x = [str(i) for i in x]
@@ -12055,6 +12073,7 @@ def plt_stair(ax, x, y, label=None, color=BLUE, **kwargs):
     :param color: 折线图的颜色,默认为BLUE
     :param kwargs: 其他plt.stairs支持的参数
     '''
+    _print_invalid_value_warning('plt_stair', x=x, y=y)
     return ax.stairs(y, x, label=label, color=color, **kwargs)
 
 
@@ -12068,6 +12087,7 @@ def plt_stack(ax, x, y, labels=None, colors=None, **kwargs):
     :param colors: 颜色列表,默认为CMAP中取色
     :param kwargs: 其他plt.stackplot支持的参数
     '''
+    _print_invalid_value_warning('plt_stack', x=x, y=y)
     if colors is None:
         colors = [CMAP(i/y.shape[0]) for i in range(y.shape[0])]
     return ax.stackplot(x, *y, labels=labels, colors=colors, **kwargs)
@@ -12090,6 +12110,7 @@ def plt_violin(ax, data, positions=None, labels=None, body_colors=None, line_col
     Returns:
     dict: 包含 violin plot 的各个元素的字典.
     '''
+    _print_invalid_value_warning('plt_violin', data=data, positions=positions)
     if isinstance(data, list):
         data = np.array(data)
     if positions is None:
@@ -12137,6 +12158,7 @@ def plt_stem(ax, x, y, label=None, linefmt='-', markerfmt='o', basefmt='-', line
     :param basefmt: 基线的格式,默认为'k-'
     :param kwargs: 其他plt.stem支持的参数
     '''
+    _print_invalid_value_warning('plt_stem', x=x, y=y)
     # 画图
     stem_container = ax.stem(x, y, label=label, linefmt=linefmt,
                              markerfmt=markerfmt, basefmt=basefmt, **kwargs)
@@ -12163,6 +12185,7 @@ def plt_quiver(ax, X, Y, U, V, color=BLUE, angles='xy', scale_units='xy', scale=
     :param width: 箭头的线宽,默认为0.015
     :param kwargs: 其他plt.quiver支持的参数
     '''
+    _print_invalid_value_warning('plt_quiver', X=X, Y=Y, U=U, V=V)
     return ax.quiver(X, Y, U, V, color=color, angles=angles,
                      scale_units=scale_units, scale=scale, width=width, **kwargs)
 
@@ -12182,6 +12205,7 @@ def plt_stream(ax, x, y, u, v, label=None, color=BLUE, density=1, broken_streaml
     :param broken_streamlines: 是否绘制断裂的流线,默认为 True
     :param kwargs: 其他 plt.streamplot 支持的参数
     '''
+    _print_invalid_value_warning('plt_stream', x=x, y=y, u=u, v=v)
     if label is not None:
         ax.plot([], [], color=color, label=label)
     # 绘制流场图
@@ -12204,6 +12228,7 @@ def plt_speed_stream(ax, x, y, u, v, label=None, color=BLUE, density=1, broken_s
     :param cmap: 流速的颜色映射表,默认为 DENSITY_CMAP
     :param kwargs: 其他 plt.streamplot 和 plt.pcolormesh 支持的参数
     '''
+    _print_invalid_value_warning('plt_speed_stream', x=x, y=y, u=u, v=v)
     if label is not None:
         ax.plot([], [], color=color, label=label)
     if cbar_kwargs is None:
@@ -12229,6 +12254,7 @@ def plt_box(ax, x, y, width=BAR_WIDTH, label=None, patch_artist=True, boxprops=N
     x不可以是单个数值,必须是一个列表或数组
     y必须是二维的,即使只有一个box,也要是二维的
     '''
+    _print_invalid_value_warning('plt_box', x=x, y=y)
     if boxprops is None:
         boxprops = dict(facecolor=BLUE)
 
@@ -12274,6 +12300,7 @@ class PltHist:
         :param vert: 是否为垂直直方图,默认为True,即纵向
         :param kwargs: 其他plt.hist支持的参数
         '''
+        _print_invalid_value_warning('plt_hist', data=data)
         self.hist, self.edge, self.mid_point = get_hist(data, bins, stat=stat)
         set_ax(ax, ylabel=stat)
         self.bar = plt_bar(ax, self.mid_point, self.hist, label=label, color=color, width=self.edge[1]-self.edge[0], vert=vert, **kwargs)
@@ -12297,6 +12324,7 @@ def plt_hist_2d(ax, x, y, x_bins=BIN_NUM, y_bins=BIN_NUM, cmap=DENSITY_CMAP, lab
     :param vmax: 最大值阈值,数据中大于此值的将被设置为此值,默认为None
     :param kwargs: 其他plt.pcolormesh支持的参数
     '''
+    _print_invalid_value_warning('plt_hist_2d', x=x, y=y)
     if cbar_kwargs is None:
         cbar_kwargs = {}
     if cbar_label == 'stat':
@@ -12334,6 +12362,7 @@ def plt_hexbin(ax, x, y, gridsize=BIN_NUM, cmap=DENSITY_CMAP, **kwargs):
     注意:
     hexbin is only for count data, if you want to plot density data, use plt_hist_2d instead
     '''
+    _print_invalid_value_warning('plt_hexbin', x=x, y=y)
     return ax.hexbin(x, y, gridsize=gridsize, cmap=cmap, **kwargs)
 
 
@@ -12354,6 +12383,7 @@ def plt_contour(ax, x, y, z, levels=None, color=BLUE, cmap=None, norm_mode='line
     :param cbar_kwargs: 用于自定义颜色条的参数,例如位置和标签.
     :param kwargs: 其他plt.contour支持的参数.
     '''
+    _print_invalid_value_warning('plt_contour', x=x, y=y)
     clabel_kwargs = update_dict(CLABEL_KWARGS, clabel_kwargs)
     cbar_kwargs = update_dict({}, cbar_kwargs)
     # 如果指定了cmap,则不使用color
@@ -12402,6 +12432,7 @@ def plt_contourf(ax, x, y, z, levels=None, cmap=DENSITY_CMAP, contour=True, cont
     :param kwargs: 其他plt.contourf支持的参数.
     '''
     cbar_kwargs = update_dict({}, cbar_kwargs)
+    _print_invalid_value_warning('plt_contourf', x=x, y=y)
     clabel_kwargs = update_dict(CLABEL_KWARGS, clabel_kwargs)
     contourf =  ax.contourf(x, y, z, levels=levels, cmap=cmap, **kwargs)
     if contour or clabel:
@@ -12426,6 +12457,7 @@ def plt_pie(ax, data, labels, colors=CMAP, explode=None, autopct='%1.1f%%', star
     :param kwargs: 其他matplotlib.pie支持的参数.
     ax.pie()方法绘制饼图,支持通过textprops自定义文本样式.
     '''
+    _print_invalid_value_warning('plt_pie', data=data, explode=explode)
     if textprops is None:
         textprops = {'fontsize': LABEL_SIZE, 'color': BLACK}
     if not isinstance(colors, list):
@@ -12471,6 +12503,7 @@ def plt_circle(ax, center, radius, color=BLUE, fill=True, adjust_lim=True, **kwa
     :param kwargs: 其他matplotlib.Circle支持的参数.
     ax.add_patch()方法绘制圆形,支持通过fill参数控制是否填充.
     '''
+    _print_invalid_value_warning('plt_circle', center=center, radius=radius)
     if adjust_lim:
         ax.scatter(center[0], center[1], s=0, zorder=-1)
     circle = plt.Circle(center, radius, color=color, fill=fill, **kwargs)
@@ -12490,6 +12523,7 @@ def plt_rectangle(ax, xy, width, height, color=BLUE, fill=True, adjust_lim=True,
     :param kwargs: 其他matplotlib.Rectangle支持的参数.
     ax.add_patch()方法绘制矩形,支持通过fill参数控制是否填充.
     '''
+    _print_invalid_value_warning('plt_rectangle', xy=xy, width=width, height=height)
     rectangle = plt.Rectangle(xy, width, height, color=color, fill=fill, **kwargs)
     if adjust_lim:
         ax.scatter(xy[0], xy[1], s=0, zorder=-1)
@@ -12507,6 +12541,7 @@ def plt_polygon(ax, xy, color=BLUE, fill=True, adjust_lim=True, **kwargs):
     :param kwargs: 其他matplotlib.Polygon支持的参数.
     ax.add_patch()方法绘制多边形,支持通过fill参数控制是否填充.
     '''
+    _print_invalid_value_warning('plt_polygon', xy=xy)
     polygon = plt.Polygon(xy, color=color, fill=fill, **kwargs)
     if adjust_lim:
         for sub_xy in xy:
@@ -12537,6 +12572,7 @@ def plt_pcolormesh(ax, vertical_line_pos, horizontal_line_pos, data, cmap=CMAP, 
     按默认方式使用,0,0会在左下角
     假如data的shape为(N_row, N_col),那么vertical_line_pos的shape应该为(N_col+1,),horizontal_line_pos的shape应该为(N_row+1,);在需要的时候,也很有可能需要转置data
     '''
+    _print_invalid_value_warning('plt_pcolormesh', vertical_line_pos=vertical_line_pos, horizontal_line_pos=horizontal_line_pos)
     return ax.pcolormesh(vertical_line_pos, horizontal_line_pos, data, cmap=cmap, norm=norm, vmin=vmin, vmax=vmax, **kwargs)
 # endregion
 
@@ -12568,6 +12604,8 @@ def plt_scatter_3d(ax, x, y, z, label=None, color=BLUE, **kwargs):
     注意:
     输入的ax需要是3D轴对象
     '''
+    _print_invalid_value_warning('plt_scatter_3d', x=x, y=y, z=z)
+
     # 画图
     if 'c' in kwargs:
         return ax.scatter(x, y, z, label=label, **kwargs)
@@ -12589,6 +12627,7 @@ def plt_line_3d(ax, x, y, z, label=None, color=BLUE, **kwargs):
     注意:
     输入的ax需要是3D轴对象
     '''
+    _print_invalid_value_warning('plt_line_3d', x=x, y=y, z=z)
     # 画图
     return ax.plot(x, y, z, label=label, color=color, **kwargs)
 
@@ -12607,6 +12646,7 @@ def plt_bar_3d(ax, x, y, z, dx, dy, dz, label=None, color=BLUE, **kwargs):
     注意:
     输入的ax需要是3D轴对象
     '''
+    _print_invalid_value_warning('plt_bar_3d', x=x, y=y, z=z, dx=dx, dy=dy, dz=dz)
     return ax.bar3d(x, y, z, dx, dy, dz, color=color, label=label, **kwargs)
 
 
@@ -12624,6 +12664,7 @@ def plt_surface_3d(ax, x, y, z, label=None, color=BLUE, alpha=FAINT_ALPHA, **kwa
     注意:
     输入的ax需要是3D轴对象
     '''
+    _print_invalid_value_warning('plt_surface_3d', x=x, y=y)
     # 画图
     return ax.plot_surface(x, y, z, label=label, color=color, alpha=alpha, **kwargs)
 
@@ -12643,6 +12684,7 @@ def plt_wireframe_3d(ax, X, Y, Z, rstride=BIN_NUM, cstride=BIN_NUM, color=BLUE, 
     注意:
     输入的ax需要是3D轴对象
     '''
+    _print_invalid_value_warning('plt_wireframe_3d', X=X, Y=Y)
     return ax.plot_wireframe(X, Y, Z, rstride=rstride, cstride=cstride, color=color, **kwargs)
 
 
@@ -12660,6 +12702,7 @@ def plt_voxel_3d(ax, data, label=None, color=BLUE, facecolors=None, edgecolors=N
     如果需要设置facecolors和edgecolors,请使用facecolors和edgecolors参数,并且把color参数设置为None,因为在这里color的优先级更高
     如果设置label的时候产生问题,建议设置label为None,另行添加图例
     '''
+    _print_invalid_value_warning('plt_voxel_3d', data=data)
     if color is not None:
         return ax.voxels(data, color=color, label=label, facecolors=facecolors, edgecolors=edgecolors, **kwargs)
     else:
@@ -12682,6 +12725,7 @@ def plt_stem_3d(ax, x, y, z, label=None, linefmt='-', markerfmt='o', basefmt='k-
     注意:
     输入的ax需要是3D轴对象
     '''
+    _print_invalid_value_warning('plt_stem_3d', x=x, y=y, z=z)
     # 画图
     return ax.stem(x, y, z, label=label, linefmt=linefmt, markerfmt=markerfmt, basefmt=basefmt, **kwargs)
 # endregion
@@ -12831,6 +12875,8 @@ def add_errorbar(ax, x, y, err, label=None, color=BLACK, linestyle='None', capsi
     :param equal_space: 是否将x的值作为字符串处理,这将使得柱子等距排列,默认为False
     :param kwargs: 传递给`ax.errorbar`的额外关键字参数.
     '''
+    _print_invalid_value_warning('add_errorbar', x=x, y=y, err=err)
+
     if 'elinewidth' not in kwargs:
         kwargs['elinewidth'] = ERRORBAR_LINEWIDTH
 
@@ -13304,6 +13350,8 @@ def add_connection(axA, axB, xA, yA, xB, yB, coordsA='data', coordsB='data', **k
     coordsA, coordsB (str): 坐标系,可以是'data', 'axes fraction'等
     **kwargs: ConnectionPatch 的其他参数,如 arrowstyle, shrinkA, shrinkB 等
     """
+    _print_invalid_value_warning('add_connection', xA=xA, yA=yA, xB=xB, yB=yB)
+
     # 创建 ConnectionPatch 对象
     con = mpatches.ConnectionPatch(xyA=(xA, yA), xyB=(xB, yB),
                          coordsA=coordsA, coordsB=coordsB,
@@ -14889,6 +14937,7 @@ def add_star(ax, x, y, label=None, marker=STAR, color=RED, markersize=None, line
     :param linestyle: 连接五角星的线型,默认为'None'.
     :param kwargs: 传递给`plot`函数的额外关键字参数.
     '''
+    _print_invalid_value_warning('add_star', x=x, y=y)
     if markersize is None:
         markersize = STAR_SIZE
 
@@ -14961,6 +15010,7 @@ def add_vline(ax, x, label=None, color=RED, linestyle=AUXILIARY_LINE_STYLE, line
     :param linewidth: 垂直线的线宽,默认为LINE_WIDTH.
     :param kwargs: 传递给`ax.axvline`的额外关键字参数.
     '''
+    _print_invalid_value_warning('add_vline', x=x)
     if linewidth is None:
         linewidth = LINE_WIDTH
 
@@ -14979,6 +15029,7 @@ def add_hline(ax, y, label=None, color=RED, linestyle=AUXILIARY_LINE_STYLE, line
     :param linewidth: 水平线的线宽,默认为LINE_WIDTH.
     :param kwargs: 传递给`ax.axhline`的额外关键字参数.
     '''
+    _print_invalid_value_warning('add_hline', y=y)
     if linewidth is None:
         linewidth = LINE_WIDTH
 
@@ -15001,6 +15052,7 @@ def add_sline(ax, slope, intercept, reference_point='auto', label=None, color=RE
     :param linewidth: 直线的线宽,默认为LINE_WIDTH.
     :param kwargs: 传递给`ax.axline`的额外关键字参数.
     '''
+    _print_invalid_value_warning('add_sline', slope=slope, intercept=intercept, reference_point=reference_point)
     if linewidth is None:
         linewidth = LINE_WIDTH
 
@@ -15022,6 +15074,7 @@ def add_grid(ax, x_list=None, y_list=None, color=RANA, linestyle=AUXILIARY_LINE_
     :param linewidth: 网格线的线宽,默认为LINE_WIDTH.
     :param kwargs: 传递给`ax.grid`的额外关键字参数.
     '''
+    _print_invalid_value_warning('add_grid', x_list=x_list, y_list=y_list)
     if linewidth is None:
         linewidth = LINE_WIDTH
 
@@ -15077,6 +15130,7 @@ def add_vspan(ax, xmin, xmax, label=None, color=GREEN, alpha=FAINT_ALPHA, **kwar
     '''
     在指定位置添加垂直跨度.
     '''
+    _print_invalid_value_warning('add_vspan', xmin=xmin, xmax=xmax)
     # 画图
     return ax.axvspan(xmin, xmax, label=label, color=color, alpha=alpha, **kwargs)
 
@@ -15085,6 +15139,7 @@ def add_hspan(ax, ymin, ymax, label=None, color=GREEN, alpha=FAINT_ALPHA, **kwar
     '''
     在指定位置添加水平跨度.
     '''
+    _print_invalid_value_warning('add_hspan', ymin=ymin, ymax=ymax)
     # 画图
     return ax.axhspan(ymin, ymax, label=label, color=color, alpha=alpha, **kwargs)
 
@@ -15114,6 +15169,7 @@ def add_gradient_patch(ax, patch, extent, transform='data', auto_scale=True, ver
     - cmap: 渐变色的颜色映射,默认为DENSITY_CMAP
     - gradient: 渐变色的数组,默认为None即自动生成
     '''
+    _print_invalid_value_warning('add_gradient_patch', extent=extent)
     imshow_kwargs = update_dict({}, imshow_kwargs)
     if transform == 'data':
         transform = ax.transData
@@ -15175,6 +15231,7 @@ def add_path_patch(ax, vertices, codes=None, facecolor='none', edgecolor=BLACK, 
     - edgecolor: 边框颜色,默认为BLACK
     - auto_scale: 是否自动调整坐标轴范围,默认为True
     '''
+    _print_invalid_value_warning('add_path_patch', vertices=vertices)
     if lw is None:
         lw = LINE_WIDTH
 
@@ -15193,6 +15250,7 @@ def add_polygon_patch(ax, xy, facecolor='none', edgecolor=BLACK, auto_scale=True
     - edgecolor: 边框颜色,默认为BLACK
     - auto_scale: 是否自动调整坐标轴范围,默认为True
     '''
+    _print_invalid_value_warning('add_polygon_patch', xy=xy)
     if lw is None:
         lw = LINE_WIDTH
 
@@ -15212,6 +15270,7 @@ def add_circle_patch(ax, center, radius, facecolor='none', edgecolor=BLACK, auto
     - edgecolor: 边框颜色,默认为BLACK
     - auto_scale: 是否自动调整坐标轴范围,默认为True
     '''
+    _print_invalid_value_warning('add_circle_patch', center=center, radius=radius)
     if lw is None:
         lw = LINE_WIDTH
 
@@ -15226,6 +15285,7 @@ def add_arc_patch(ax, center, radius, theta1, theta2, facecolor='none', edgecolo
 
     angle_type: 角度类型,默认为'rad',即弧度制.可选'rad'或'deg'
     '''
+    _print_invalid_value_warning('add_arc_patch', center=center, radius=radius, theta1=theta1, theta2=theta2)
     if angle_type == 'rad':
         theta1 = np.rad2deg(theta1)
         theta2 = np.rad2deg(theta2)
@@ -15303,6 +15363,7 @@ def add_arrow(ax, x_start, y_start, x_end, y_end, xycoords='data', label=None, f
     :param kwargs: 传递给`ax.arrow`的额外关键字参数.
     '''
 
+    _print_invalid_value_warning('add_arrow', x_start=x_start, y_start=y_start, x_end=x_end, y_end=y_end)
     if linewidth is None:
         linewidth = LINE_WIDTH
 
@@ -15349,6 +15410,7 @@ def add_quiver_3d(ax, x_start, y_start, z_start, x_end, y_end, z_end, label=None
     在3D图中添加箭头.https://matplotlib.org/stable/api/_as_gen/mpl_toolkits.mplot3d.axes3d.Axes3D.quiver.html#mpl_toolkits.mplot3d.axes3d.Axes3D.quiver
     注意: 如果设定length,这里的length会基于原先的箭头加倍得到长度,而不是直接设定长度.
     '''
+    _print_invalid_value_warning('add_quiver_3d', x_start=x_start, y_start=y_start, z_start=z_start, x_end=x_end, y_end=y_end, z_end=z_end)
     if linewidth is None:
         linewidth = LINE_WIDTH
 
@@ -15372,6 +15434,7 @@ def add_annotation(ax, text, xy, xytext, xycoords='data', fontsize=None, arrowpr
     '''
     text_process = update_dict(TEXT_PROCESS, text_process)
     arrowprops = update_dict(ARROW_PROPS, arrowprops)
+    _print_invalid_value_warning('add_annotation', xy=xy, xytext=xytext)
     if fontsize is None:
         fontsize = FONT_SIZE
 
@@ -15440,6 +15503,7 @@ def add_text(ax, text, x=TEXT_X, y=TEXT_Y, text_process=None, transform='ax', va
     :param kwargs: 传递给'ax.text'的额外关键字参数
     '''
     text_process = update_dict(TEXT_PROCESS, text_process)
+    _print_invalid_value_warning('add_text', x=x, y=y)
     if fontsize is None:
         fontsize = FONT_SIZE
     _check_maybe_wrong_transform_for_text(x, y, transform)
@@ -15847,6 +15911,7 @@ def plt_colorful_scatter(ax, x, y, c, cmap=CMAP, norm_mode='linear', vmin=None, 
     - cbar_postion (str or None, optional): 颜色条的位置,默认为None.
     - cbar_kwargs (dict or None, optional): 传递给add_side_colorbar的其他参数.
     '''
+    _print_invalid_value_warning('plt_colorful_scatter', c=c)
     # 设置默认参数
     if scatter_kwargs is None:
         scatter_kwargs = {}
@@ -15903,6 +15968,7 @@ def plt_colorful_line(ax, x, y, c, cmap=CMAP, norm_mode='linear', vmin=None, vma
     - line_kwargs (dict, optional): mcoll.LineCollection的其他参数
     - adjust_lim (bool, optional): 是否调整坐标轴范围, 默认为 True
     '''
+    _print_invalid_value_warning('plt_colorful_line', x=x, y=y, c=c)
     # 设置默认参数
     if cbar_kwargs is None:
         cbar_kwargs = {}
@@ -16108,6 +16174,7 @@ def plt_linregress(ax, x, y, xlog=False, ylog=False, xlog_base=10, ylog_base=10,
     if text_size is None:
         text_size = FONT_SIZE
 
+    _print_invalid_value_warning('plt_linregress', x=x, y=y)
     x = np.array(x)
     y = np.array(y)
 
@@ -16214,6 +16281,7 @@ def plt_density_scatter(ax, x, y, label=None, label_cmap_float=1.0, estimate_typ
     注意:
     如果log scale,则不太适合使用hist,因为hist的bins是线性的,而log scale的bins是对数的
     '''
+    _print_invalid_value_warning('plt_density_scatter', x=x, y=y)
     if scatter_kwargs is None:
         scatter_kwargs = {}
     cbar_kwargs = update_dict(cbar_kwargs, {'cbar_label': cbar_label})
@@ -16251,6 +16319,7 @@ def plt_density_line(ax, x, y, stat='density', bins_x=None, bins_y=None, cmap=DE
     '''
     if cbar_label is None:
         cbar_label = 'density'
+    _print_invalid_value_warning('plt_density_line', x=x, y=y)
     if cbar_kwargs is None:
         cbar_kwargs = {}
     if imshow_kwargs is None:
@@ -16366,6 +16435,7 @@ def plt_fill_between_line(ax, x, y1, y2, label=None, color=BLUE, alpha=FAINT_ALP
     :param alpha: 填充区域的透明度,默认为FAINT_ALPHA
     :param kwargs: 传递给plt.fill_between的额外关键字参数
     '''
+    _print_invalid_value_warning('plt_fill_between_line', x=x, y1=y1, y2=y2)
     # 画图
     if vert:
         return ax.fill_between(x, y1, y2, label=label, color=color, alpha=alpha, **kwargs)
@@ -16419,6 +16489,7 @@ def plt_kde(ax, data, label=None, color=BLUE, vert=True, x=None, kde_kwargs=None
     :param bw_method: 核密度估计的带宽,默认为None
     :param kwargs: 其他plt.plot支持的参数
     '''
+    _print_invalid_value_warning('plt_kde', data=data, x=x)
     if kde_kwargs is None:
         kde_kwargs = {}
     kde = get_kde(data, **kde_kwargs)
@@ -16440,6 +16511,7 @@ def plt_kde_contour(ax, x, y, label=None, color=BLUE, cmap=None, levels=None, gr
     :param kde_kwargs: 传递给get_kde的额外关键字参数
     :param contour_kwargs: 传递给plt.contour的额外关键字参数
     '''
+    _print_invalid_value_warning('plt_kde_contour', x=x, y=y)
     if kde_kwargs is None:
         kde_kwargs = {}
     if contour_kwargs is None:
@@ -16477,6 +16549,7 @@ def plt_kde_contourf(ax, x, y, cmap=DENSITY_CMAP, levels=None, gridsize=100, xmi
     :param kde_kwargs: 传递给get_kde的额外关键字参数
     :param contourf_kwargs: 传递给plt.contourf的额外关键字参数
     '''
+    _print_invalid_value_warning('plt_kde_contourf', x=x, y=y)
     if kde_kwargs is None:
         kde_kwargs = {}
     if contourf_kwargs is None:
@@ -16511,6 +16584,7 @@ def plt_cdf(ax, data, label=None, color=BLUE, vert=True, **kwargs):
     :param color: 累积分布函数图的颜色,默认为BLUE
     :param kwargs: 其他plt.plot支持的参数
     '''
+    _print_invalid_value_warning('plt_cdf', data=data)
     cdf = get_cdf(data)
     return plt_line(ax, cdf.x, cdf.y, label=label, color=color, vert=vert, **kwargs)
 
@@ -16707,6 +16781,7 @@ def plt_qq_plot(ax, data_x, data_y, n_quantiles=None, scatter_color=BLUE, line_c
     :param data_y: 数据集y
     :param n_quantiles: 分位数的数量,如果为None,则根据较小的数据集长度自动确定
     """
+    _print_invalid_value_warning('plt_qq_plot', data_x=data_x, data_y=data_y)
     # 如果未指定分位数数量,则取两个数据集中较小的长度
     if n_quantiles is None:
         n_quantiles = min(len(data_x), len(data_y))
@@ -16745,6 +16820,7 @@ def plt_pp_plot(ax, data_x, data_y, n_points=None, scatter_color=BLUE, line_colo
     :param data_y: 数据集y
     :param n_points: 用于绘制CDF的点的数量,如果为None,则根据较小的数据集长度自动确定
     """
+    _print_invalid_value_warning('plt_pp_plot', data_x=data_x, data_y=data_y)
     # 如果未指定点的数量,根据数据集中较小的长度自动确定
     if n_points is None:
         n_points = min(len(data_x), len(data_y))
@@ -16849,6 +16925,7 @@ def plt_colorful_scatter_3d(ax, x, y, z, c, cmap=CMAP, norm_mode='linear', vmin=
     注意:
     输入的ax需要是3D轴对象
     '''
+    _print_invalid_value_warning('plt_colorful_scatter_3d', c=c)
     # 设置默认参数
     if scatter_kwargs is None:
         scatter_kwargs = {}
@@ -16971,6 +17048,7 @@ def plt_vstack(ax, x, y_values, z_sets, cmap=CMAP, alpha=FAINT_ALPHA):
     输入的ax需要是3D轴对象
     """
     
+    _print_invalid_value_warning('plt_vstack', x=x, y_values=y_values, z_sets=z_sets)
     # 定义辅助函数,生成位于(x, z)曲线之下的多边形的顶点
     def polygon_under_graph(x, z):
         """
@@ -17419,6 +17497,7 @@ def add_star_extreme_value(ax, x, y, extreme_type, label=None, marker=STAR, colo
     在min或者max位置添加星号
     :param extreme_type: 极值类型,可以是'max'或者'min'
     '''
+    _print_invalid_value_warning('add_star_extreme_value', x=x, y=y)
     if markersize is None:
         markersize = STAR_SIZE
 
@@ -17490,6 +17569,7 @@ def add_vline_extreme_value(ax, x, y, extreme_type, label=None, color=None, line
     在min或者max位置添加垂直线
     :param extreme_type: 极值类型,可以是'max'或者'min'
     '''
+    _print_invalid_value_warning('add_vline_extreme_value', x=x, y=y)
     if linewidth is None:
         linewidth = LINE_WIDTH
 
