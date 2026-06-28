@@ -7747,6 +7747,8 @@ def sync_special_value_along_axis(data, sync_axis=0, inf_policy=INF_POLICY):
 
 
 def has_invalid_value(value):
+    if isinstance(value, dict):
+        return any(has_invalid_value(item) for item in value.values())
     if isinstance(value, (list, tuple)):
         return any(has_invalid_value(item) for item in value)
     array = np.asarray(value)
@@ -12226,7 +12228,7 @@ def plt_speed_stream(ax, x, y, u, v, label=None, color=BLUE, density=1, broken_s
     :param density: 流线的密度,默认为 1
     :param broken_streamlines: 是否绘制断裂的流线,默认为 True
     :param cmap: 流速的颜色映射表,默认为 DENSITY_CMAP
-    :param kwargs: 其他 plt.streamplot 和 plt.pcolormesh 支持的参数
+    :param kwargs: 其他 plt.streamplot 支持的参数
     '''
     _print_invalid_value_warning('plt_speed_stream', x=x, y=y, u=u, v=v)
     if label is not None:
@@ -12270,10 +12272,10 @@ def plt_box(ax, x, y, width=BAR_WIDTH, label=None, patch_artist=True, boxprops=N
 
 def plt_hist(ax, data, bins=BIN_NUM, label=None, color=BLUE, stat='probability', vert=True, **kwargs):
     '''
-    使用数据绘制直方图,可以接受plt.hist的其他参数
+    使用 get_hist 统计数据,再通过 plt_bar 绘制直方图
     :param ax: matplotlib的轴对象,用于绘制图形
     :param data: 用于绘制直方图的数据集
-    :param bins: 直方图的箱数,默认为None,自动确定箱数
+    :param bins: 直方图的箱数,默认为BIN_NUM
     :param label: 图例标签,默认为None
     :param color: 直方图的颜色,默认为BLUE
     :param stat: 直方图的统计方法,默认为'probability'
@@ -12290,10 +12292,10 @@ class PltHist:
     '''
     def __init__(self, ax, data, bins=BIN_NUM, label=None, color=BLUE, stat='probability', vert=True, **kwargs):
         '''
-        使用数据绘制直方图,可以接受plt.hist的其他参数
+        使用 get_hist 统计数据,再通过 plt_bar 绘制直方图
         :param ax: matplotlib的轴对象,用于绘制图形
         :param data: 用于绘制直方图的数据集
-        :param bins: 直方图的箱数,默认为None,自动确定箱数
+        :param bins: 直方图的箱数,默认为BIN_NUM
         :param label: 图例标签,默认为None
         :param color: 直方图的颜色,默认为BLUE
         :param stat: 直方图的统计方法,默认为'probability'
@@ -14812,10 +14814,9 @@ def add_marginal_distribution(ax, data, side_ax=None, side_ax_position='right', 
     '''
     在指定位置添加边缘分布.
     :param ax: matplotlib的轴对象,用于绘制图形.
-    :param x: x轴的数据.
-    :param y: y轴的数据.
+    :param data: 边缘分布的数据.
     :param color: 边缘分布的颜色,默认为BLUE.
-    :param hist_kwargs: 传递给`sns.histplot`的其他参数.
+    :param hist_kwargs: 传递给`plt_hist`的其他参数.
     '''
     if hist_kwargs is None:
         hist_kwargs = {}
@@ -15362,7 +15363,7 @@ def clip_ax_by_path(ax, vertices, codes=None, patch_kwargs=None):
 # region 初级作图函数(添加箭头)
 def add_arrow(ax, x_start, y_start, x_end, y_end, xycoords='data', label=None, fc=RED, ec=RED, linewidth=None, arrow_sytle=ARROW_STYLE, head_width=ARROW_HEAD_WIDTH, head_length=ARROW_HEAD_LENGTH, alpha=1.0, **kwargs):
     '''
-    在指定位置添加箭头.更换了使用方式,现在是指定起点和终点,而不是指定增量,并且内部实际调用ax.annotation来保证箭头的头大小相对于ax美观,箭头的终点严格对应xy_end.可以处理输入单个箭头或多个箭头的情况.支持list,array,单个数字并且不会改变原始数据类型.
+    根据起点和终点坐标绘制一个或多个箭头.实际箭头由add_annotation绘制,并额外创建空artist用于图例.支持list、array和单个数字.
     :param ax: matplotlib的轴对象,用于绘制图形.
     :param x_start: 箭头的起始x坐标.
     :param y_start: 箭头的起始y坐标.
@@ -15371,13 +15372,11 @@ def add_arrow(ax, x_start, y_start, x_end, y_end, xycoords='data', label=None, f
     :param label: 箭头的标签,默认为None.
     :param fc: 箭头的填充颜色,默认为RED.
     :param ec: 箭头的边框颜色,默认为RED.
-    :param linestyle: 箭头的线型,默认为'-'.
     :param linewidth: 箭头的线宽,默认为LINE_WIDTH.
     :param arrow_sytle: 箭头的样式,默认为ARROW_STYLE.
     :param head_width: 箭头的宽度,默认为ARROW_HEAD_WIDTH.
     :param head_length: 箭头的长度,默认为ARROW_HEAD_LENGTH.
-    :param adjust_end_point: 是否调整箭头的终点,使箭头的end坐标为箭头三角形终点(True)或者箭头直线的终点(False)
-    :param kwargs: 传递给`ax.arrow`的额外关键字参数.
+    :param kwargs: 传递给`add_annotation`的额外关键字参数,同时用于创建图例artist.
     '''
 
     _print_invalid_value_warning('add_arrow', x_start=x_start, y_start=y_start, x_end=x_end, y_end=y_end)
@@ -15405,10 +15404,12 @@ def add_mid_arrow(ax, x_start, y_start, x_end, y_end, xycoords='data', label=Non
     if linewidth is None:
         linewidth = LINE_WIDTH
 
+    _print_invalid_value_warning('add_mid_arrow', x_start=x_start, y_start=y_start, x_end=x_end, y_end=y_end)
+    x_start, y_start, x_end, y_end = map(np.asarray, [x_start, y_start, x_end, y_end])
     x_mid = (x_start + x_end) / 2
     y_mid = (y_start + y_end) / 2
     add_arrow(ax, x_start, y_start, x_mid, y_mid, xycoords=xycoords, label=label, fc=fc, ec=ec, linewidth=linewidth, arrow_sytle=arrow_sytle, head_width=head_width, head_length=head_length, alpha=alpha, **kwargs)
-    plt_line(ax, [x_start, x_end], [y_start, y_end], color=fc, linestyle='-', linewidth=linewidth, alpha=alpha, **kwargs)
+    plt_line(ax, np.vstack([x_start, x_end]), np.vstack([y_start, y_end]), color=fc, linestyle='-', linewidth=linewidth, alpha=alpha, **kwargs)
 
 
 def add_double_arrow(ax, x_start, y_start, x_end, y_end, xycoords='data', label=None, fc=RED, ec=RED, linewidth=None, arrow_sytle=ARROW_STYLE, head_width=ARROW_HEAD_WIDTH, head_length=ARROW_HEAD_LENGTH, alpha=1.0, **kwargs):
@@ -16056,11 +16057,12 @@ def plt_group_bar(ax, x, y, label_list, width=None, inner_gap=0.0, colors=CMAP, 
     :param x: x轴的分组标签,大组,每个组包含多个柱子(比如['A', 'B'])
     :param y: 一个二维列表或数组,表示每组中柱子的高度(shape=(len(x), len(label_list)),例如[[1, 2, 3], [4, 5, 6]])
     :param label_list: 每个柱子的标签,例如['x', 'y', 'z']
-    :param bar_width: 单个柱子的宽度,默认为None,自动确定宽度
+    :param width: 单个柱子的宽度,默认为None,自动确定宽度
     :param inner_gap: 柱子之间的间距,默认为0.0,其数值代表的是同组内柱子之间的间距占单个柱子宽度的比例
     :param colors: 柱状图的颜色序列,应与label_list的长度相匹配;也可以指定cmap,默认为CMAP,然后根据label_list的长度生成颜色序列
     :param kwargs: 其他plt.bar支持的参数
     '''
+    _print_invalid_value_warning('plt_group_bar', x=x)
     # 假如colors不是一个list,则用colors对应的cmap生成颜色
     if not isinstance(colors, list):
         colors = colors(np.linspace(0, 1, len(label_list)))
@@ -16121,6 +16123,7 @@ def plt_group_box(ax, x, y, label_list, width=None, inner_gap=0.0, colors=CMAP, 
     :param colors: 箱线图的颜色序列,应与label_list的长度相匹配;也可以指定cmap,默认为CMAP,然后根据label_list的长度生成颜色序列
     :param kwargs: 其他plt.boxplot支持的参数
     '''
+    _print_invalid_value_warning('plt_group_box', x=x)
     # 假如colors不是一个list,则用colors对应的cmap生成颜色
     if not isinstance(colors, list):
         colors = colors(np.linspace(0, 1, len(label_list)))
@@ -16467,8 +16470,10 @@ def plt_band_line(ax, x, y, bandwidth, line_label=None, line_color=BLUE, fill_la
     :param x: x轴的数据
     :param y: y轴的数据
     :param bandwidth: 误差带的数据
-    :param label: 图例标签,默认为None
-    :param color: 折线图的颜色,默认为BLUE
+    :param line_label: 折线图的图例标签,默认为None
+    :param line_color: 折线图的颜色,默认为BLUE
+    :param fill_label: 填充区域的图例标签,默认为None
+    :param fill_color: 填充区域的颜色,默认为BLUE
     :param alpha: 误差带的透明度,默认为FAINT_ALPHA
     :param line_kwargs: 传递给plt_line的额外关键字参数
     :param fill_kwargs: 传递给plt_fill_between_line的额外关键字参数
@@ -16492,6 +16497,7 @@ def plt_smooth_scatter_line(ax, x, y, frac=0.2, scatter_label=None, line_label='
         scatter_kwargs = {}
     if line_kwargs is None:
         line_kwargs = {}
+    _print_invalid_value_warning('plt_smooth_scatter_line', x=x, y=y)
     x_smooth, y_smooth = lowess_smooth(x, y, frac=frac)
     return plt_scatter(ax, x, y, color=scatter_color, label=scatter_label, alpha=scatter_alpha, **scatter_kwargs), plt_line(ax, x_smooth, y_smooth, color=line_color, label=line_label, **line_kwargs)
 
@@ -16503,7 +16509,8 @@ def plt_kde(ax, data, label=None, color=BLUE, vert=True, x=None, kde_kwargs=None
     :param data: 用于绘制核密度估计图的数据集
     :param label: 图例标签,默认为None
     :param color: 核密度估计图的颜色,默认为BLUE
-    :param bw_method: 核密度估计的带宽,默认为None
+    :param x: 计算KDE曲线的坐标,默认为数据范围内的1000个点
+    :param kde_kwargs: 传递给get_kde的其他参数
     :param kwargs: 其他plt.plot支持的参数
     '''
     _print_invalid_value_warning('plt_kde', data=data, x=x)
@@ -16695,6 +16702,8 @@ def plt_vector_input_bar(ax, x, y, label=None, color=BLUE, vert=True, equal_spac
     if ebar_kwargs is None:
         ebar_kwargs = {}
 
+    _print_invalid_value_warning('plt_vector_input_bar', x=x)
+    x = list(x)
     if equal_space:
         # 将x的每个元素变为字符串
         xtick_label = [str(i) for i in x]
@@ -17050,9 +17059,9 @@ def plt_vstack(ax, x, y_values, z_sets, cmap=CMAP, alpha=FAINT_ALPHA):
     
     参数：
     - x: 一维数组,代表x轴的数据点
-    - y_sets: 一个包含多个y数据集的二维数组(每个数据集对应x轴的数据点)
-    - z_values: 每个y数据集的对应z轴值,决定在z轴上的位置(可以是array或者list)
-    - colormap: 字符串,指定用于多边形填充颜色的colormap
+    - y_values: 每个数据集在y轴上的位置(可以是array或者list)
+    - z_sets: 一个包含多个z数据集的二维数组(每个数据集对应x轴的数据点)
+    - cmap: 指定用于多边形填充颜色的colormap
     - alpha: 透明度值,控制多边形的透明度.
 
     使用示例:
@@ -17258,26 +17267,33 @@ def plt_scatter_heatmap(ax, color_data, size_data, cmap=HEATMAP_CMAP, edgecolor=
 
 def plt_group_bar_df(ax, df, bar_width=None, group_by='columns', colors=CMAP, vert=True, **kwargs):
     '''
-    基于DataFrame绘制分组的柱状图,根据分组是按照行还是列来自动处理.
+    基于DataFrame绘制分组柱状图.
+
+    group_by='columns'时,DataFrame的每一列是一个横轴分组,index中的每一行是组内具有独立图例标签的柱系列.
+    例如2行3列的DataFrame会绘制3个横轴分组,每组包含2根柱.
+
+    group_by='rows'时,DataFrame的每一行是一个横轴分组,columns中的每一列是组内具有独立图例标签的柱系列.
+    例如2行3列的DataFrame会绘制2个横轴分组,每组包含3根柱.
+
     :param ax: matplotlib的轴对象,用于绘制图形
     :param df: 数据存放的DataFrame
     :param bar_width: 单个柱子的宽度,默认为None,自动确定宽度
-    :param group_by: 指定分组数据是按行('rows')还是按列('columns'),默认为'columns'
+    :param group_by: 指定将DataFrame的列还是行作为横轴分组,可选'columns'或'rows',默认为'columns'
     :param colors: 每个分组的颜色列表;也可以指定cmap,默认为CMAP,然后自动生成颜色序列
     :param vert: 是否是垂直的柱状图,默认为True
     :param kwargs: 其他plt.bar支持的参数
     '''
     if group_by == 'columns':
-        x = df.index.tolist()  # x轴标签
+        x = df.columns.tolist()  # x轴分组标签
         y = df.values.T.tolist()  # 每组的柱状图值
-        label_list = df.columns.tolist()  # 每个柱状图的标签
+        label_list = df.index.tolist()  # 组内每个柱系列的标签
     else:  # 'rows'
-        x = df.columns.tolist()  # x轴标签
+        x = df.index.tolist()  # x轴分组标签
         y = df.values.tolist()  # 每组的柱状图值
-        label_list = df.index.tolist()  # 每个柱状图的标签
+        label_list = df.columns.tolist()  # 组内每个柱系列的标签
 
     plt_group_bar(ax=ax, x=x, y=y, label_list=label_list,
-                       bar_width=bar_width, colors=colors, vert=vert, **kwargs)
+                       width=bar_width, colors=colors, vert=vert, **kwargs)
 
 
 def plt_two_side_bar_df():
