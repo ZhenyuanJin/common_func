@@ -736,7 +736,10 @@ class MemoryTracker:
         """
         停止内存追踪并记录第二个快照
         """
-        self.snapshot_after = tracemalloc.take_snapshot()
+        try:
+            self.snapshot_after = tracemalloc.take_snapshot()
+        finally:
+            tracemalloc.stop()
 
     def compare_by_lineno(self, top_n=10):
         """
@@ -800,9 +803,9 @@ class WithMemoryTracker:
         """退出上下文时停止追踪并打印结果"""
         self.tracker.stop()
         if self.mode == 'lineno':
-            print(self.tracker.compare_by_lineno(self.top_n))
+            self.tracker.compare_by_lineno(self.top_n)
         else:
-            print(self.tracker.compare_by_traceback(self.top_n))
+            self.tracker.compare_by_traceback(self.top_n)
         return False  # 不抑制异常
 # endregion
 
@@ -6034,6 +6037,11 @@ class InstanceContainer:
                 distance = np.linalg.norm(np.array(value) - np.array(target_value))
             else:
                 distance = abs(value - target_value)
+            if np.isnan(distance):
+                print(
+                    "Warning: NaN distance detected while finding close items; "
+                    "the result may be unreliable."
+                )
             items_with_dist.append((distance, item))
 
         items_with_dist.sort(key=lambda x: x[0])
@@ -18216,6 +18224,7 @@ def add_sep_tick(ax, axis, ticks, length=None, width=None):
         sec.set_yticks(ticks, labels=[])
         sec.tick_params('y', length=length, width=width)
         sec.spines['left'].set_visible(False)
+    return sec
 
 @iterate_over_axs
 def rm_ax_tick(ax, axis=None, which='both'):
@@ -18331,8 +18340,28 @@ def reduce_ax_tick_by_indices(ax, axis, tick_indices=None):
     return ax
 
 
-def set_cbar_tick(cbar, norm_mode='linear', ticks=None):
-    pass
+def set_cbar_tick(cbar, ticks=None, tick_labels=None):
+    """
+    Set explicit tick locations and optional labels on a colorbar.
+
+    ``ticks`` are values in the original data space represented by the
+    colorbar, not normalized positions between 0 and 1.  For example, a
+    logarithmic colorbar spanning 1 to 1000 uses ticks such as 1, 10, 100,
+    and 1000.  The colorbar's existing norm maps these values to positions.
+
+    Parameters:
+    - cbar: The matplotlib Colorbar to update.
+    - ticks: Tick values in the colorbar's original data space.
+    - tick_labels: Optional display labels corresponding one-to-one to ticks.
+    """
+    if tick_labels is not None and ticks is None:
+        raise ValueError("ticks must be provided when tick_labels are set")
+
+    if ticks is not None:
+        cbar.set_ticks(ticks)
+        if tick_labels is not None:
+            cbar.set_ticklabels(tick_labels)
+    return cbar
 # endregion
 
 
@@ -19060,6 +19089,9 @@ def set_ax(ax, xlabel=None, ylabel=None, zlabel=None, xlabel_pad=None, ylabel_pa
     tight_layout - 是否启用紧凑布局,默认为False,如果输入dict,则作为tight_layout的参数
     reset_scale - 是否在不设定xlog等的时候重新set为linear(如果True则会进行一步linear,但是这有可能破坏一些xticklabel之类的设置)
     '''
+    if not isinstance(tight_layout, (bool, dict)):
+        raise TypeError("tight_layout must be a bool or dict")
+
     text_process = update_dict(TEXT_PROCESS, text_process)
     legend_kwargs = update_dict({}, legend_kwargs)
 
@@ -19161,7 +19193,9 @@ def set_ax(ax, xlabel=None, ylabel=None, zlabel=None, xlabel_pad=None, ylabel_pa
     if legend:
         set_ax_legend(ax, loc=legend_loc, fontsize=legend_size, bbox_to_anchor=bbox_to_anchor, text_process=text_process, rm_exist_legend=rm_exist_legend, **legend_kwargs)
 
-    if tight_layout:
+    if tight_layout is True:
+        plt.tight_layout()
+    elif isinstance(tight_layout, dict):
         plt.tight_layout(**tight_layout)
 
     if is_3d:
@@ -20026,7 +20060,8 @@ def copy_ax_content(source_ax, target_ax):
     for line in source_ax.get_lines():
         target_ax.plot(line.get_xdata(), line.get_ydata(), label=line.get_label(),
                        color=line.get_color(), linestyle=line.get_linestyle(),
-                       linewidth=line.get_linewidth(), marker=line.get_marker())
+                       linewidth=line.get_linewidth(), marker=line.get_marker(),
+                       alpha=line.get_alpha())
 
     # 复制散点图 (PathCollection)
     for collection in source_ax.collections:
@@ -20653,11 +20688,13 @@ def fig_to_video(fig_paths, filename, frame_rate=FRAME_RATE, delete_figs=False, 
     mkdir(os.path.dirname(filename))
 
     valid_fig_paths = []
+    original_valid_fig_paths = []
 
     # Check for the existence of figs and accumulate valid paths
     for fig_path in fig_paths:
         valid_fig_path, fig_exist = find_fig(fig_path, order=['.png', '.pdf', '.eps'])
         if fig_exist:
+            original_valid_fig_paths.append(valid_fig_path)
             if valid_fig_path.endswith('.png'):
                 valid_fig_paths.append(valid_fig_path)
             else:
@@ -20701,8 +20738,8 @@ def fig_to_video(fig_paths, filename, frame_rate=FRAME_RATE, delete_figs=False, 
                                append_images=resized_figs[1:], duration=1000/frame_rate, loop=0)
 
     if delete_figs:
-        # Delete figs after processing all formats
-        for fig_path in valid_fig_paths:
+        # Delete original inputs and any PNG files generated for video encoding.
+        for fig_path in dict.fromkeys(original_valid_fig_paths + valid_fig_paths):
             os.remove(fig_path)
         print("All valid figs deleted.")
 
