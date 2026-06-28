@@ -1605,12 +1605,15 @@ def method_decorator(decorator):
 
     使用方法:
     已有一个decorator,可以使用如下方式将其应用到类的所有方法
-    @class_decorator(decorator)
+    @method_decorator(decorator)
     '''
     def decorate(cls):
         for attr_name, attr_value in cls.__dict__.items():
-            if callable(attr_value):  # 只处理可调用的方法
-                # 将装饰器应用到每个方法
+            if isinstance(attr_value, staticmethod):
+                setattr(cls, attr_name, staticmethod(decorator(attr_value.__func__)))
+            elif isinstance(attr_value, classmethod):
+                setattr(cls, attr_name, classmethod(decorator(attr_value.__func__)))
+            elif callable(attr_value):
                 setattr(cls, attr_name, decorator(attr_value))
         return cls
     return decorate
@@ -1620,7 +1623,26 @@ def method_decorator(decorator):
 # region class method recorder
 class MethodRecorder:
     '''
-    使用例子:
+    记录一个对象的实例方法是否曾被调用.
+
+    适用于需要检查对象执行流程的场景,例如:
+    - 判断初始化、计算、保存等步骤是否已经执行;
+    - 在测试或调试中确认某个方法是否被调用;
+    - 为 CallOnceExecutor 提供方法调用状态.
+
+    创建 MethodRecorder 时,它会用记录包装器替换目标实例上选中的方法.
+    方法被调用时会先标记为已调用,再执行原方法.因此,即使原方法随后抛出
+    异常,was_called() 仍会返回 True.
+
+    默认只记录公共方法.methods_to_record 可以作为严格白名单使用:
+    - None: 记录所有公共方法;
+    - []: 不记录任何方法;
+    - ['method_a', '_method_b']: 只记录列出的方法,也可以显式包含私有方法.
+
+    本类只记录方法是否被调用过,不记录调用次数、参数、返回值或异常信息.
+    reset() 可以清除单个方法或全部方法的调用状态.
+
+    使用示例:
     class MyClass:
         def __init__(self):
             self.recorder = MethodRecorder(self)
@@ -1643,12 +1665,12 @@ class MethodRecorder:
     def _decorate_instance_methods(self, instance):
         cls = instance.__class__
         for name, attr in inspect.getmembers(cls, inspect.isfunction):
-            # 跳过特殊方法和私有方法
-            if name.startswith("__") and name.endswith("__"):
-                continue
-            
-            # 如果指定了要记录的方法列表,且当前方法不在列表中,则跳过
-            if self._methods_to_record and name not in self._methods_to_record:
+            if self._methods_to_record is None:
+                # 默认只记录公共方法
+                if name.startswith("_"):
+                    continue
+            elif name not in self._methods_to_record:
+                # 显式列表是严格白名单；空列表表示不记录任何方法
                 continue
             
             # 创建方法装饰器
@@ -1683,6 +1705,19 @@ class MethodRecorder:
 
 
 class CallOnceExecutor(MethodRecorder):
+    '''
+    限制目标实例上的指定方法只成功执行一次.
+
+    适用于防止重复初始化、重复保存或重复提交等操作.
+    首次执行失败时会清除调用记录,因此之后仍可重试.
+
+    action 控制成功执行后的重复调用:
+    - "skip": 跳过执行并返回 None
+    - "block": 抛出 RuntimeError
+    - "record_only": 给出提示并继续执行
+
+    methods_to_protect 使用与 MethodRecorder 相同的白名单规则.
+    '''
     def __init__(self, target_instance, methods_to_protect=None, action="skip"):
         """
         :param target_instance: 要保护的目标实例
@@ -12260,14 +12295,11 @@ def plt_box(ax, x, y, width=BAR_WIDTH, label=None, patch_artist=True, boxprops=N
     if boxprops is None:
         boxprops = dict(facecolor=BLUE)
 
-    # 添加bar,用于添加图例,调整以支持横向箱形图
-    if vert:
-        ax.bar(x[0], 0, color=boxprops['facecolor'], label=label, bottom=y[0][0], **kwargs)
-    else:
-        ax.barh(x[0], 0, color=boxprops['facecolor'], label=label, left=y[0][0], **kwargs)
-
-    # 画图
-    return ax.boxplot(list(y), positions=x, patch_artist=patch_artist, boxprops=boxprops, vert=vert, widths=width, **kwargs)
+    # 画图，并直接使用真实的 box artist 添加图例
+    boxplot_result = ax.boxplot(list(y), positions=x, patch_artist=patch_artist, boxprops=boxprops, vert=vert, widths=width, **kwargs)
+    if label is not None and boxplot_result['boxes']:
+        boxplot_result['boxes'][0].set_label(label)
+    return boxplot_result
 
 
 def plt_hist(ax, data, bins=BIN_NUM, label=None, color=BLUE, stat='probability', vert=True, **kwargs):
