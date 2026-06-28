@@ -1122,7 +1122,9 @@ def flex_print_df(print_func=print, df=None, name=None, n=PRINT_WIDTH, char=PRIN
 
 
 def flex_print_array(print_func=print, arr=None, name=None, n=PRINT_WIDTH, char=PRINT_CHAR, lite=True, print_title=True):
-    '''灵活打印数组或列表或稀疏矩阵信息'''
+    '''灵活打印数组、列表或元组信息'''
+    if not isinstance(arr, (np.ndarray, list, tuple)):
+        raise TypeError(f'arr must be an ndarray, list, or tuple, got {type(arr).__name__}')
     if print_title:
         flex_print_title(print_func, title=name, n=n, char=char)
     elif name is not None:
@@ -1134,8 +1136,6 @@ def flex_print_array(print_func=print, arr=None, name=None, n=PRINT_WIDTH, char=
         print_func(f'List shape: {list_shape(arr)}')
     elif isinstance(arr, tuple):
         print_func(f'Tuple shape: {tuple_shape(arr)}')
-    elif isinstance(arr, sps.spmatrix):
-        print_func(f'Sparse matrix shape: {arr.shape}')
     if lite:
         print_func(f'value head: {arr[:5]}')
     else:
@@ -1183,7 +1183,7 @@ def flex_better_print(print_func=print, variable=None, name=None, n=PRINT_WIDTH,
     '''更好的打印'''
     if isinstance(variable, pd.DataFrame):
         flex_print_df(print_func, df=variable, name=name, n=n, char=char, lite=lite, print_title=print_title)
-    elif isinstance(variable, (np.ndarray, list, tuple, sps.spmatrix)):
+    elif isinstance(variable, (np.ndarray, list, tuple)):
         flex_print_array(print_func, arr=variable, name=name, n=n, char=char, lite=lite, print_title=print_title)
     elif isinstance(variable, dict):
         flex_print_dict(print_func, dic=variable, name=name, n=n, char=char, lite=lite, print_title=print_title)
@@ -1249,7 +1249,12 @@ class Capturing(list):
     '''
     def __init__(self, loggers=None, print_to_console=True):
         super().__init__()
-        self.loggers = loggers if isinstance(loggers, list) else [loggers]  # Store multiple loggers in a list
+        if loggers is None:
+            self.loggers = []
+        elif isinstance(loggers, list):
+            self.loggers = loggers
+        else:
+            self.loggers = [loggers]
         self.print_to_console = print_to_console  # Control real-time console printing
         self._buffer = ''  # Temporary storage to reduce unnecessary newlines
 
@@ -1259,7 +1264,10 @@ class Capturing(list):
         return self
 
     def __exit__(self, *args):
-        sys.stdout = self._stdout
+        try:
+            self.flush()
+        finally:
+            sys.stdout = self._stdout
 
     def write(self, message):
         # Accumulate content in the buffer
@@ -1392,7 +1400,7 @@ class Logger:
 
     def prt(self, *message, end='\n'):
         if self.prt_mode:
-            print(*message)
+            print(*message, end=end)
         for i, m in enumerate(message):
             self.log.append(m)
             if i < len(message) - 1:

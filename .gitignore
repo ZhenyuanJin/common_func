@@ -7,7 +7,7 @@ font/
 # 忽略所有 .pyc 文件
 *.pyc
 
-# 防止unit_test_functions.py被忽略
+# 防止特定的带test的文件被忽略
 !unit_test_functions.py
 !test_cf_usage_functions.py
 
