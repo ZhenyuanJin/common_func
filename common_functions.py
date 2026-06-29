@@ -20541,8 +20541,8 @@ class MultiVisualizerByRow(MultiVisualizer):
     注意:
     仅仅支持每个subfig内部的ax只有一行
     '''
-    def __init__(self, single_visualizer_list, save_fig_kwargs=None, fig_title_list=None):
-        super().__init__(single_visualizer_list, save_fig_kwargs, fig_title_list)
+    def __init__(self, single_visualizer_list, save_fig_kwargs=None, fig_title_list=None, title=None):
+        super().__init__(single_visualizer_list, save_fig_kwargs, fig_title_list, title)
     
     def rm_redundant_xylabel(self):
         '''
@@ -20569,8 +20569,8 @@ class MultiVisualizerByCol(MultiVisualizer):
     注意:
     仅仅支持每个subfig内部的ax只有一列
     '''
-    def __init__(self, single_visualizer_list, save_fig_kwargs=None, fig_title_list=None):
-        super().__init__(single_visualizer_list, save_fig_kwargs, fig_title_list)
+    def __init__(self, single_visualizer_list, save_fig_kwargs=None, fig_title_list=None, title=None):
+        super().__init__(single_visualizer_list, save_fig_kwargs, fig_title_list, title)
     
     def rm_redundant_xylabel(self):
         '''
