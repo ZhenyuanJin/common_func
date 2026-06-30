@@ -1,8 +1,62 @@
 import sys
 import os
+import numpy as np
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 import common_functions as cf
 import tqdm
+
+
+def test_axes_lifecycle():
+    """检查 Axes 删除、合并、切分和重挂载的生命周期行为。"""
+    fig, ax = cf.get_fig_ax()
+    cf.rm_ax(ax)
+    assert ax not in fig.axes
+    assert ax.figure is None
+
+    fig, parent_ax = cf.get_fig_ax()
+    inset_ax = cf.inset_ax(parent_ax, 0.1, 0.4, 0.2, 0.6, inset_mode='ax')
+    assert inset_ax in parent_ax.child_axes
+    cf.rm_ax(inset_ax)
+    assert inset_ax not in parent_ax.child_axes
+    assert inset_ax.figure is None
+
+    fig, axs = cf.get_fig_ax(ncols=2)
+    axs = cf.get_iterable_ax(axs)
+    expected_left = min(ax.get_position().x0 for ax in axs)
+    expected_right = max(ax.get_position().x1 for ax in axs)
+    expected_bottom = min(ax.get_position().y0 for ax in axs)
+    expected_top = max(ax.get_position().y1 for ax in axs)
+    merged_ax = cf.merge_ax(axs, rm_mode='rm_ax')
+    merged_position = merged_ax.get_position()
+    assert all(ax not in fig.axes and ax.figure is None for ax in axs)
+    assert np.allclose(
+        [merged_position.x0, merged_position.x1, merged_position.y0, merged_position.y1],
+        [expected_left, expected_right, expected_bottom, expected_top],
+    )
+
+    fig, axs = cf.get_fig_ax(ncols=2)
+    axs = cf.get_iterable_ax(axs)
+    merged_ax = cf.merge_ax(axs, rm_mode='rm_axis')
+    assert all(ax in fig.axes and not ax.axison for ax in axs)
+    assert merged_ax in fig.axes
+
+    fig, axs = cf.get_fig_ax(ncols=2)
+    axs = cf.get_iterable_ax(axs)
+    merged_ax = cf.merge_ax(axs, rm_mode=None)
+    assert all(ax in fig.axes and ax.axison for ax in axs)
+    assert merged_ax in fig.axes
+
+    fig, ax = cf.get_fig_ax()
+    split_axs = cf.get_iterable_ax(cf.split_ax_by_gs(ax, ncols=2))
+    assert ax not in fig.axes and ax.figure is None
+    assert all(split_ax in fig.axes for split_ax in split_axs)
+
+    fig, axs = cf.get_fig_ax(ncols=2)
+    source_ax, parent_ax = cf.get_iterable_ax(axs)
+    reparented_ax = cf.reparent_ax(source_ax, parent_ax)
+    assert source_ax not in fig.axes and source_ax.figure is None
+    assert reparented_ax in parent_ax.child_axes
+
 
 def test_experiment():
     '''

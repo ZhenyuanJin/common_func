@@ -13473,7 +13473,7 @@ def add_twin_ax(ax, axis, color='black', label='twin', inset_mode='fig'):
 # region 初级作图函数(删除ax, 设置ax不可见, 清除ax内容)
 @iterate_over_axs
 def rm_ax(ax):
-    """删除指定的Axes对象"""
+    """删除指定 Axes.删除后该对象已失效,不应再读取其 figure,位置或标签"""
     ax.remove()
 
 @iterate_over_axs
@@ -13993,12 +13993,19 @@ def split_with_double_marginal_ax(ax, x_side_ax_position='top', y_side_ax_positi
 # region 初级作图函数(合并ax)
 def merge_ax(axs, rm_mode='rm_axis', label='merge'):
     '''
-        合并给定的轴对象列表或数组为一个轴对象.
+    合并给定的轴对象列表或数组为一个轴对象
 
-        :param axs: 要合并的轴对象列表或数组
-        :param rm_mode: 是否删除原始的轴对象.默认为'rm_axis',即删除原始的轴对象;假如为'rm_ax',则删除整个ax;如果是其他值,则不删除原始的轴对象
+    :param axs: 要合并的轴对象列表或数组
+    :param rm_mode: 默认为 'rm_axis',隐藏原坐标轴,'rm_ax' 删除原 Axes,其他值保留原 Axes.使用 'rm_ax' 时,源 Axes 在函数返回前已失效
     '''
     axs = get_iterable_ax(axs)
+    fig = axs[0].get_figure()
+    left = get_extreme_ax_position(axs, 'left')
+    right = get_extreme_ax_position(axs, 'right')
+    bottom = get_extreme_ax_position(axs, 'bottom')
+    top = get_extreme_ax_position(axs, 'top')
+    for ax in axs:
+        label = cat(label, ax.get_label())
     for ax in axs:
         if rm_mode == 'rm_axis':
             rm_ax_axis(ax)
@@ -14006,12 +14013,7 @@ def merge_ax(axs, rm_mode='rm_axis', label='merge'):
             rm_ax(ax)
         else:
             pass
-        label = cat(label, ax.get_label())
-    left = get_extreme_ax_position(axs, 'left')
-    right = get_extreme_ax_position(axs, 'right')
-    bottom = get_extreme_ax_position(axs, 'bottom')
-    top = get_extreme_ax_position(axs, 'top')
-    return add_ax(fig=axs[0].get_figure(), left=left, right=right, bottom=bottom, top=top, label=label)
+    return add_ax(fig=fig, left=left, right=right, bottom=bottom, top=top, label=label)
 # endregion
 
 
