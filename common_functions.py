@@ -3051,8 +3051,10 @@ def save_dict_separate(dict_data, save_dir, save_func_dict=None, save_kwargs_dic
     if key_to_save is None:
         key_to_save = list(dict_data.keys())
 
-    save_func_dict = fill_missing_key(save_func_dict, key_to_save, None)
-    save_kwargs_dict = fill_missing_key(save_kwargs_dict, key_to_save, {})
+    save_func_dict = {} if save_func_dict is None else save_func_dict.copy()
+    for key in key_to_save:
+        save_func_dict.setdefault(key, None)
+    save_kwargs_dict = fill_dict_kwargs(save_kwargs_dict, key_to_save)
 
     for k in key_to_save:
         if save_func_dict.get(k, None) is not None:
