@@ -74,6 +74,17 @@ def test_dataframe_io():
             {'update': 1.0, 'loss': 1.5},
             {'update': 2.0, 'loss': 1.2},
         ]
+        empty_path = os.path.join(temporary_dir, 'empty.csv')
+        open(empty_path, 'w').close()
+        cf.append_df(first, empty_path, index=False)
+        assert cf.load_df(empty_path, index_col=None).to_dict('records') == [
+            {'update': 1.0, 'loss': 1.5},
+        ]
+        indexed_path = os.path.join(temporary_dir, 'indexed')
+        cf.append_df(first.set_index('update'), indexed_path, index=True)
+        cf.append_df(second.set_index('update'), indexed_path, index=True)
+        indexed = cf.load_df(indexed_path, index_col=0, index_dtype=int)
+        assert indexed.index.tolist() == [1, 2]
         try:
             cf.append_df(pd.DataFrame([{'loss': 1.0, 'update': 3}]), path, index=False)
         except ValueError:
