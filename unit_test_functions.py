@@ -58,6 +58,35 @@ def test_axes_lifecycle():
     assert reparented_ax in parent_ax.child_axes
 
 
+def test_dataframe_io():
+    import tempfile
+
+    import pandas as pd
+
+    with tempfile.TemporaryDirectory() as temporary_dir:
+        path = os.path.join(temporary_dir, 'history')
+        first = pd.DataFrame([{'update': 1, 'loss': 1.5}])
+        second = pd.DataFrame([{'update': 2, 'loss': 1.2}])
+        cf.append_df(first, path, index=False)
+        cf.append_df(second, path + '.csv', index=False)
+        loaded = cf.load_df(path, index_col=None)
+        assert loaded.to_dict('records') == [
+            {'update': 1.0, 'loss': 1.5},
+            {'update': 2.0, 'loss': 1.2},
+        ]
+        try:
+            cf.append_df(pd.DataFrame([{'loss': 1.0, 'update': 3}]), path, index=False)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError('append_df must reject a different column order')
+        try:
+            cf.append_df(first, path + '.xlsx', index=False)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError('append_df must reject non-CSV paths')
+
 def test_experiment():
     '''
     用于测试experiment的各种功能是否正常

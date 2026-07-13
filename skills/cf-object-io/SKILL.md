@@ -31,6 +31,14 @@ result_dict = cf.load_dict(filename)
 
 numpy array 用 `save_array` / `load_array`，scipy sparse matrix 用 `save_sps_array` / `load_sps_array`，DataFrame 用 `save_df` / `load_df`。
 
+需要把轻量表格按 step 或 task 增量写入同一个 CSV 时，使用 `append_df`。首次调用会写入 header，后续调用会校验列名及顺序后追加，避免反复重写完整历史：
+
+```python
+cf.append_df(pd.DataFrame([row]), filename, index=False)
+```
+
+`append_df` 只支持 CSV；需要保存完整 DataFrame 或其他格式时仍使用 `save_df`。
+
 简单可人工编辑的配置可以用 `save_dict_yaml` / `load_dict_yaml`；普通文本或列表文本用 `save_txt`、`save_list_txt`、`load_txt` 等文本函数。
 
 ## 大字典和分开保存

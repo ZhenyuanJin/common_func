@@ -55,12 +55,12 @@ cf.plt_scatter_3d(ax[1], x, y, z)
 常用函数族：
 
 - 基础图：`plt_line`、`plt_scatter`、`plt_bar`、`plt_hist`、`plt_box`、`plt_violin`
-- 矩阵和热图：优先用 `sns_heatmap`；按坐标边界显示矩阵时用 `plt_pcolormesh`，直接显示数组时用 `plt_imshow`，二维分布用 `plt_hist_2d`，圆形热图用 `plt_scatter_heatmap`
+- 矩阵和热图：默认优先走 `sns_heatmap`；按坐标边界显示矩阵时用 `plt_pcolormesh`，直接显示数组时用 `plt_imshow`，二维分布用 `plt_hist_2d`，圆形热图用 `plt_scatter_heatmap`
 - 统计增强：`plt_linregress`、`plt_density_scatter`、`plt_errorbar_line`、`plt_band_line`、`plt_kde`、`plt_cdf`
 - 分组数据：`plt_group_bar`、`plt_group_box`、`plt_bar_dict`、`plt_group_bar_dict`、`plt_group_bar_df`
 - 3D 图：`plt_scatter_3d`、`plt_line_3d`、`plt_bar_3d`、`plt_surface_3d`、`plt_voxel_heatmap`
 
-热图和带颜色映射的图尽量使用 cf 函数自带的 colorbar 逻辑，通过 `cbar=True`、`cbar_label`、`cbar_position`、`cbar_kwargs` 控制；需要单独添加 colorbar 时，用 `add_colorbar` 或 `add_side_colorbar`，散点大小和颜色同时编码时用 `add_scatter_colorbar` 或 `add_side_scatter_colorbar`。不要直接手写新的 colorbar 布局，除非 cf 的默认布局无法满足需求。
+热图和带颜色映射的图尽量使用 cf 函数自带的 colorbar 逻辑，通过 `cbar=True`、`cbar_label`、`cbar_position`、`cbar_kwargs` 控制；其中热图默认先考虑 `sns_heatmap`。需要单独添加 colorbar 时，用 `add_colorbar` 或 `add_side_colorbar`，散点大小和颜色同时编码时用 `add_scatter_colorbar` 或 `add_side_scatter_colorbar`。不要直接手写新的 colorbar 布局，除非 cf 的默认布局无法满足需求。
 
 默认颜色、colormap、线宽、marker size、直方图 bin 数、colorbar 位置等通常已经合适。cf 里已经全局定义了常用颜色、`CMAP`、`HEATMAP_CMAP`、`DENSITY_CMAP`、`CMAP_DICT` 和 `get_cmap`；只有在数据语义需要区分、论文版式要求或默认效果明显不合适时，才覆盖 `color`、`cmap`、`s`、`linewidth`、`cbar_kwargs` 等参数。
 

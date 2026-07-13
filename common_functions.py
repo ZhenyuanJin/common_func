@@ -3729,6 +3729,26 @@ def save_df(df, filename, index=True, format_list=None):
                 "Unsupported file type. Please use csv, xlsx, or joblib")
 
 
+def append_df(df, filename, index=False):
+    '''Append DataFrame rows to one CSV while preserving a single checked header.'''
+    if not isinstance(df, pd.DataFrame):
+        raise TypeError("df must be a pandas DataFrame")
+    filename = os.fspath(filename)
+    base_filename, extension = os.path.splitext(filename)
+    if extension and extension.lower() != '.csv':
+        raise ValueError("append_df only supports CSV files")
+    full_filename = filename if extension else filename + '.csv'
+    mkdir(os.path.dirname(full_filename))
+
+    write_header = not os.path.exists(full_filename) or os.path.getsize(full_filename) <= 1
+    if not write_header:
+        saved_columns = pd.read_csv(full_filename, nrows=0, index_col=0 if index else None).columns.tolist()
+        if [str(column) for column in saved_columns] != [str(column) for column in df.columns]:
+            raise ValueError("Appended DataFrame columns must match the saved CSV columns and order")
+    mode = 'w' if write_header else 'a'
+    df.to_csv(full_filename, mode=mode, header=write_header, index=index)
+
+
 def load_df(filename, index_col=0, index_dtype=str, col_dtype=str):
     '''
     Load a DataFrame from a CSV, Excel file, or Pickle file, depending on the file's extension.
